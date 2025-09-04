@@ -23,8 +23,8 @@ return [
     | Supported Drivers: "local", "ftp", "sftp", "s3"
     |
     */
-    'disks' => [
-        'local' => [
+    'disks'   => [
+        'local'  => [
             'driver' => 'local',
             'root'   => storage_path('app'),
             'throw'  => false,
@@ -36,7 +36,7 @@ return [
             'visibility' => 'public',
             'throw'      => false,
         ],
-        's3' => [
+        's3'     => [
             'driver'                  => 's3',
             'key'                     => env('AWS_ACCESS_KEY_ID'),
             'secret'                  => env('AWS_SECRET_ACCESS_KEY'),
@@ -58,7 +58,7 @@ return [
     | the locations of the links and the values should be their targets.
     |
     */
-    'links' => [
+    'links'   => [
         public_path('storage') => storage_path('app/public'),
     ],
 ];

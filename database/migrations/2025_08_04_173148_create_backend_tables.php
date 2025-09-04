@@ -30,6 +30,19 @@ class CreateBackendTables extends Migration
             $table->string('remember_token', 100)->nullable();
             $table->timestamps();
         });
+        Schema::create('password_reset_tokens', function(Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+        Schema::create('sessions', function(Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
         Schema::create(config('backend.database.roles_table'), function(Blueprint $table) {
             $table->increments('id');
             $table->string('name', 50)->unique();
@@ -42,16 +55,6 @@ class CreateBackendTables extends Migration
             $table->string('slug', 50)->unique();
             $table->string('http_method')->nullable();
             $table->text('http_path')->nullable();
-            $table->timestamps();
-        });
-        Schema::create(config('backend.database.menu_table'), function(Blueprint $table) {
-            $table->increments('id');
-            $table->integer('parent_id')->default(0);
-            $table->integer('order')->default(0);
-            $table->string('title', 50);
-            $table->string('icon', 50);
-            $table->string('uri')->nullable();
-            $table->string('permission')->nullable();
             $table->timestamps();
         });
         Schema::create(config('backend.database.role_users_table'), function(Blueprint $table) {
@@ -72,14 +75,24 @@ class CreateBackendTables extends Migration
             $table->index(['user_id', 'permission_id']);
             $table->timestamps();
         });
+        Schema::create(config('backend.database.menu_table'), function(Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('parent_id')->nullable();
+            $table->integer('order')->default(0);
+            $table->string('title', 50);
+            $table->string('icon', 50);
+            $table->string('uri')->nullable();
+            $table->string('permission')->nullable();
+            $table->timestamps();
+        });
         Schema::create(config('backend.database.role_menu_table'), function(Blueprint $table) {
             $table->integer('role_id');
-            $table->integer('menu_id');
+            $table->uuid('menu_id');
             $table->index(['role_id', 'menu_id']);
             $table->timestamps();
         });
         Schema::create(config('backend.database.operation_log_table'), function(Blueprint $table) {
-            $table->increments('id');
+            $table->uuid('id')->primary();
             $table->integer('user_id');
             $table->string('path');
             $table->string('method', 10);
@@ -88,13 +101,8 @@ class CreateBackendTables extends Migration
             $table->index('user_id');
             $table->timestamps();
         });
-        Schema::create(config('backend.database.settings_table', 'settings'), function($table) {
-            $table->string('key')->primary();
-            $table->text('value')->nullable();
-            $table->timestamps();
-        });
         Schema::create('scaffold', function(Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('table_name');
             $table->string('model_name')->nullable();
             $table->string('controller_name')->nullable();
@@ -105,8 +113,9 @@ class CreateBackendTables extends Migration
             $table->timestamps();
         });
         Schema::create('scaffold_details', function(Blueprint $table) {
-            $table->id();
-            $table->foreignId('scaffold_id')->constrained('scaffold')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('scaffold_id');
+            $table->foreign('scaffold_id')->references('id')->on('scaffold')->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('type')->nullable();
             $table->boolean('nullable')->default(false);

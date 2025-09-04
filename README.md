@@ -28,9 +28,11 @@ $ composer install
 # create key
 $ php artisan key:generate
 # publish assets
-$ php artisan crud:publish
-# run crud
-$ php artisan crud:install
+$ php artisan backend:publish
+# run install
+$ php artisan backend:install
+# run minify
+$ php artisan backend:minify
 ```
 
 ## Usage

@@ -27,18 +27,18 @@ return [
     |                    "redis", "dynamodb", "octane", "null"
     |
     */
-    'stores' => [
-        'array' => [
+    'stores'  => [
+        'array'     => [
             'driver'    => 'array',
             'serialize' => false,
         ],
-        'database' => [
+        'database'  => [
             'driver'          => 'database',
             'table'           => env('DB_CACHE_TABLE', 'cache'),
             'connection'      => env('DB_CACHE_CONNECTION', null),
             'lock_connection' => env('DB_CACHE_LOCK_CONNECTION', null),
         ],
-        'file' => [
+        'file'      => [
             'driver'    => 'file',
             'path'      => storage_path('framework/cache/data'),
             'lock_path' => storage_path('framework/cache/data'),
@@ -61,12 +61,12 @@ return [
                 ],
             ],
         ],
-        'redis' => [
+        'redis'     => [
             'driver'          => 'redis',
             'connection'      => env('REDIS_CACHE_CONNECTION', 'cache'),
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
-        'dynamodb' => [
+        'dynamodb'  => [
             'driver'   => 'dynamodb',
             'key'      => env('AWS_ACCESS_KEY_ID'),
             'secret'   => env('AWS_SECRET_ACCESS_KEY'),
@@ -74,7 +74,7 @@ return [
             'table'    => env('DYNAMODB_CACHE_TABLE', 'cache'),
             'endpoint' => env('DYNAMODB_ENDPOINT'),
         ],
-        'octane' => [
+        'octane'    => [
             'driver' => 'octane',
         ],
     ],
@@ -88,5 +88,5 @@ return [
     | that reason, you may prefix every cache key to avoid collisions.
     |
     */
-    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_cache_'),
+    'prefix'  => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_cache_'),
 ];

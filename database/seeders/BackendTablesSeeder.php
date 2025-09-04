@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use Crud\Backend\Auth\Database\Menu;
+use Crud\Backend\Auth\Database\Permission;
+use Crud\Backend\Auth\Database\Role;
 use DB;
 use Illuminate\Database\Seeder;
 
@@ -15,8 +18,8 @@ class BackendTablesSeeder extends Seeder
     public function run()
     {
         // base tables
-        \Crud\Backend\Auth\Database\Menu::truncate();
-        \Crud\Backend\Auth\Database\Menu::insert(
+        Menu::truncate();
+        Menu::insert(
             [
                 [
                     "parent_id"  => 0,
@@ -116,8 +119,8 @@ class BackendTablesSeeder extends Seeder
                 ]
             ]
         );
-        \Crud\Backend\Auth\Database\Permission::truncate();
-        \Crud\Backend\Auth\Database\Permission::insert(
+        Permission::truncate();
+        Permission::insert(
             [
                 [
                     "name"        => "All permission",
@@ -157,8 +160,8 @@ class BackendTablesSeeder extends Seeder
                 ]
             ]
         );
-        \Crud\Backend\Auth\Database\Role::truncate();
-        \Crud\Backend\Auth\Database\Role::insert(
+        Role::truncate();
+        Role::insert(
             [
                 [
                     "name" => "Superuser",

@@ -10,7 +10,7 @@ return [
     | syntax for each. The default queue connection is defined below.
     |
     */
-    'default' => env('QUEUE_CONNECTION', 'database'),
+    'default'     => env('QUEUE_CONNECTION', 'database'),
     /*
     |--------------------------------------------------------------------------
     | Queue Connections
@@ -24,10 +24,10 @@ return [
     |
     */
     'connections' => [
-        'sync' => [
+        'sync'       => [
             'driver' => 'sync',
         ],
-        'database' => [
+        'database'   => [
             'driver'       => 'database',
             'connection'   => env('DB_QUEUE_CONNECTION', null),
             'table'        => env('DB_QUEUE_TABLE', 'jobs'),
@@ -43,7 +43,7 @@ return [
             'block_for'    => 0,
             'after_commit' => false,
         ],
-        'sqs' => [
+        'sqs'        => [
             'driver'       => 'sqs',
             'key'          => env('AWS_ACCESS_KEY_ID'),
             'secret'       => env('AWS_SECRET_ACCESS_KEY'),
@@ -53,7 +53,7 @@ return [
             'region'       => env('AWS_DEFAULT_REGION', 'us-east-1'),
             'after_commit' => false,
         ],
-        'redis' => [
+        'redis'      => [
             'driver'       => 'redis',
             'connection'   => env('REDIS_QUEUE_CONNECTION', 'default'),
             'queue'        => env('REDIS_QUEUE', 'default'),
@@ -72,7 +72,7 @@ return [
     | connection and table which has been defined by your application.
     |
     */
-    'batching' => [
+    'batching'    => [
         'database' => env('DB_CONNECTION', 'sqlite'),
         'table'    => 'job_batches',
     ],
@@ -88,7 +88,7 @@ return [
     | Supported drivers: "database-uuids", "dynamodb", "file", "null"
     |
     */
-    'failed' => [
+    'failed'      => [
         'driver'   => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
         'database' => env('DB_CONNECTION', 'sqlite'),
         'table'    => 'failed_jobs',

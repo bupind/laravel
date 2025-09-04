@@ -30,7 +30,7 @@ return [
     |
     */
     'mailers' => [
-        'smtp' => [
+        'smtp'     => [
             'transport'    => 'smtp',
             'url'          => env('MAIL_URL'),
             'host'         => env('MAIL_HOST', '127.0.0.1'),
@@ -41,7 +41,7 @@ return [
             'timeout'      => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
-        'ses' => [
+        'ses'      => [
             'transport' => 'ses',
         ],
         'postmark' => [
@@ -55,11 +55,11 @@ return [
             'transport' => 'sendmail',
             'path'      => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
         ],
-        'log' => [
+        'log'      => [
             'transport' => 'log',
             'channel'   => env('MAIL_LOG_CHANNEL'),
         ],
-        'array' => [
+        'array'    => [
             'transport' => 'array',
         ],
         'failover' => [
@@ -80,7 +80,7 @@ return [
     | used globally for all emails that are sent by your application.
     |
     */
-    'from' => [
+    'from'    => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name'    => env('MAIL_FROM_NAME', 'Example'),
     ],

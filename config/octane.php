@@ -32,7 +32,7 @@ return [
     | Supported: "roadrunner", "swoole", "frankenphp"
     |
     */
-    'server' => env('OCTANE_SERVER', 'roadrunner'),
+    'server'             => env('OCTANE_SERVER', 'roadrunner'),
     /*
     |--------------------------------------------------------------------------
     | Force HTTPS
@@ -43,7 +43,7 @@ return [
     | protocol. Otherwise your links may be generated using plain HTTP.
     |
     */
-    'https' => env('OCTANE_HTTPS', false),
+    'https'              => env('OCTANE_HTTPS', false),
     /*
     |--------------------------------------------------------------------------
     | Octane Listeners
@@ -54,34 +54,34 @@ return [
     | the next request. You may even add your own listeners to the list.
     |
     */
-    'listeners' => [
-        WorkerStarting::class => [
+    'listeners'          => [
+        WorkerStarting::class      => [
             EnsureUploadedFilesAreValid::class,
             EnsureUploadedFilesCanBeMoved::class,
         ],
-        RequestReceived::class => [
+        RequestReceived::class     => [
             ...Octane::prepareApplicationForNextOperation(),
             ...Octane::prepareApplicationForNextRequest(),
             //
         ],
-        RequestHandled::class => [
+        RequestHandled::class      => [
             //
         ],
-        RequestTerminated::class => [
+        RequestTerminated::class   => [
             // FlushUploadedFiles::class,
         ],
-        TaskReceived::class => [
+        TaskReceived::class        => [
             ...Octane::prepareApplicationForNextOperation(),
             //
         ],
-        TaskTerminated::class => [
+        TaskTerminated::class      => [
             //
         ],
-        TickReceived::class => [
+        TickReceived::class        => [
             ...Octane::prepareApplicationForNextOperation(),
             //
         ],
-        TickTerminated::class => [
+        TickTerminated::class      => [
             //
         ],
         OperationTerminated::class => [
@@ -94,7 +94,7 @@ return [
             ReportException::class,
             StopWorkerIfNecessary::class,
         ],
-        WorkerStopping::class => [
+        WorkerStopping::class      => [
             //
         ],
     ],
@@ -108,10 +108,10 @@ return [
     | will force the container to resolve that binding again when asked.
     |
     */
-    'warm' => [
+    'warm'               => [
         ...Octane::defaultServicesToWarm(),
     ],
-    'flush' => [
+    'flush'              => [
         //
     ],
     /*
@@ -124,7 +124,7 @@ return [
     | quickly accessed by other workers on the particular Swoole server.
     |
     */
-    'tables' => [
+    'tables'             => [
         'example:1000' => [
             'name'  => 'string:1000',
             'votes' => 'int',
@@ -140,7 +140,7 @@ return [
     | the number of bytes per row using the configuration options below.
     |
     */
-    'cache' => [
+    'cache'              => [
         'rows'  => 1000,
         'bytes' => 10000,
     ],
@@ -154,7 +154,7 @@ return [
     | files are changed, Octane will automatically reload your workers.
     |
     */
-    'watch' => [
+    'watch'              => [
         'app',
         'bootstrap',
         'config',
@@ -175,7 +175,7 @@ return [
     | collection if your application consumes this amount of megabytes.
     |
     */
-    'garbage' => 50,
+    'garbage'            => 50,
     /*
     |--------------------------------------------------------------------------
     | Maximum Execution Time

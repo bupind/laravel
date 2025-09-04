@@ -10,7 +10,7 @@ return [
     | as required, but they're a perfect start for most applications.
     |
     */
-    'defaults' => [
+    'defaults'         => [
         'guard'     => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
@@ -30,7 +30,7 @@ return [
     | Supported: "session"
     |
     */
-    'guards' => [
+    'guards'           => [
         'web' => [
             'driver'   => 'session',
             'provider' => 'users',
@@ -52,7 +52,7 @@ return [
     | Supported: "database", "eloquent"
     |
     */
-    'providers' => [
+    'providers'        => [
         'users' => [
             'driver' => 'eloquent',
             'model'  => env('AUTH_MODEL', App\Models\User::class),
@@ -80,7 +80,7 @@ return [
     | quickly generating a very large amount of password reset tokens.
     |
     */
-    'passwords' => [
+    'passwords'        => [
         'users' => [
             'provider' => 'users',
             'table'    => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
