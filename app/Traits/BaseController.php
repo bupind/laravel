@@ -3,6 +3,8 @@
 namespace App\Traits;
 
 use App\Exports\GeneralExport;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use ReflectionClass;
@@ -10,6 +12,7 @@ use ReflectionClass;
 trait BaseController
 {
     protected $repository;
+    protected $moreActions;
     protected $request;
     protected $route;
     protected $data = [];
@@ -89,9 +92,10 @@ trait BaseController
             $this->repository->setPermissions($permissions);
         }
         $data = array_merge($this->data, [
-            'heads'  => $this->repository->buildHeads(),
-            'datas'  => $this->repository->buildConfig($this->route),
-            'config' => $this->repository->config(),
+            'heads'       => $this->repository->buildHeads(),
+            'datas'       => $this->repository->buildConfig($this->route),
+            'config'      => $this->repository->config(),
+            'moreActions' => $this->moreActions,
         ]);
         $data = array_merge($data, $permissions);
         return view($this->resolveView('index'), $data);
@@ -113,15 +117,34 @@ trait BaseController
 
     public function store()
     {
-        $validated = $this->request->validate($this->request->rules());
-        $callback  = $this->repository->beforeAction($validated, 'store');
-        if($callback['error']) {
+        $request  = $this->resolveRequest();
+        $data     = $request->validated();
+        $callback = $this->repository->beforeAction($data, 'store');
+        if(!empty($callback['error'])) {
             return back()->with('error', $callback['message'])->withInput();
         }
-        $model = $this->repository->create($callback['data']);
-        return $this->request->wantsJson()
-            ? $model
-            : redirect()->route($this->route . '.index')->with('success', 'Created successfully');
+        $this->repository->create($callback['data']);
+        return $request->wantsJson()
+            ? response()->json(['status' => true])
+            : redirect()->route($this->route . '.index')
+                ->with('success', 'Created successfully');
+    }
+
+    protected function resolveRequest(): FormRequest
+    {
+        $formRequest = app($this->requestClass);
+        $current     = request();
+        $formRequest->initialize(
+            $current->query->all(),
+            $current->request->all(),
+            $current->attributes->all(),
+            $current->cookies->all(),
+            $current->files->all(),
+            $current->server->all()
+        );
+        $formRequest->setContainer(app())->setRedirector(app(Redirector::class));
+        $formRequest->validateResolved();
+        return $formRequest;
     }
 
     public function create()
@@ -129,7 +152,6 @@ trait BaseController
         $fields = $this->repository->formFields(null, 'create');
         $data   = array_merge($this->data, [
             'fields'   => $fields,
-            'route'    => $this->route,
             'isForm'   => true,
             'title'    => __('Create') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
             'useModal' => request()->query('useModal'),
@@ -145,7 +167,6 @@ trait BaseController
         $data   = array_merge($this->data, [
             'item'     => $item,
             'fields'   => $fields,
-            'route'    => $this->route,
             'isForm'   => true,
             'title'    => __('Update') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
             'useModal' => request()->query('useModal'),
@@ -157,7 +178,8 @@ trait BaseController
     public function update()
     {
         $validated = $this->request->validate($this->request->rules());
-        $callback  = $this->repository->beforeAction(array_merge($validated, $this->request->all()), 'update');
+        $data      = array_merge($validated, $this->request->all());
+        $callback  = $this->repository->beforeAction($data, 'update');
         if($callback['error']) {
             return back()->with('error', $callback['message'])->withInput();
         }

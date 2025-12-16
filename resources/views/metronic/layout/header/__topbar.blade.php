@@ -15,7 +15,7 @@
         <div class="cursor-pointer symbol symbol-30px symbol-md-40px" data-kt-menu-trigger="click" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
             <img src="{{ Auth::user()->profile_photo_url }}" alt="image"/>
         </div>
-        @include("metronic/partials/menus/_user-account-menu")
+        @include("metronic.partials._user-account-menu")
     </div>
     <div class="d-flex align-items-center d-lg-none ms-2 me-n2" title="Show header menu">
         <div class="btn btn-icon btn-active-color-primary w-30px h-30px w-md-40px h-md-40px" id="kt_header_menu_mobile_toggle">

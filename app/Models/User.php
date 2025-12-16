@@ -9,7 +9,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -20,7 +19,6 @@ class User extends Authenticatable
     use Notifiable;
     use TwoFactorAuthenticatable;
     use HasRoles;
-//    use LogsActivity;
 
     const ROLE_SUPERUSER     = 'superuser';
     const ROLE_ADMINISTRATOR = 'administrator';
@@ -34,15 +32,21 @@ class User extends Authenticatable
         'password_changed_at',
         'profile_photo_path'
     ];
-    protected $hidden  = [
+    protected $hidden   = [
         'password',
         'remember_token',
         'two_factor_recovery_codes',
         'two_factor_secret',
     ];
-    protected $appends = [
+    protected $appends  = [
         'profile_photo_url',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logOnly(['*'])->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")->useLogName('User');
+    }
 
     protected function casts(): array
     {
@@ -51,11 +55,4 @@ class User extends Authenticatable
             'password'          => 'hashed',
         ];
     }
-
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()->logOnly(['*'])->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")->useLogName('User');
-    }
-
 }

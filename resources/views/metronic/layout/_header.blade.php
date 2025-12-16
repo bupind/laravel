@@ -23,8 +23,7 @@
                 $fecha = Carbon::now()->translatedFormat('j F Y');
                 echo $fecha
             @endphp
-        </span>
-                </a>
+        </span> </a>
             </div>
 
             <div class="app-navbar-item ms-1 ms-md-4">
@@ -36,7 +35,7 @@
                 <div class="cursor-pointer symbol symbol-35px" data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
                     <img src="{{ Auth::user()->profile_photo_url }}" class="rounded-3" alt="image"/>
                 </div>
-                @include("metronic/partials/menus/_user-account-menu")
+                @include("metronic.partials._top-menu")
             </div>
         </div>
     </div>

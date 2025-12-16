@@ -1,3 +1,17 @@
-@props(['disabled' => false])
+@props([
+    'type' => 'text',
+    'name',
+    'value' => null,
+])
 
-<input {{ $disabled ? 'disabled' : '' }} {!! $attributes->merge(['class' => 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm']) !!}>
+@php
+    $val = old($name, $type === 'password' ? '' : $value);
+@endphp
+
+<input type="{{ $type }}" name="{{ $name }}" value="{{ $val }}"{{ $attributes->merge([
+    'class' => 'form-control' . ($errors->has($name) ? ' is-invalid' : '')
+    ]) }}>
+
+@error($name)
+<div class="invalid-feedback">{{ $message }}</div>
+@enderror

@@ -1,7 +1,6 @@
-<div class="card card-flush h-md-100">
-    <div class="card-header py-0 d-flex flex-stack">
+<div class="card bg-light shadow-sm border border-gray-300">
+    <div class="card-header p-0 d-flex flex-stack">
         <div class="card-title d-flex align-items-center">
-
             <select class="form-select form-select-sm w-auto" id="entriesSelect">
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -9,38 +8,54 @@
                 <option value="100">100</option>
                 <option value="500">500</option>
             </select>
-
             <div class="btn-group btn-group-xs mx-2">
                 @can($data['permission_add'] ?? null)
                     @if(Route::has($route.'.create'))
                         <a href="{{ route($route.'.create') }}"
-                           class="btn btn-sm btn-primary px-2 @if($config['modal.use']) --modal @endif"
-                           data-modalsize="{{ $config['modal.size'] }}"
-                           data-title="Create {{ \Illuminate\Support\Str::title(str_replace('-', ' ', $route)) }}">
-                            <i class="ki-outline ki-plus fs-3"></i> </a>
+                           class="btn btn-primary p-2 @if($config['modal.use']) --modal @endif"
+                           data-modalsize="{{ $config['modal.size'] }}"> <i class="ki-outline ki-plus fs-3"></i> </a>
                     @endif
                 @endcan
-
+                @if($moreActions)
+                    @foreach($moreActions as $action)
+                        @can($action['permission'] ?? null)
+                            @if(isset($action['route']) && Route::has($action['route']))
+                                <a href="{{ route($action['route']) }}"
+                                   class="btn {{ $action['class'] ?? 'btn-light' }} p-2"
+                                        {!! $action['attributes'] ?? '' !!}>
+                                    @isset($action['icon'])
+                                        <i class="ki-outline {{ $action['icon'] }} fs-3"></i>
+                                    @endisset
+                                </a>
+                            @elseif(isset($action['url']))
+                                <a href="{{ $action['url'] }}"
+                                   class="btn {{ $action['class'] ?? 'btn-light' }} p-2"
+                                        {!! $action['attributes'] ?? '' !!}>
+                                    @isset($action['icon'])
+                                        <i class="ki-outline {{ $action['icon'] }} fs-3"></i>
+                                    @endisset
+                                </a>
+                            @endif
+                        @endcan
+                    @endforeach
+                @endif
                 <button class="btn btn-sm btn-secondary" id="toggleSearchBtn">
                     <i class="ki-outline ki-filter-search"></i>
                 </button>
-
-                @if($config['checkbox.all'])
-                    <button class="btn btn-sm btn-danger" id="deleteSelectedBtn" disabled>
+                @if($config['checkbox.route'])
+                    <button class="btn btn-sm btn-danger" id="deleteSelectedBtn">
                         <i class="ki-outline ki-trash"></i>
                     </button>
                 @endif
-
                 <input type="text" id="tableSearch"
                        class="form-control form-control-sm rounded-0"
                        placeholder="Search..."
                        style="display:none;width:250px;">
-                <button class="btn btn-sm btn-warning px-2" id="reloadTableBtn">
+                <button class="btn btn-sm btn-warning p-2" id="reloadTableBtn">
                     <i class="ki-outline ki-arrows-circle fs-3"></i>
                 </button>
             </div>
         </div>
-
         <div class="card-toolbar d-flex gap-1">
             <div class="dropdown">
                 <button class="btn btn-sm btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
@@ -64,34 +79,34 @@
                     </ul>
                 </div>
             @endif
-
         </div>
     </div>
 
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table id="{{ $id }}" class="table table-striped table-bordered align-middle">
-                <thead>
-                <tr>
-                    @if($config['checkbox.all'])
-                        <th class="text-center" width="5">
-                            <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                <input type="checkbox" class="form-check-input" id="checkAll">
-                            </div>
-                        </th>
-                    @endif
-                    <th class="text-center" width="5">#</th>
-                    @foreach($heads as $head)
-                        <th width="{!! $head['width'] ?? null !!}">{!! $head['label'] !!}</th>
-                    @endforeach
-                </tr>
-                </thead>
-            </table>
-        </div>
+        <table id="{{ $id }}" class="table table-striped table-row-bordered gy-1 gs-1 border rounded w-100 align-middle">
+            <thead>
+            <tr>
+                @if($config['checkbox.all'])
+                    <th class="text-center" width="5">
+                        <div class="form-check form-check-sm form-check-custom form-check-solid">
+                            <input type="checkbox" class="form-check-input" id="checkAll">
+                        </div>
+                    </th>
+                @endif
+                <th class="text-center" width="5">#</th>
+                @foreach($heads as $head)
+                    <th width="{!! $head['width'] ?? null !!}">{!! $head['label'] !!}</th>
+                @endforeach
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center py-3">
+        <div class="dt-info"></div>
+        <div class="dt-pagination"></div>
     </div>
 </div>
 @push('scripts')
-    <script src="{{asset('assets/custom/datatables/datatables.bundle.js')}}"></script>
     <script>
         $(function () {
             const checkboxAll = @json($config['checkbox.all']);
@@ -140,10 +155,6 @@
 
             let table = $('#{{ $id }}').DataTable({
                 ...datas,
-                fixedHeader: {
-                    header: true,
-                    headerOffset: 5
-                },
                 serverSide: true,
                 stateSave: true,
                 dom: 'rtip',
@@ -155,7 +166,14 @@
                         searchable: false,
                         className: 'text-center'
                     }
-                ]
+                ],
+                initComplete: function () {
+                    let wrapper = $('#{{ $id }}_wrapper');
+                    wrapper.find('.dataTables_info')
+                        .appendTo(wrapper.closest('.card').find('.dt-info'));
+                    wrapper.find('.dataTables_paginate')
+                        .appendTo(wrapper.closest('.card').find('.dt-pagination'));
+                }
             });
             $('#reloadTableBtn').click(() => table.ajax.reload(null, false));
             $('#toggleSearchBtn').click(() => $('#tableSearch').toggle().focus());
@@ -224,29 +242,6 @@
 @endpush
 
 @push('styles')
-    <link href="{{asset('assets/custom/datatables/datatables.bundle.css')}}" rel="stylesheet" type="text/css"/>
     <style>
-        th.text-center {
-            text-align: center;
-        }
-
-        .card-header .btn {
-            font-size: 0.75rem;
-            padding: 0.375rem 0.75rem;
-        }
-
-        /*table.dataTable thead th {*/
-        /*    background-color: #0073ea !important;*/
-        /*    color: #fff !important;*/
-        /*    font-weight: 600;*/
-        /*}*/
-
-        /*table.dataTable tbody td {*/
-        /*    vertical-align: middle !important;*/
-        /*}*/
-
-        /*.table-responsive {*/
-        /*    overflow-x: auto;*/
-        /*}*/
     </style>
 @endpush

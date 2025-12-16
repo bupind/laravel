@@ -12,9 +12,9 @@ class UsersController extends Controller
 {
     use BaseController;
 
+    protected string $requestClass = UserRequest::class;
     public function __construct(Request $request, UserRepository $repository)
     {
-        $this->request    = new UserRequest($request->all());
         $this->repository = $repository;
         $config           = new ConfigDTO([
             'modal.use'      => true,

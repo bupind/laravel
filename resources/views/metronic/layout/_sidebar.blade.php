@@ -4,10 +4,9 @@
         <img alt="Logo" src="{{asset("img/default-dark.svg")}}" class="h-20px app-sidebar-logo-minimize"/>
     </a>
     <div id="kt_app_sidebar_toggle" class="app-sidebar-toggle btn btn-icon btn-shadow btn-sm btn-color-muted btn-active-color-primary h-30px w-30px position-absolute top-50 start-100 translate-middle rotate" data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body" data-kt-toggle-name="app-sidebar-minimize">
-        <i class="ki-outline ki-abstract-14 fs-1"></i>
+        <i class="ki-outline ki-burger-menu-3 fs-1"></i>
     </div>
 </div>
-
 <div class="app-sidebar-menu overflow-hidden flex-column-fluid">
     <div id="kt_app_sidebar_menu_wrapper" class="app-sidebar-wrapper">
         <div id="kt_app_sidebar_menu_scroll" class="scroll-y my-5 mx-3" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer" data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true">

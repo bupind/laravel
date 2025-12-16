@@ -98,11 +98,6 @@ trait BaseRepository
         });
     }
 
-    public function customIndex($data) { return $data; }
-
-    public function customCreateOrEdit($data, $item = null) { return $data; }
-
-    public function customShow($data, $item) { return $data; }
 
     public function beforeAction($data, $method)
     {

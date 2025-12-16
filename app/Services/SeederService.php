@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Menu;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -74,65 +73,6 @@ class SeederService
                         $role = Role::where('name', $roleName)->first();
                         if($role && !$role->hasPermissionTo($permission)) {
                             $role->givePermissionTo($permission);
-                        }
-                    }
-                }
-            };
-        }
-        if($name === 'menu') {
-            return new class () {
-                public function add(array $data, $parent = null): void
-                {
-                    $lookup = [];
-                    if(isset($data['key'])) {
-                        $lookup['key'] = $data['key'];
-                    } else {
-                        $lookup['parent_id'] = $parent?->id;
-                        $lookup['text']      = $data['text'] ?? null;
-                        $lookup['header']    = $data['header'] ?? null;
-                    }
-                    if(isset($data['order'])) {
-                        $parent_id = $parent?->id;
-                        $newOrder  = $data['order'];
-                        $menu      = Menu::where($lookup)->first();
-                        if($menu) {
-                            $oldOrder = $menu->order;
-                            if($newOrder != $oldOrder) {
-                                if($newOrder < $oldOrder) {
-                                    Menu::where('parent_id', $parent_id)
-                                        ->where('order', '>=', $newOrder)
-                                        ->where('order', '<', $oldOrder)
-                                        ->increment('order');
-                                } else {
-                                    Menu::where('parent_id', $parent_id)
-                                        ->where('order', '<=', $newOrder)
-                                        ->where('order', '>', $oldOrder)
-                                        ->decrement('order');
-                                }
-                            }
-                        } else {
-                            Menu::where('parent_id', $parent_id)
-                                ->where('order', '>=', $newOrder)
-                                ->increment('order');
-                        }
-                    }
-                    $menu = Menu::updateOrCreate(
-                        $lookup,
-                        [
-                            'parent_id' => $parent?->id,
-                            'text'      => $data['text'] ?? null,
-                            'header'    => $data['header'] ?? null,
-                            'route'     => $data['route'] ?? null,
-                            'url'       => $data['url'] ?? null,
-                            'can'       => $data['can'] ?? null,
-                            'role'      => $data['role'] ?? null,
-                            'icon'      => $data['icon'] ?? null,
-                            'order'     => $data['order'] ?? Menu::where('parent_id', $parent?->id)->max('order') + 1,
-                        ]
-                    );
-                    if(isset($data['submenu']) && is_array($data['submenu'])) {
-                        foreach($data['submenu'] as $submenu) {
-                            $this->add($submenu, $menu);
                         }
                     }
                 }
