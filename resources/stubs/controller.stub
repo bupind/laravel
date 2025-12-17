@@ -6,18 +6,18 @@ use App\Http\Requests\{{name}}Request;
 use App\Repositories\{{name}}Repository;
 use App\Support\ConfigDTO;
 use App\Traits\BaseController;
-use Illuminate\Http\Request;
 
 class {{name}}Controller extends Controller
 {
     use BaseController;
-    protected string $requestClass = {{name}}Request::class;
+
     public function __construct(Request $request, {{name}}Repository $repository)
     {
         $this->repository = $repository;
+        $this->request    = new {{name}}Request($request->all());
         $config           = new ConfigDTO([
-            'modal.use'      => true,
-            'modal.size'     => 'md'
+            'modal.use'  => true,
+            'modal.size' => 'md',
         ]);
         $this->repository->setConfig($config);
         $this->boot();

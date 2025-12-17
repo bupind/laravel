@@ -12,11 +12,10 @@ class UnitController extends Controller
 {
     use BaseController;
 
-    protected string $requestClass = UnitRequest::class;
-
     public function __construct(Request $request, UnitRepository $repository)
     {
         $this->repository = $repository;
+        $this->request    = new UnitRequest($request->all());
         $config           = new ConfigDTO([
             'modal.use'  => true,
             'modal.size' => 'md'

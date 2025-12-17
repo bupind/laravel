@@ -1,5 +1,5 @@
-<div class="card bg-light shadow-sm border border-gray-300">
-    <div class="card-header p-0 d-flex flex-stack">
+<div class="card bg-light shadow-sm border border-gray-300 rounded-2">
+    <div class="card-header p-1 d-flex flex-stack">
         <div class="card-title d-flex align-items-center">
             <select class="form-select form-select-sm w-auto" id="entriesSelect">
                 <option value="10">10</option>
@@ -81,8 +81,7 @@
             @endif
         </div>
     </div>
-
-    <div class="card-body p-0">
+    <div class="card-body p-1">
         <table id="{{ $id }}" class="table table-striped table-row-bordered gy-1 gs-1 border rounded w-100 align-middle">
             <thead>
             <tr>
@@ -101,7 +100,7 @@
             </thead>
         </table>
     </div>
-    <div class="card-footer d-flex justify-content-between align-items-center py-3">
+    <div class="card-footer d-flex justify-content-between align-items-center py-3 px-1">
         <div class="dt-info"></div>
         <div class="dt-pagination"></div>
     </div>

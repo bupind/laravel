@@ -2,29 +2,49 @@
 
 namespace App\Repositories;
 
+use App\Models\Permissions;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
+use App\Traits\LogsActivity;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Str;
 
 class PermissionRepository
 {
-    use BaseRepository;
-    use BaseDatatable;
-    public function __construct(Permission $model)
+    use BaseRepository, BaseDatatable, LogsActivity;
+
+    public function __construct(Permissions $model)
     {
         $this->model = $model;
-        $this->with = ['roles'];
+        $this->datatableColumns();
     }
 
-    public function customTables($table)
+    private function datatableColumns(): void
     {
-        $table->name->label('Permission');
-        $table->add('roles', function ($model) {
-            return $model->roles->map(function ($role) {
-                $color = $role->name === 'admin' ? 'danger' : 'primary';
-                return badge($role->name, $color);
-            })->join(' ');
-        })->label('Roles')->searchable(false);
+        $this->addColumn('name');
+        $this->addColumn('guard_name');
+        $this->addColumn('created_at', fn($row) => $row->created_at->format('d-m-Y'));
+    }
+
+    public function formRules(): array
+    {
+        return [
+            [
+                'name'  => 'name',
+                'label' => 'Permission Name',
+                'type'  => 'text',
+                'col'   => 'col-12',
+            ],
+        ];
+    }
+
+    public function store(array $data)
+    {
+        return Permission::updateOrCreate(
+            ['id' => $data['id'] ?? null],
+            [
+                'name'       => $data['name'],
+                'guard_name' => 'web',
+            ]
+        );
     }
 }

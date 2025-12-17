@@ -3,11 +3,6 @@
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
-Route::resource('roles', 'RolesController');
-Route::post('destroy_roles', 'RolesController@destroy_roles');
-
-Route::resource('permissions', 'PermissionsController');
-Route::post('destroy_permissions', 'PermissionsController@destroy_permissions');
 
 
 Route::get('users/datatable', [\App\Http\Controllers\UsersController::class, 'datatable'])->name('users.datatable');
@@ -29,3 +24,14 @@ Route::get('unit/datatable', [\App\Http\Controllers\UnitController::class, 'data
 Route::get('unit/export/{format?}', [\App\Http\Controllers\UnitController::class, 'export'])->name('unit.export');
 Route::post('unit/bulk', [\App\Http\Controllers\UnitController::class, 'bulk'])->name('unit.bulk');
 Route::resource('unit', \App\Http\Controllers\UnitController::class);
+
+
+Route::get('roles/datatable', [\App\Http\Controllers\RolesController::class, 'datatable'])->name('roles.datatable');
+Route::get('roles/export/{format?}', [\App\Http\Controllers\RolesController::class, 'export'])->name('roles.export');
+Route::post('roles/bulk', [\App\Http\Controllers\RolesController::class, 'bulk'])->name('roles.bulk');
+Route::resource('roles', \App\Http\Controllers\RolesController::class);
+
+Route::get('permissions/datatable', [\App\Http\Controllers\PermissionsController::class, 'datatable'])->name('permissions.datatable');
+Route::get('permissions/export/{format?}', [\App\Http\Controllers\PermissionsController::class, 'export'])->name('permissions.export');
+Route::post('permissions/bulk', [\App\Http\Controllers\PermissionsController::class, 'bulk'])->name('permissions.bulk');
+Route::resource('permissions', \App\Http\Controllers\PermissionsController::class);

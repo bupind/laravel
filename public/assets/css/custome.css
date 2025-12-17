@@ -1,0 +1,7 @@
+#kt_app_wrapper {
+    background-color: #F1F1F4;
+}
+
+[data-bs-theme=dark] #kt_app_wrapper {
+    background-color: rgba(63,66,84,.35);
+}

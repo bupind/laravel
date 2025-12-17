@@ -25,6 +25,28 @@
                 @case('file')
                     <x-input type="file" :name="$name"/>
                     @break
+                @case('checkbox')
+                    @php
+                        $checkedValues = collect($value ?? [])->map(fn($v) => (string) $v)->toArray();
+                    @endphp
+                    <div class="row">
+                        @foreach(($field['options'] ?? []) as $val => $text)
+                            <div class="col-md-3">
+                                <div class="form-check form-check-custom form-check-solid">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="{{ $name }}[]"
+                                        value="{{ $val }}"
+                                        {{ in_array((string)$val, $checkedValues, true) ? 'checked' : '' }}
+                                    > <label class="form-check-label">
+                                        {{ $text }}
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @break
                 @default
                     <x-input
                         :type="$type"

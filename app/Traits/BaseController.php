@@ -117,14 +117,14 @@ trait BaseController
 
     public function store()
     {
-        $request  = $this->resolveRequest();
-        $data     = $request->validated();
+        $validated = $this->request->validate($this->request->rules());
+        $data      = array_merge($validated, $this->request->all());
         $callback = $this->repository->beforeAction($data, 'store');
         if(!empty($callback['error'])) {
             return back()->with('error', $callback['message'])->withInput();
         }
         $this->repository->create($callback['data']);
-        return $request->wantsJson()
+        return $this->request->wantsJson()
             ? response()->json(['status' => true])
             : redirect()->route($this->route . '.index')
                 ->with('success', 'Created successfully');
