@@ -20,7 +20,6 @@ class Datatable extends Component
 //'class' => 'btn-warning',
 //'attributes' => 'data-bs-toggle=modal',
 //]
-
     public function __construct($id, $heads = [], $datas = [], $moreActions = [], $route = null, ConfigDTO $config)
     {
         $this->id          = $id;

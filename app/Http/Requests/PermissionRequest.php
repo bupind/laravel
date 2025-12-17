@@ -16,7 +16,7 @@ class PermissionRequest extends FormRequest
         $rules = [
             'name' => 'required|string'
         ];
-        if (request()->isMethod('patch') || request()->isMethod('put')) {
+        if(request()->isMethod('patch') || request()->isMethod('put')) {
             $rules['id'] = 'required';
         }
         return $rules;

@@ -11,7 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         using   : function() {
             Route::middleware('api')->prefix('api')->group(base_path('routes/api.php'));
             Route::middleware('web')->namespace("App\Http\Controllers")->group(base_path('routes/web.php'));
-            //Backend
             Route::middleware([
                 'web',
                 'auth:sanctum',

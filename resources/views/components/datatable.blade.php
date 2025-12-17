@@ -16,6 +16,13 @@
                            data-modalsize="{{ $config['modal.size'] }}"> <i class="ki-outline ki-plus fs-3"></i> </a>
                     @endif
                 @endcan
+                    @can($data['permission_import'] ?? null)
+                        @if(Route::has($route.'.import'))
+                            <a href="{{ route($route.'.import') }}"
+                               class="btn btn-primary p-2 @if($config['modal.use']) --modal @endif"
+                               data-modalsize="{{ $config['modal.size'] }}"> <i class="ki-outline ki-plus fs-3"></i> </a>
+                        @endif
+                    @endcan
                 @if($moreActions)
                     @foreach($moreActions as $action)
                         @can($action['permission'] ?? null)

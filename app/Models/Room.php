@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Unit extends Model
+class Room extends Model
 {
     use HasFactory;
 
     const STATUS_ACTIVE   = 'active';
     const STATUS_INACTIVE = 'inactive';
+
     protected $fillable = [
         'name',
         'status',
@@ -19,8 +20,9 @@ class Unit extends Model
     public static function statuses(): array
     {
         return [
-            self::STATUS_ACTIVE   => self::STATUS_ACTIVE,
-            self::STATUS_INACTIVE => self::STATUS_INACTIVE,
+            self::STATUS_ACTIVE     => self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE   => self::STATUS_INACTIVE,
         ];
     }
+
 }

@@ -2,30 +2,27 @@
 
 namespace App\Repositories;
 
-use App\Models\Unit;
+use App\Models\Room;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
 use App\Traits\LogsActivity;
 
-class UnitRepository
+class RoomRepository
 {
     use BaseRepository, BaseDatatable, LogsActivity;
-
-    public function __construct(Unit $model)
+    public function __construct(Room $model)
     {
         $this->model = $model;
-        $this->datatableColumns();
+         $this->datatableColumns();
     }
-
     private function datatableColumns()
     {
         $this->addColumn('name');
         $this->addColumn('status', function($row) {
-            $statuses = Unit::statuses();
+            $statuses = Room::statuses();
             return $statuses[$row->status] ?? $row->status;
         });
     }
-
     public function formRules(): array
     {
         return [
@@ -40,7 +37,7 @@ class UnitRepository
                 'type'    => 'select',
                 'label'   => 'Status',
                 'col'     => 'col-6',
-                'options' => Unit::statuses(),
+                'options' => Room::statuses(),
             ],
         ];
     }

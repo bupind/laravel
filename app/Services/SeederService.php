@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -78,6 +79,6 @@ class SeederService
                 }
             };
         }
-        throw new \Exception("Property {$name} not found on SeederService");
+        throw new Exception("Property {$name} not found on SeederService");
     }
 }

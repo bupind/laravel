@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
-use App\Models\User;
-use Auth;
+
 class NewPasswordController extends Controller
 {
     /**
@@ -23,7 +24,7 @@ class NewPasswordController extends Controller
     /**
      * Handle an incoming new password request.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -31,27 +32,22 @@ class NewPasswordController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|string',
         ]);
-
         $user = User::where('email', $request->email)->first();
-        if (!$user) {
+        if(!$user) {
             return redirect()->back()->withErrors(['email' => 'Usuario no encontrado.']);
         }
-
         $user->update([
-            'password' => Hash::make($request->password),
+            'password'            => Hash::make($request->password),
             'password_changed_at' => now(),
         ]);
-
         Auth::logoutOtherDevices($request->password);
         Auth::logout();
         Session::flush();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
         return redirect()->route('login')->with('pass', "Contraseña cambiada correctamente");
-
     }
 }

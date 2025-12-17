@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 | Acceso Prohibido</title>
+    <title>403 | Access Denied</title>
     <style>
         body {
             background-color: #1C2127;
@@ -219,11 +219,11 @@
     </style>
 </head>
 <body>
-<div class="message">No estas autorizado a ver esta página.</div>
-<div class="message2">Pide a un administrador que te asigne los permisos corresponientes.</div>
-<div>
-    <a href="{{route('dashboard')}}" class="button-33">Regresar al menú principal</a>
-</div>
+<div class="message">{{ __('errors.403_message') }}</div>
+<div class="message2">{{ __('errors.403_sub') }}</div>
+<a href="{{ route('dashboard') }}" class="button-33">
+    {{ __('errors.403_back') }}
+</a>
 <div class="container">
     <div class="neon">403</div>
     <div class="door-frame">

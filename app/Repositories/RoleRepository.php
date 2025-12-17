@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
 use App\Traits\LogsActivity;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -77,7 +78,7 @@ class RoleRepository
 
     public function getById($id)
     {
-        $role = Roles::with('permissions')->findOrFail($id);
+        $role              = Roles::with('permissions')->findOrFail($id);
         $role->permissions = $role->permissions
             ->pluck('name')
             ->toArray();
@@ -93,7 +94,7 @@ class RoleRepository
             $record->update($data);
             DB::commit();
             return $record;
-        }, function(\Exception $e) {
+        }, function(Exception $e) {
             DB::rollBack();
             throw $e;
         });

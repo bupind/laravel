@@ -18,8 +18,7 @@
     @endcan
 
     @can($data['permission_delete'] ?? null)
-        <form method="POST" action="{{ route($route . '.destroy', $model->id) }}"
-              onsubmit="return confirm('Are you sure?')" style="display:inline-block;">
+        <form method="POST" action="{{ route($route . '.destroy', $model->id) }}" onsubmit="return confirm('Are you sure?')" style="display:inline-block;">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-light-danger p-2">

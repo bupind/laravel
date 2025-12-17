@@ -1,7 +1,7 @@
 @extends('metronic.index')
 @section('title', 'Dashboard')
 @section('content')
-    <div id="kt_content_container" class="container-xxl">
+    <div id="kt_content_container" class="container-fluid">
         <div class="row gy-5 g-xl-8">
             <div class="col-xl-4">
                 <div class="card card-xl-stretch mb-xl-8">

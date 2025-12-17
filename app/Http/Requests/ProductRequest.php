@@ -14,17 +14,15 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
             'category_id' => 'required|integer|exists:categories,id',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'price'       => 'required|numeric|min:0',
+            'stock'       => 'required|integer|min:0',
         ];
-
-        if (request()->isMethod('patch') || request()->isMethod('put')) {
+        if(request()->isMethod('patch') || request()->isMethod('put')) {
             $rules['id'] = 'required';
         }
-
         return $rules;
     }
 }

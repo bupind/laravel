@@ -35,22 +35,18 @@ class GeneralExport implements FromCollection, WithHeadings, WithMapping, WithTi
     {
         $model = $this->repository->getInstanceModel();
         $query = $model->with($this->with);
-
         // Terapkan filter
         if(method_exists($model, 'scopeFilter')) {
             $query->filter($this->request['filters'] ?? []);
         }
-
         // Pagination jika page
         if(($this->request['scope'] ?? 'page') === 'page') {
             $start  = (int)($this->request['start'] ?? 0);
             $length = (int)($this->request['length'] ?? 10);
             $query->skip($start)->take($length);
         }
-
         return $query->get();
     }
-
 
     public function map($row): array
     {

@@ -3,7 +3,6 @@
 use Laravel\Fortify\Features;
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Fortify Guard
@@ -14,9 +13,7 @@ return [
     | guards that is already present in your "auth" configuration file.
     |
     */
-
-    'guard' => 'web',
-
+    'guard'               => 'web',
     /*
     |--------------------------------------------------------------------------
     | Fortify Password Broker
@@ -27,9 +24,7 @@ return [
     | of your password brokers setup in your "auth" configuration file.
     |
     */
-
-    'passwords' => 'users',
-
+    'passwords'           => 'users',
     /*
     |--------------------------------------------------------------------------
     | Username / Email
@@ -44,11 +39,8 @@ return [
     | another name for the field you may define it below as needed.
     |
     */
-
-    'username' => 'email',
-
-    'email' => 'email',
-
+    'username'            => 'email',
+    'email'               => 'email',
     /*
     |--------------------------------------------------------------------------
     | Lowercase Usernames
@@ -59,9 +51,7 @@ return [
     | sensitive. You may disable this for your application if necessary.
     |
     */
-
     'lowercase_usernames' => true,
-
     /*
     |--------------------------------------------------------------------------
     | Home Path
@@ -72,9 +62,7 @@ return [
     | and the user is authenticated. You are free to change this value.
     |
     */
-
-    'home' => '/dashboard',
-
+    'home'                => '/',
     /*
     |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
@@ -85,11 +73,8 @@ return [
     | subdomain under which all of the Fortify routes will be available.
     |
     */
-
-    'prefix' => '',
-
-    'domain' => null,
-
+    'prefix'              => '',
+    'domain'              => null,
     /*
     |--------------------------------------------------------------------------
     | Fortify Routes Middleware
@@ -100,9 +85,7 @@ return [
     | these middleware but typically this provided default is preferred.
     |
     */
-
-    'middleware' => ['web'],
-
+    'middleware'          => ['web'],
     /*
     |--------------------------------------------------------------------------
     | Rate Limiting
@@ -113,12 +96,10 @@ return [
     | specify a custom rate limiter to call then you may specify it here.
     |
     */
-
-    'limiters' => [
-        'login' => 'login',
+    'limiters'            => [
+        'login'      => 'login',
         'two-factor' => 'two-factor',
     ],
-
     /*
     |--------------------------------------------------------------------------
     | Register View Routes
@@ -129,9 +110,7 @@ return [
     | especially true if you're writing a custom single-page application.
     |
     */
-
-    'views' => true,
-
+    'views'               => true,
     /*
     |--------------------------------------------------------------------------
     | Features
@@ -142,18 +121,16 @@ return [
     | these features or you can even remove all of these if you need to.
     |
     */
-
-    'features' => [
+    'features'            => [
         Features::registration(),
         Features::resetPasswords(),
         // Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
-            'confirm' => true,
+            'confirm'         => true,
             'confirmPassword' => true,
             // 'window' => 0,
         ]),
     ],
-
 ];

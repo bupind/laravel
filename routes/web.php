@@ -1,23 +1,19 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Middleware\CheckExpirationPassword;
-use App\Http\Middleware\HomeAuth;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 Route::get('/', function() {
+    return view('welcome');
+})->name('home');
+
+Route::get('/login', function() {
     return view('auth.login');
-})->middleware(HomeAuth::class)->name('public');
+})->middleware('guest')
+    ->name('login');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -25,7 +21,8 @@ Route::middleware([
 ])->group(function() {
     Route::get('/dashboard', function() {
         return view('dashboard');
-    })->middleware(CheckExpirationPassword::class)->name('dashboard');
+    })->middleware(CheckExpirationPassword::class)
+        ->name('dashboard');
 });
 Route::get('/password/expired', function() {
     return view('auth.password-expired');

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RoleRequest extends FormRequest
+class RoomRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +16,7 @@ class RoleRequest extends FormRequest
         $rules = [
             'name' => 'required|string'
         ];
-        if(request()->isMethod('patch') || request()->isMethod('put')) {
+        if (request()->isMethod('patch') || request()->isMethod('put')) {
             $rules['id'] = 'required';
         }
         return $rules;

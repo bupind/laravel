@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Http\Requests\{{name}}Request;
-use App\Repositories\{{name}}Repository;
+use App\Http\Requests\RoomRequest;
+use App\Repositories\RoomRepository;
 use App\Support\ConfigDTO;
 use App\Traits\BaseController;
 
-class {{name}}Controller extends Controller
+class RoomController extends Controller
 {
     use BaseController;
 
-    public function __construct(Request $request, {{name}}Repository $repository)
+    public function __construct(Request $request, RoomRepository $repository)
     {
         $this->repository = $repository;
-        $this->request    = new {{name}}Request($request->all());
+        $this->request    = new RoomRequest($request->all());
         $config           = new ConfigDTO([
             'modal.use'  => true,
             'modal.size' => 'md',

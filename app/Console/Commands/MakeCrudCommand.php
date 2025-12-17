@@ -16,7 +16,7 @@ class MakeCrudCommand extends Command
     {
         $name   = Str::studly($this->argument('name'));
         $paths  = [
-            app_path("Http/Controllers/{$name}Controller.php"),
+            app_path("Http/Controllers/Backend/{$name}Controller.php"),
             app_path("Repositories/{$name}Repository.php"),
             app_path("Http/Requests/{$name}Request.php"),
             app_path("Models/{$name}.php"),
@@ -53,7 +53,7 @@ class MakeCrudCommand extends Command
 
     protected function createController($name)
     {
-        $path = app_path("Http/Controllers/{$name}Controller.php");
+        $path = app_path("Http/Controllers/Backend/{$name}Controller.php");
         $this->createFile($name, $path, 'controller');
     }
 
@@ -120,15 +120,17 @@ class MakeCrudCommand extends Command
         }
         $slug          = Str::kebab($name);
         $controller    = "{$name}Controller";
-        $routeBlock    = <<<PHP
-            // {$name}
-            Route::prefix('{$slug}')->name('{$slug}.')->group(function () {
-                Route::get('datatable', [\\App\\Http\\Controllers\\{$controller}::class, 'datatable'])->name('datatable');
-                Route::get('export/{format?}', [\\App\\Http\\Controllers\\{$controller}::class, 'export'])->name('export');
-                Route::post('bulk', [\\App\\Http\\Controllers\\{$controller}::class, 'bulk'])->name('bulk');
-                Route::resource('/', \\App\\Http\\Controllers\\{$controller}::class)->parameters(['' => '{$slug}']);
-            });
-            PHP;
+        $routeBlock = <<<PHP
+        // {$name}
+        Route::get('{$slug}/datatable', [\\App\\Http\\Controllers\\Backend\\{$controller}::class, 'datatable'])
+            ->name('{$slug}.datatable');
+        Route::get('{$slug}/export/{format?}', [\\App\\Http\\Controllers\\Backend\\{$controller}::class, 'export'])
+            ->name('{$slug}.export');
+        Route::post('{$slug}/bulk', [\\App\\Http\\Controllers\\Backend\\{$controller}::class, 'bulk'])
+            ->name('{$slug}.bulk');
+        Route::resource('{$slug}', \\App\\Http\\Controllers\\Backend\\{$controller}::class);
+        PHP;
+
         $content       = File::get($routePath);
         $escapedName   = preg_quote($name, '/');
         $escapedPlural = preg_quote($slug, '/');

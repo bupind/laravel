@@ -9,12 +9,14 @@ use App\Traits\BaseRepository;
 class ProductRepository
 {
     use BaseRepository, BaseDatatable;
+
     private $categoriesRepository;
+
     public function __construct(Product $model, CategoriesRepository $categoriesRepository)
     {
-        $this->model = $model;
+        $this->model                = $model;
         $this->categoriesRepository = $categoriesRepository;
-        $this->with = ['category'];
+        $this->with                 = ['category'];
     }
 
     public function customCreateOrEdit($data, $item = null)
@@ -32,10 +34,10 @@ class ProductRepository
     public function customTables($table)
     {
         $table->name->label('Name');
-        $table->add('category', function ($model) {
+        $table->add('category', function($model) {
             return $model->category->name ?? '-';
         })->label('Category');
-        $table->add('price', function ($model) {
+        $table->add('price', function($model) {
             return 'Rp ' . number_format($model->price, 2, ',', '.');
         })->label('Price');
         $table->stock->label('Stock');
@@ -44,7 +46,11 @@ class ProductRepository
     public function customExportHeadings()
     {
         return [
-            'Name', 'Category', 'Description', 'Price', 'Stock'
+            'Name',
+            'Category',
+            'Description',
+            'Price',
+            'Stock'
         ];
     }
 

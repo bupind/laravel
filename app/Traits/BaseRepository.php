@@ -98,7 +98,6 @@ trait BaseRepository
         });
     }
 
-
     public function beforeAction($data, $method)
     {
         return [
