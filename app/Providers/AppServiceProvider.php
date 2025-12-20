@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\User;
+use App\Models\Roles;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(function($user, $ability) {
-            return $user->hasRole(User::ROLE_SUPERUSER) ? true : null;
+            return $user->hasRole(Roles::ROLE_SUPERUSER) ? true : null;
         });
     }
 }

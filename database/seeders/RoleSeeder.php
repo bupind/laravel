@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Roles;
 use App\Services\SeederService;
 use Illuminate\Database\Seeder;
 
@@ -13,7 +13,7 @@ class RoleSeeder extends Seeder
      */
     public function run(SeederService $seeder): void
     {
-        $seeder->role->add(User::ROLE_SUPERUSER);
-        $seeder->role->add(User::ROLE_ADMINISTRATOR);
+        $seeder->role->add(Roles::ROLE_SUPERUSER);
+        $seeder->role->add(Roles::ROLE_ADMINISTRATOR);
     }
 }

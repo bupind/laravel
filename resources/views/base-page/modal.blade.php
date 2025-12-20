@@ -14,7 +14,7 @@
     @else
         @include('base-page.form')
     @endif
-    <div class="modal-footer d-flex justify-content-between px-0">
+    <div class="modal-footer d-flex justify-content-between p-0">
         <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">
             <i class="ki-outline ki-arrow-back me-1"></i> Close
         </button>

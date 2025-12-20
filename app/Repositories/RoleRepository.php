@@ -4,13 +4,12 @@ namespace App\Repositories;
 
 use App\Models\Permissions;
 use App\Models\Roles;
-use App\Models\User;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
 use App\Traits\LogsActivity;
-use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class RoleRepository
 {
@@ -57,23 +56,19 @@ class RoleRepository
 
     public function store(array $data)
     {
+        $permissions = $data['permissions'] ?? null;
+        unset($data['permissions']);
         $role = Roles::updateOrCreate(
             ['id' => $data['id'] ?? null],
             [
-                'name'       => $data['name'],
+                'name'       => $data['name'] ?? 'default_name',
                 'guard_name' => 'web',
             ]
         );
-        if(isset($data['permissions'])) {
-            $role->syncPermissions($data['permissions']);
+        if(!empty($permissions) && is_array($permissions)) {
+            $role->syncPermissions($permissions);
         }
         return $role;
-    }
-
-    public function syncPermissions($id, array $permissions)
-    {
-        $role = $this->getById($id);
-        $role->syncPermissions($permissions);
     }
 
     public function getById($id)
@@ -85,34 +80,39 @@ class RoleRepository
         return $role;
     }
 
-    public function update($id, $data)
+    public function update($id, array $data)
     {
-        return rescue(function() use ($id, $data) {
-            DB::beginTransaction();
-            $record = $this->getById($id);
-            $data   = $this->prepareSaveData($data, 'update', $record);
-            $record->update($data);
-            DB::commit();
-            return $record;
-        }, function(Exception $e) {
-            DB::rollBack();
-            throw $e;
+        return DB::transaction(function() use ($id, $data) {
+            $role        = Roles::with('permissions')->findOrFail($id);
+            $permissions = $data['permissions'] ?? null;
+            unset($data['permissions']);
+            $role->update([
+                'name'       => $data['name'] ?? $role->name,
+                'guard_name' => 'web',
+            ]);
+            if(!empty($permissions)) {
+                $role->syncPermissions($permissions);
+            }
+            return $role;
         });
     }
 
-    protected function prepareSaveData(array $data, string $action, $record = null): array
+    public function delete($id)
     {
-        $data['guard_name'] = 'web';
-        return $data;
+        return DB::transaction(function() use ($id) {
+            $role = Role::findOrFail($id);
+            $role->delete();
+            return $role;
+        });
     }
 
     public function beforeAction($data, $method)
     {
         if($method === 'delete') {
-            if(Str::lower($data['name']) === User::ROLE_SUPERUSER) {
+            if(Str::lower($data['name']) === Roles::ROLE_SUPERUSER) {
                 return [
                     'error'   => 1,
-                    'message' => User::ROLE_SUPERUSER . ' role cannot be deleted.',
+                    'message' => Roles::ROLE_SUPERUSER . ' role cannot be deleted.',
                 ];
             }
         }

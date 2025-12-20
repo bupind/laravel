@@ -22,24 +22,19 @@ class GeneralExport implements FromCollection, WithHeadings, WithMapping, WithTi
     {
         $this->repository = $repository;
         $this->request    = $request;
-        $this->columns    = $this->repository->customExportColumns();
-        if(empty($this->columns)) {
-            $this->columns = $this->repository->getInstanceModel()->getFillable();
-        }
-        $this->headings  = $this->repository->customExportHeadings() ?: $this->columns;
-        $this->sheetName = $sheetName ?: $this->repository->getInstanceModel()->getTable();
-        $this->with      = $this->repository->customExportWith() ?: [];
+        $this->columns    = $request['columns'] ?? $this->repository->getInstanceModel()->getFillable();
+        $this->headings   = array_map(fn($col) => ucwords(str_replace('_', ' ', $col)), $this->columns);
+        $this->sheetName  = $sheetName ?: $this->repository->getInstanceModel()->getTable();
+        $this->with       = $this->repository->customExportWith() ?: [];
     }
 
     public function collection()
     {
         $model = $this->repository->getInstanceModel();
         $query = $model->with($this->with);
-        // Terapkan filter
         if(method_exists($model, 'scopeFilter')) {
             $query->filter($this->request['filters'] ?? []);
         }
-        // Pagination jika page
         if(($this->request['scope'] ?? 'page') === 'page') {
             $start  = (int)($this->request['start'] ?? 0);
             $length = (int)($this->request['length'] ?? 10);
@@ -52,19 +47,24 @@ class GeneralExport implements FromCollection, WithHeadings, WithMapping, WithTi
     {
         return array_map(function($column) use ($row) {
             if(str_contains($column, '.')) {
-                $relations         = explode('.', $column);
-                $relationName      = $relations[0];
-                $relationAttribute = $relations[1];
-                if($row->relationLoaded($relationName)) {
-                    $relationData = $row->{$relationName};
-                    if($relationData instanceof Collection) {
-                        return (string)$relationData->pluck($relationAttribute)->implode(', ');
-                    } elseif($relationData instanceof Model) {
-                        return (string)$relationData->{$relationAttribute};
+                $parts = explode('.', $column);
+                $value = $row;
+                foreach($parts as $part) {
+                    if(is_null($value)) break;
+                    if($value instanceof Collection) {
+                        $value = $value->map(fn($item) => $item->{$part} ?? null)->filter()->values();
+                    } elseif($value instanceof Model) {
+                        $value = $value->{$part} ?? null;
+                    } else {
+                        $value = null;
                     }
                 }
+                if($value instanceof Collection) {
+                    return $value->implode(', ');
+                }
+                return (string)($value ?? '');
             }
-            return (string)$row->{$column};
+            return (string)($row->{$column} ?? '');
         }, $this->columns);
     }
 

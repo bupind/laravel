@@ -26,14 +26,7 @@ class UnitController extends Controller
             'modal.size' => 'md'
         ]);
         $this->repository->setConfig($config);
-        $this->moreActions = [
-            [
-                'icon'       => 'ki-upload',
-                'url'        => '#importModal',
-                'class'      => 'btn-warning',
-                'attributes' => 'data-bs-toggle=modal',
-            ]
-        ];
+        $this->moreActions = [];
         $this->boot();
     }
 }

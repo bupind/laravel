@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 trait BaseRepository
 {
+
     protected           $model;
     protected string    $orderBy     = 'created_at';
     protected string    $orderBySort = 'desc';
@@ -23,14 +24,14 @@ trait BaseRepository
         return $this->config;
     }
 
-    public function getAll($data = [])
+    public function getAll(array $filters = [])
     {
         $query = $this->model->newQuery();
         if(!empty($this->orderBy)) {
             $query->orderBy($this->orderBy, $this->orderBySort);
         }
         if(method_exists($this->model, 'scopeFilter')) {
-            $query->filter($data);
+            $query->filter($filters);
         }
         return $query->get();
     }
@@ -40,37 +41,39 @@ trait BaseRepository
         return $this->model;
     }
 
-    public function create($data)
+    public function create(array $data)
     {
-        return rescue(function() use ($data) {
+        return $this->wrapTransaction(function() use ($data) {
+            $data = $this->prepareSaveData($data, 'create');
+            return $this->model::create($data);
+        });
+    }
+
+    protected function wrapTransaction(callable $callback)
+    {
+        return rescue(function() use ($callback) {
             DB::beginTransaction();
-            $data   = $this->prepareSaveData($data, 'create');
-            $record = $this->model::create($data);
+            $result = $callback();
             DB::commit();
-            return $record;
+            return $result;
         }, function(Exception $e) {
             DB::rollBack();
             throw $e;
         });
     }
 
-    public function prepareSaveData($data, $method, $record = null)
+    public function prepareSaveData(array $data, string $method, $record = null): array
     {
         return $data;
     }
 
-    public function update($id, $data)
+    public function update($id, array $data)
     {
-        return rescue(function() use ($id, $data) {
-            DB::beginTransaction();
+        return $this->wrapTransaction(function() use ($id, $data) {
             $record = $this->getById($id);
             $data   = $this->prepareSaveData($data, 'update', $record);
             $record->update($data);
-            DB::commit();
             return $record;
-        }, function(Exception $e) {
-            DB::rollBack();
-            throw $e;
         });
     }
 
@@ -79,26 +82,21 @@ trait BaseRepository
         return $this->model->findOrFail($id);
     }
 
-    public function bulkDelete(array $ids)
+    public function bulkDelete(array $ids): void
     {
         $this->model->whereIn('id', $ids)->delete();
     }
 
     public function delete($id)
     {
-        return rescue(function() use ($id) {
-            DB::beginTransaction();
+        return $this->wrapTransaction(function() use ($id) {
             $record = $this->getById($id);
             $record->delete();
-            DB::commit();
             return $record;
-        }, function(Exception $e) {
-            DB::rollBack();
-            throw $e;
         });
     }
 
-    public function beforeAction($data, $method)
+    public function beforeAction($data, $method): array
     {
         return [
             'error' => 0,
@@ -106,21 +104,18 @@ trait BaseRepository
         ];
     }
 
-    public function customExportColumns() { return []; }
+    public function customExportColumns(): array { return []; }
 
-    public function customExportHeadings() { return []; }
+    public function customExportHeadings(): array { return []; }
 
-    public function customExportWith() { return []; }
+    public function customExportWith(): array { return []; }
 
-    public function formFields($item = null, $scenario = 'default')
+    public function formFields($item = null, string $scenario = 'default'): array
     {
         $fields = [];
         if(method_exists($this, 'formRules')) {
-            $rules = $this->formRules();
-            foreach($rules as $key => $field) {
-                if(!isset($field['name'])) {
-                    $field['name'] = $key;
-                }
+            foreach($this->formRules() as $key => $field) {
+                $field['name'] ??= $key;
                 if($item && isset($item->{$field['name']})) {
                     $field['value'] = $item->{$field['name']};
                 }

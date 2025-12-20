@@ -7,6 +7,12 @@ use Illuminate\Support\Arr;
 
 class ConfigDTO implements ArrayAccess
 {
+//[
+//    'modal'      => true,
+//    'modal.size' => 'md',
+//    'batch' = false
+//    'batch.route' = ''
+//]
     protected array $items = [];
 
     public function __construct(array $items = [])

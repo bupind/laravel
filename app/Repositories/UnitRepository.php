@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Constants\DataConstant;
 use App\Models\Unit;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
@@ -32,12 +33,12 @@ class UnitRepository
             [
                 'name'  => 'name',
                 'label' => 'Name',
-                'type'  => 'text',
+                'type'  => DataConstant::TYPE_TEXT,
                 'col'   => 'col-6',
             ],
             [
                 'name'    => 'status',
-                'type'    => 'select',
+                'type'    => DataConstant::TYPE_SELECT,
                 'label'   => 'Status',
                 'col'     => 'col-6',
                 'options' => Unit::statuses(),

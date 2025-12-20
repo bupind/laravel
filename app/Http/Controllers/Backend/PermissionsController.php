@@ -18,7 +18,7 @@ class PermissionsController extends Controller
         $this->repository = $repository;
         $this->request    = new PermissionRequest($request->all());
         $config           = new ConfigDTO([
-            'modal.use'  => true,
+            'modal'      => true,
             'modal.size' => 'md',
         ]);
         $this->repository->setConfig($config);

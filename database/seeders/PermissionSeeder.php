@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Roles;
 use App\Services\SeederService;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
@@ -19,8 +19,8 @@ class PermissionSeeder extends Seeder
             category   : 'dashboard',
             permissions: ['read'],
             assignTo   : [
-                User::ROLE_ADMINISTRATOR,
-                User::ROLE_SUPERUSER
+                Roles::ROLE_ADMINISTRATOR,
+                Roles::ROLE_SUPERUSER
             ],
         );
         $seeder->permission->add(
@@ -29,7 +29,7 @@ class PermissionSeeder extends Seeder
                 'crud',
                 'login_as'
             ],
-            assignTo   : [User::ROLE_SUPERUSER],
+            assignTo   : [Roles::ROLE_SUPERUSER],
         );
     }
 }

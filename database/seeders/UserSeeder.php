@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Roles;
 use App\Services\SeederService;
 use Illuminate\Database\Seeder;
 
@@ -14,11 +14,18 @@ class UserSeeder extends Seeder
     public function run(SeederService $seeder): void
     {
         $seeder->user->add(
-            name    : 'Super Admin',
-            email   : 'superadmin@gmail.com',
+            name    : 'Super User',
+            email   : 'superuser@gmail.com',
             phone   : '085460003030',
             password: 'password',
-            roleName: User::ROLE_SUPERUSER,
+            roleName: Roles::ROLE_SUPERUSER,
+        );
+        $seeder->user->add(
+            name    : 'Administrator',
+            email   : 'administrator@gmail.com',
+            phone   : '085460003030',
+            password: 'password',
+            roleName: Roles::ROLE_ADMINISTRATOR,
         );
     }
 }

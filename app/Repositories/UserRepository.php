@@ -2,6 +2,8 @@
 
 namespace App\Repositories;
 
+use App\Constants\DataConstant;
+use App\Models\Roles;
 use App\Models\User;
 use App\Traits\BaseDatatable;
 use App\Traits\BaseRepository;
@@ -23,8 +25,36 @@ class UserRepository
 
     private function datatableColumns()
     {
-        $this->addColumn('name');
-        $this->addColumn('email');
-        $this->addColumn('roles', fn($model) => $model->roles->pluck('name')->join(', '));
+        $rolesOptions = Roles::pluck('name', 'name')->toArray();
+        $this->addColumns([
+            [
+                'name'   => 'name',
+                'filter' => DataConstant::FILTER_LIKE,
+            ],
+            [
+                'name'         => 'roles_label',
+                'label'        => 'Roles',
+                'filter'       => DataConstant::FILTER_SELECT,
+                'options'      => $rolesOptions,
+                'filter_field' => 'roles.name',
+            ],
+        ]);
+    }
+
+    public function formRules(): array
+    {
+        return [
+            [
+                'name'  => 'name',
+                'label' => 'Name',
+                'type'  => DataConstant::TYPE_TEXT,
+                'col'   => 'col-6',
+            ],
+            [
+                'name'  => 'password',
+                'label' => 'Password',
+                'type'  => DataConstant::TYPE_PASSWORD
+            ],
+        ];
     }
 }

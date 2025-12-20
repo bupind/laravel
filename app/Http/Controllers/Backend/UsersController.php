@@ -18,8 +18,10 @@ class UsersController extends Controller
     {
         $this->repository = $repository;
         $config           = new ConfigDTO([
-            'modal.use'  => true,
-            'modal.size' => 'md',
+            'modal'       => true,
+            'batch'       => true,
+            'batch.route' => 'bacth',
+            'modal.size'  => 'md',
         ]);
         $this->repository->setConfig($config);
         $this->boot();

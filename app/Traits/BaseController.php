@@ -7,6 +7,7 @@ use App\Jobs\ImportBatchJob;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use ReflectionClass;
@@ -16,20 +17,18 @@ trait BaseController
     protected        $repository;
     protected        $moreActions;
     protected        $request;
-    protected        $route;
-    protected        $data           = [];
+    protected string $route;
+    protected array  $data           = [];
     protected bool   $enableImport   = false;
     protected string $importClass    = '';
     protected string $importTemplate = '';
 
     public function boot(): void
     {
-        if(empty($this->route)) {
-            $this->route = $this->getRouteName();
-        }
+        $this->route = $this->route ?? $this->getRouteName();
         $this->setData([
             'route' => $this->route,
-            'title' => Str::title(Str::of($this->route)->replace('-', ' ')),
+            'title' => Str::title(str_replace('-', ' ', $this->route)),
         ]);
         $this->setPermissions();
         $this->registerPermissionsMiddleware();
@@ -55,19 +54,17 @@ trait BaseController
             'edit',
             'show',
             'delete',
-            'import',
+            'import'
         ];
-        $permissionRoute = Str::of($this->route)->replace('-', '_');
+        $permissionRoute = str_replace('-', '_', $this->route);
         foreach($actions as $action) {
-            $this->data["permission_{$action}"] = "{$action}_{$permissionRoute}";
+            $this->data["permission_{$action}"] = (bool)Gate::allows("{$permissionRoute}_{$action}");
         }
     }
 
     private function registerPermissionsMiddleware(): void
     {
-        if(!method_exists($this, 'middleware')) {
-            return;
-        }
+        if(!method_exists($this, 'middleware')) return;
         $permissions = [
             'view'   => ['index'],
             'add'    => [
@@ -82,165 +79,85 @@ trait BaseController
             'delete' => ['destroy'],
             'import' => [
                 'import',
-                'importStore',
-                'importTemplate'
-            ],
+                'importStore'
+            ]
         ];
         foreach($permissions as $key => $methods) {
-            $this->middleware(
-                "can:{$this->data['permission_' . $key]}",
-                ['only' => $methods]
-            );
+            $this->middleware("can:{$this->data['permission_' . $key]}", ['only' => $methods]);
         }
     }
 
-    public function import()
+    public function index()
     {
-        if(!$this->enableImport) {
-            abort(403, 'Import disabled');
-        }
-        $data = array_merge($this->data, [
-            'isForm'   => true,
-            'title'    => __('Import') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
-            'useModal' => true,
-            'template' => route($this->route . '.import-template'),
+        $permissions = $this->syncPermissionsToRepository();
+        $data        = $this->buildPageData([
+            'permissions' => $permissions,
+            'table'       => [
+                'heads'       => $this->repository->buildHeads(),
+                'data'        => $this->repository->buildConfig($this->route),
+                'config'      => $this->repository->config(),
+                'moreActions' => $this->moreActions
+            ]
         ]);
-        return view($this->resolveView('import'), $data);
+        return view($this->resolveView('index'), $data);
     }
 
-    private function resolveView(string $name): string
+    protected function syncPermissionsToRepository(): array
+    {
+        $permissions = collect($this->data)
+            ->filter(fn($v, $k) => str_starts_with($k, 'permission_'))
+            ->mapWithKeys(fn($v, $k) => [str_replace('permission_', '', $k) => $v])
+            ->toArray();
+        if(method_exists($this->repository, 'setPermissions')) {
+            $this->repository->setPermissions($permissions);
+        }
+        return $permissions;
+    }
+
+    protected function buildPageData(array $extra = []): array
+    {
+        return array_merge(
+            collect($this->data)->reject(fn($v, $k) => str_starts_with($k, 'permission_'))->toArray(),
+            $extra
+        );
+    }
+
+    protected function resolveView(string $name): string
     {
         $pageView = "{$this->route}.{$name}";
         return view()->exists($pageView) ? $pageView : "base-page.{$name}";
     }
 
-    public function importStore(Request $request)
+    public function create()
     {
-        if($this->enableImport !== true) {
-            abort(403);
-        }
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
+        return $this->renderForm('create', __('Create'));
+    }
+
+    protected function renderForm(string $titleKey, string $titleText, $item = null, string $scenario = 'create')
+    {
+        $fields = $this->repository->formFields($item, $scenario);
+        $data   = $this->buildPageData([
+            'fields'   => $fields,
+            'isForm'   => true,
+            'title'    => $titleText . ' ' . Str::title(str_replace('-', ' ', $this->route)),
+            'item'     => $item,
+            'useModal' => request()->query('useModal')
         ]);
-        $file = $request->file('file');
-        if(!$file || !$file->isValid()) {
-            return redirect()->route($this->route . '.index')
-                ->with('error', 'File tidak valid');
-        }
-        $destination = storage_path('app/public/import');
-        if(!file_exists($destination)) {
-            mkdir($destination, 0777, true);
-        }
-        $timestamp = now()->format('Ymd_His');
-        $extension = $file->getClientOriginalExtension();
-        $fileName  = 'import_' . $this->route . '_' . $timestamp . '.' . $extension;
-        $file->move($destination, $fileName);
-        $fullPath = $destination . DIRECTORY_SEPARATOR . $fileName;
-        ImportBatchJob::dispatch($fullPath, $this->importClass);
-        return redirect()->route($this->route . '.index')
-            ->with('success', 'Import sedang diproses');
-    }
-
-    public function importTemplate()
-    {
-        if(!$this->enableImport) {
-            abort(403, 'Import disabled');
-        }
-        $filename = "{$this->route}-template.xlsx";
-        return Excel::download(
-            new GeneralExport($this->repository, ['template' => true]),
-            $filename
-        );
-    }
-
-    public function index()
-    {
-        $permissions = collect($this->data)
-            ->filter(fn($v, $k) => str_starts_with($k, 'permission_'))
-            ->toArray();
-        if(method_exists($this->repository, 'setPermissions')) {
-            $this->repository->setPermissions($permissions);
-        }
-        $data = array_merge($this->data, [
-            'heads'       => $this->repository->buildHeads(),
-            'datas'       => $this->repository->buildConfig($this->route),
-            'config'      => $this->repository->config(),
-            'moreActions' => $this->moreActions,
-        ]);
-        $data = array_merge($data, $permissions);
-        return view($this->resolveView('index'), $data);
-    }
-
-    public function datatable()
-    {
-        if(!request()->ajax()) abort(403, 'Forbidden');
-        $referer = request()->headers->get('referer');
-        if(!$referer || !str_contains($referer, "/{$this->route}")) abort(403, 'Forbidden');
-        return $this->repository->datatable();
+        $view   = $data['useModal'] ? 'modal' : 'page';
+        return view($this->resolveView($view), $data);
     }
 
     public function edit($id)
     {
-        $item   = $this->repository->getById($id);
-        $fields = $this->repository->formFields($item, 'update');
-        $data   = array_merge($this->data, [
-            'item'     => $item,
-            'fields'   => $fields,
-            'isForm'   => true,
-            'title'    => __('Update') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
-            'useModal' => request()->query('useModal'),
-        ]);
-        $view   = $data['useModal'] ? 'modal' : 'page';
-        return view($this->resolveView($view), $data);
-    }
-
-    public function store()
-    {
-        $validated = $this->request->validate($this->request->rules());
-        $data      = array_merge($validated, $this->request->all());
-        $callback  = $this->repository->beforeAction($data, 'store');
-        if(!empty($callback['error'])) {
-            return redirect()->route($this->route . '.index')
-                ->with('error', $callback['message'])
-                ->withInput();
-        }
-        $this->repository->create($callback['data']);
-        return redirect()->route($this->route . '.index')->with('success', 'Created successfully');
-    }
-
-    public function create()
-    {
-        $fields = $this->repository->formFields(null, 'create');
-        $data   = array_merge($this->data, [
-            'fields'   => $fields,
-            'isForm'   => true,
-            'title'    => __('Create') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
-            'useModal' => request()->query('useModal'),
-        ]);
-        $view   = $data['useModal'] ? 'modal' : 'page';
-        return view($this->resolveView($view), $data);
-    }
-
-    public function update()
-    {
-        $validated = $this->request->validate($this->request->rules());
-        $data      = array_merge($validated, $this->request->all());
-        $callback  = $this->repository->beforeAction($data, 'update');
-        if(!empty($callback['error'])) {
-            return redirect()->route($this->route . '.index')
-                ->with('error', $callback['message'])
-                ->withInput();
-        }
-        $this->repository->update($this->request->id, $callback['data']);
-        return redirect()->route($this->route . '.index')
-            ->with('success', 'Updated successfully');
+        $item = $this->repository->getById($id);
+        return $this->renderForm('update', __('Update'), $item, 'update');
     }
 
     public function show($id)
     {
         $item   = $this->repository->getById($id);
         $fields = $this->repository->formFields($item, 'update');
-        $data   = array_merge($this->data, [
+        $data   = $this->buildPageData([
             'item'     => $item,
             'fields'   => $fields,
             'isForm'   => false,
@@ -251,43 +168,88 @@ trait BaseController
         return view($this->resolveView($view), $data);
     }
 
+    public function store()
+    {
+        $this->handleFormAction('store');
+    }
+
+    protected function handleFormAction(string $method)
+    {
+        $validated = $this->request->validate($this->request->rules());
+        $data      = array_merge($validated, $this->request->all());
+        $callback  = $this->repository->beforeAction($data, $method);
+        if(!empty($callback['error'])) {
+            throw_exception(500, $callback['message'], $this->route . '.index');
+        }
+        $this->repository->{$method === 'store' ? 'create' : 'update'}(
+            $this->request->id ?? null,
+            $callback['data']
+        );
+        throw_exception(200, ucfirst($method) . ' successfully', $this->route . '.index');
+    }
+
+    public function update()
+    {
+        $this->handleFormAction('update');
+    }
+
     public function destroy($id)
     {
         $record   = $this->repository->getById($id)->toArray();
         $callback = $this->repository->beforeAction($record, 'delete');
         if($callback['error']) {
-            return back()->with('error', $callback['message']);
+            throw_exception(500, $callback['message'], $this->route . '.index');
         }
         $this->repository->delete($id);
-        return redirect()->route($this->route . '.index')->with('success', 'Deleted successfully');
+        throw_exception(200, 'Deleted successfully', $this->route . '.index');
     }
 
-    public function export()
+    public function import()
     {
-        $this->request->validate([
-            'format' => 'nullable|in:xls,csv,pdf',
-            'scope'  => 'nullable|in:page,all',
-            'start'  => 'nullable|integer|min:0',
-            'length' => 'nullable|integer|min:1',
+        abort_if(!$this->enableImport, 403, 'Import disabled');
+        $data = $this->buildPageData([
+            'isForm'   => true,
+            'title'    => __('Import') . ' ' . Str::title(str_replace('-', ' ', $this->route)),
+            'useModal' => true,
+            'template' => url($this->importTemplate)
         ]);
-        $format     = $this->request->input('format', 'xls');
-        $scope      = $this->request->input('scope', 'page');
-        $filename   = "{$this->route}.{$format}";
-        $exportData = [
-            'scope'   => $scope,
-            'start'   => (int)$this->request->input('start', 0),
-            'length'  => (int)$this->request->input('length', 10),
-            'filters' => $this->request->except([
-                'format',
-                'scope',
-                'start',
-                'length'
-            ]),
-        ];
-        return Excel::download(
-            new GeneralExport($this->repository, $exportData),
-            $filename
-        );
+        return view($this->resolveView('import'), $data);
+    }
+
+    public function importStore(Request $request)
+    {
+        abort_if(!$this->enableImport, 403);
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls,csv']);
+        $file = $request->file('file');
+        abort_if(!$file || !$file->isValid(), 500, 'Invalid File');
+        $destination = storage_path('app/public/import');
+        if(!file_exists($destination)) mkdir($destination, 0777, true);
+        $fileName = 'import_' . $this->route . '_' . now()->format('Ymd_His') . '.' . $file->getClientOriginalExtension();
+        $file->move($destination, $fileName);
+        ImportBatchJob::dispatch($destination . DIRECTORY_SEPARATOR . $fileName, $this->importClass);
+        throw_exception(200, 'Import was processing', $this->route . '.index');
+    }
+
+    public function datatable()
+    {
+        abort_if(!request()->ajax(), 403, 'Forbidden');
+        $referer = request()->headers->get('referer');
+        abort_if(!$referer || !str_contains($referer, "/{$this->route}"), 403, 'Forbidden');
+        $this->syncPermissionsToRepository();
+        return $this->repository->datatable();
+    }
+
+    public function export(Request $request)
+    {
+        $request->validate([
+            'format'  => 'nullable|in:xls,csv,pdf',
+            'scope'   => 'nullable|in:page,all',
+            'start'   => 'nullable|integer|min:0',
+            'length'  => 'nullable|integer|min:1',
+            'columns' => 'nullable|array'
+        ]);
+        $exportData = $request->all();
+        return Excel::download(new GeneralExport($this->repository, $exportData), $this->route . ".{$request->input('format','xls')}");
     }
 
     public function bulk(Request $request)

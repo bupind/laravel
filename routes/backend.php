@@ -23,8 +23,6 @@ Route::get('unit/export/{format?}', [UnitController::class, 'export'])->name('un
 Route::post('unit/bulk', [UnitController::class, 'bulk'])->name('unit.bulk');
 Route::get('unit/import', [UnitController::class, 'import'])->name('unit.import');
 Route::post('unit/import', [UnitController::class, 'importStore'])->name('unit.import.store');
-
-Route::get('unit/import-template', [UnitController::class, 'importTemplate'])->name('unit.import-template');
 Route::resource('unit', UnitController::class);
 
 

@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Roles extends Model
+class Roles extends SpatieRole
 {
-    protected $table    = "roles";
+    const ROLE_SUPERUSER = 'superuser';
+    const ROLE_ADMINISTRATOR = 'administrator';
+    protected $table = "roles";
     protected $fillable = [
         'name',
         'guard_name'
     ];
+    protected $appends = ['permission_names'];
 
-    public function permissions()
+
+    public function getPermissionNamesAttribute()
     {
-        return $this->belongsToMany(Permissions::class, 'role_has_permissions', 'role_id', 'permission_id');
+        return $this->permissions->pluck('name')->toArray();
     }
 }

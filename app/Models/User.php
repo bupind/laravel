@@ -20,8 +20,6 @@ class User extends Authenticatable
     use TwoFactorAuthenticatable;
     use HasRoles;
 
-    const ROLE_SUPERUSER     = 'superuser';
-    const ROLE_ADMINISTRATOR = 'administrator';
     protected $fillable = [
         'name',
         'phone_number',
@@ -41,6 +39,16 @@ class User extends Authenticatable
     protected $appends  = [
         'profile_photo_url',
     ];
+
+    public function getRolesLabelAttribute()
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->pluck('name')->implode(', ');
+    }
+
 
     public function getActivitylogOptions(): LogOptions
     {
