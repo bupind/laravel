@@ -22,28 +22,16 @@ trait BaseController
     protected string $importClass    = '';
     protected string $importTemplate = '';
 
-    protected function initializeBaseController(): void
+    public function boot(): void
     {
         $this->route = $this->route ?? $this->getRouteName();
-
         $this->setData([
             'route' => $this->route,
             'title' => Str::title(str_replace('-', ' ', $this->route)),
         ]);
-
         $this->setPermissions();
         $this->registerPermissionsMiddleware();
     }
-//    public function boot(): void
-//    {
-//        $this->route = $this->route ?? $this->getRouteName();
-//        $this->setData([
-//            'route' => $this->route,
-//            'title' => Str::title(str_replace('-', ' ', $this->route)),
-//        ]);
-//        $this->setPermissions();
-//        $this->registerPermissionsMiddleware();
-//    }
 
     private function getRouteName(): string
     {

@@ -16,7 +16,7 @@ class RolesController extends Controller
 
     public function __construct(RoleRepository $repository, Request $request)
     {
-        $this->initializeBaseController();
+        $this->boot();
         $this->repository = $repository;
         $this->request    = new RoleRequest($request->all());
         $config           = new ConfigDTO([
