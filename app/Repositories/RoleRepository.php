@@ -21,9 +21,6 @@ class RoleRepository
         $this->datatableColumns();
     }
 
-    /**
-     * Datatable Columns
-     */
     private function datatableColumns(): void
     {
         $this->addColumn('name');

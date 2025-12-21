@@ -7,7 +7,6 @@ use App\Jobs\ImportBatchJob;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use ReflectionClass;
@@ -23,16 +22,28 @@ trait BaseController
     protected string $importClass    = '';
     protected string $importTemplate = '';
 
-    public function boot(): void
+    protected function initializeBaseController(): void
     {
         $this->route = $this->route ?? $this->getRouteName();
+
         $this->setData([
             'route' => $this->route,
             'title' => Str::title(str_replace('-', ' ', $this->route)),
         ]);
+
         $this->setPermissions();
         $this->registerPermissionsMiddleware();
     }
+//    public function boot(): void
+//    {
+//        $this->route = $this->route ?? $this->getRouteName();
+//        $this->setData([
+//            'route' => $this->route,
+//            'title' => Str::title(str_replace('-', ' ', $this->route)),
+//        ]);
+//        $this->setPermissions();
+//        $this->registerPermissionsMiddleware();
+//    }
 
     private function getRouteName(): string
     {
@@ -49,8 +60,8 @@ trait BaseController
     private function setPermissions(): void
     {
         $actions         = [
-            'add',
             'view',
+            'add',
             'edit',
             'show',
             'delete',
@@ -58,14 +69,15 @@ trait BaseController
         ];
         $permissionRoute = str_replace('-', '_', $this->route);
         foreach($actions as $action) {
-            $this->data["permission_{$action}"] = (bool)Gate::allows("{$permissionRoute}_{$action}");
+            $this->data["permission_{$action}"] = "{$permissionRoute}_{$action}";
         }
     }
 
     private function registerPermissionsMiddleware(): void
     {
         if(!method_exists($this, 'middleware')) return;
-        $permissions = [
+
+        $map = [
             'view'   => ['index'],
             'add'    => [
                 'create',
@@ -80,23 +92,24 @@ trait BaseController
             'import' => [
                 'import',
                 'importStore'
-            ]
+            ],
         ];
-        foreach($permissions as $key => $methods) {
-            $this->middleware("can:{$this->data['permission_' . $key]}", ['only' => $methods]);
+        foreach($map as $key => $methods) {
+            $permission = $this->data['permission_' . $key];
+            $this->middleware("can:{$permission}", ['only' => $methods]);
         }
     }
 
     public function index()
     {
         $permissions = $this->syncPermissionsToRepository();
-        $data        = $this->buildPageData([
+        $data = $this->buildPageData([
             'permissions' => $permissions,
             'table'       => [
                 'heads'       => $this->repository->buildHeads(),
                 'data'        => $this->repository->buildConfig($this->route),
                 'config'      => $this->repository->config(),
-                'moreActions' => $this->moreActions
+                'moreActions' => $this->moreActions,
             ]
         ]);
         return view($this->resolveView('index'), $data);
@@ -106,7 +119,9 @@ trait BaseController
     {
         $permissions = collect($this->data)
             ->filter(fn($v, $k) => str_starts_with($k, 'permission_'))
-            ->mapWithKeys(fn($v, $k) => [str_replace('permission_', '', $k) => $v])
+            ->mapWithKeys(fn($v, $k) => [
+                str_replace('permission_', '', $k) => auth()->user()->can($v)
+            ])
             ->toArray();
         if(method_exists($this->repository, 'setPermissions')) {
             $this->repository->setPermissions($permissions);
@@ -175,17 +190,36 @@ trait BaseController
 
     protected function handleFormAction(string $method)
     {
-        $validated = $this->request->validate($this->request->rules());
-        $data      = array_merge($validated, $this->request->all());
-        $callback  = $this->repository->beforeAction($data, $method);
+        $this->request = $this->resolveRequest();
+        $validated     = $this->request->validated();
+        $data          = array_merge($validated, $this->request->all());
+        $callback      = $this->repository->beforeAction($data, $method);
         if(!empty($callback['error'])) {
             throw_exception(500, $callback['message'], $this->route . '.index');
         }
-        $this->repository->{$method === 'store' ? 'create' : 'update'}(
-            $this->request->id ?? null,
-            $callback['data']
-        );
+        if($method === 'store') {
+            $this->repository->store($callback['data']);
+        } else {
+            $this->repository->update($this->request->id, $callback['data']);
+        }
         throw_exception(200, ucfirst($method) . ' successfully', $this->route . '.index');
+    }
+
+    protected function resolveRequest(): FormRequest
+    {
+        $formRequest = app($this->requestClass);
+        $current     = request();
+        $formRequest->initialize(
+            $current->query->all(),
+            $current->request->all(),
+            $current->attributes->all(),
+            $current->cookies->all(),
+            $current->files->all(),
+            $current->server->all()
+        );
+        $formRequest->setContainer(app())->setRedirector(app(Redirector::class));
+        $formRequest->validateResolved();
+        return $formRequest;
     }
 
     public function update()
@@ -262,23 +296,6 @@ trait BaseController
             $this->repository->bulkDelete($request->ids);
         }
         return response()->json(['status' => true]);
-    }
-
-    protected function resolveRequest(): FormRequest
-    {
-        $formRequest = app($this->requestClass);
-        $current     = request();
-        $formRequest->initialize(
-            $current->query->all(),
-            $current->request->all(),
-            $current->attributes->all(),
-            $current->cookies->all(),
-            $current->files->all(),
-            $current->server->all()
-        );
-        $formRequest->setContainer(app())->setRedirector(app(Redirector::class));
-        $formRequest->validateResolved();
-        return $formRequest;
     }
 
     protected function addCustomMiddleware(string $permission, array $methods): void

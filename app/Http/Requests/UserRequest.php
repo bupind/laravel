@@ -19,6 +19,10 @@ class UserRequest extends FormRequest
             'name'      => 'required|string',
             'roles'     => [
                 'required',
+                'array'
+            ],
+            'roles.*'   => [
+                'required',
                 Rule::exists('roles', 'id')
             ],
             'email'     => [
@@ -26,7 +30,10 @@ class UserRequest extends FormRequest
                 'email',
                 Rule::unique('users', 'email')->ignore(request()->id)
             ],
-            'is_active' => 'required|boolean',
+            'phone_number'     => [
+                'required',
+                Rule::unique('users', 'phone_number')->ignore(request()->id)
+            ]
         ];
         if(request()->isMethod('post')) {
             $rules['password'] = [

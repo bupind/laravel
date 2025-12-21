@@ -2,13 +2,13 @@
 
 namespace App\Traits;
 
+use App\Constants\DataConstant;
 use App\Support\ConfigDTO;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
 trait BaseRepository
 {
-
     protected           $model;
     protected string    $orderBy     = 'created_at';
     protected string    $orderBySort = 'desc';
@@ -104,17 +104,21 @@ trait BaseRepository
         ];
     }
 
-    public function customExportColumns(): array { return []; }
-
-    public function customExportHeadings(): array { return []; }
-
     public function customExportWith(): array { return []; }
 
     public function formFields($item = null, string $scenario = 'default'): array
     {
+        return $this->baseFormFields($item, $scenario);
+    }
+
+    protected function baseFormFields($item = null, string $scenario = 'default'): array
+    {
         $fields = [];
         if(method_exists($this, 'formRules')) {
             foreach($this->formRules() as $key => $field) {
+                if(isset($field['scenario']) && !in_array($scenario, $field['scenario'])) {
+                    continue;
+                }
                 $field['name'] ??= $key;
                 if($item && isset($item->{$field['name']})) {
                     $field['value'] = $item->{$field['name']};
@@ -125,16 +129,12 @@ trait BaseRepository
             foreach($this->model->getFillable() as $col) {
                 $fields[] = [
                     'name'  => $col,
-                    'type'  => 'text',
+                    'type'  => DataConstant::TYPE_TEXT,
                     'label' => ucfirst(str_replace('_', ' ', $col)),
                     'value' => $item->{$col} ?? null,
                     'col'   => 'col-12',
                 ];
             }
-        }
-        if(method_exists($this, 'scenarios')) {
-            $scenarioFields = $this->scenarios()[$scenario] ?? [];
-            $fields         = array_filter($fields, fn($f) => in_array($f['name'], $scenarioFields));
         }
         return array_values($fields);
     }

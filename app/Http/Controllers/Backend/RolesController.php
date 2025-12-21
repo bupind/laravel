@@ -14,32 +14,26 @@ class RolesController extends Controller
 {
     use BaseController;
 
-    public function __construct(Request $request, RoleRepository $repository)
+    public function __construct(RoleRepository $repository, Request $request)
     {
+        $this->initializeBaseController();
         $this->repository = $repository;
         $this->request    = new RoleRequest($request->all());
         $config           = new ConfigDTO([
-            'modal.use'  => true,
+            'modal'      => true,
             'modal.size' => 'md',
         ]);
         $this->repository->setConfig($config);
-        $this->boot();
     }
-
 
     public function destroy($id)
     {
-        $role = Roles::with('permissions')->findOrFail($id);
+        $role     = Roles::with('permissions')->findOrFail($id);
         $callback = $this->repository->beforeAction($role->toArray(), 'delete');
-
-        if ($callback['error']) {
+        if($callback['error']) {
             throw_exception(500, $callback['message'], $this->route . '.index');
         }
-
         $this->repository->delete($id);
-
         throw_exception(200, 'Deleted successfully', $this->route . '.index');
     }
-
-
 }

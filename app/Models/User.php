@@ -25,13 +25,12 @@ class User extends Authenticatable
         'phone_number',
         'address',
         'email',
+        'password',
         'email_verified_at',
         'two_factor_confirmed_at',
         'password_changed_at',
-        'profile_photo_path'
     ];
     protected $hidden   = [
-        'password',
         'remember_token',
         'two_factor_recovery_codes',
         'two_factor_secret',

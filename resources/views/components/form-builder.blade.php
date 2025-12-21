@@ -19,7 +19,7 @@
                     @break
 
                 @case(DataConstant::TYPE_SELECT)
-                    <x-select :name="$name" :options="$field['options'] ?? []" :value="$value" :placeholder="$field['placeholder'] ?? null"/>
+                    <x-select :name="$name" :options="$field['options'] ?? []" :value="$value" :placeholder="$field['placeholder'] ?? null" :multiple="$field['multiple'] ?? false"/>
                     @break
 
                 @case(DataConstant::TYPE_EMAIL)
