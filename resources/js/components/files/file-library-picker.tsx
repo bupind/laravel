@@ -1,16 +1,34 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, UploadCloud } from 'lucide-react';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
+// ── CSRF helper ───────────────────────────────────────────────────────────────
+// Baca dari meta tag (sudah ada di backend/app.blade.php).
+// Dipanggil setiap kali dibutuhkan agar selalu fresh (Laravel merotasi token
+// setelah tiap request di beberapa konfigurasi).
+function getCsrfToken(): string {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+}
+
+// ── Shared fetch defaults ─────────────────────────────────────────────────────
+// credentials: 'same-origin' wajib agar session cookie (laravel_session) ikut
+// dikirim — tanpanya server tidak mengenali session dan CSRF tidak bisa diverifikasi.
+function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    return fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...options.headers,
+        },
+    });
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface FolderItem {
     id: number;
     name: string;
@@ -43,7 +61,9 @@ interface FileLibraryPickerProps {
     onSelect: (item: FileLibraryItem) => void;
 }
 
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function FileLibraryPicker({ open, onOpenChange, onSelect }: FileLibraryPickerProps) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -59,30 +79,25 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
         const params = new URLSearchParams();
         params.set('per_page', '20');
         params.set('page', String(page));
-        if (folderId !== '__ROOT__') {
-            params.set('folder_id', folderId);
-        }
-        if (search.trim() !== '') {
-            params.set('search', search.trim());
-        }
-
+        if (folderId !== '__ROOT__') params.set('folder_id', folderId);
+        if (search.trim() !== '') params.set('search', search.trim());
         return params.toString();
     }, [page, search, folderId]);
 
+    // Load folders
     useEffect(() => {
         if (!open) return;
-
         let isActive = true;
 
-        fetch('/backend/files/library/folders', {
-            headers: {
-                Accept: 'application/json',
-            },
-        })
+        // credentials: 'same-origin' diurus oleh apiFetch
+        apiFetch('/backend/files/library/folders')
             .then((res) => res.json())
             .then((payload: { data?: FolderItem[] }) => {
                 if (!isActive) return;
                 setFolders(payload.data ?? []);
+            })
+            .catch(() => {
+                /* silent – folders tidak kritis */
             });
 
         return () => {
@@ -90,23 +105,17 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
         };
     }, [open]);
 
+    // Load files
     useEffect(() => {
         if (!open) return;
-
         let isActive = true;
+
         setLoading(true);
         setErrorMessage('');
 
-        fetch(`/backend/files/library?${query}`, {
-            headers: {
-                Accept: 'application/json',
-            },
-        })
+        apiFetch(`/backend/files/library?${query}`)
             .then(async (res) => {
-                if (!res.ok) {
-                    throw new Error('Failed to load files.');
-                }
-
+                if (!res.ok) throw new Error('Gagal memuat file.');
                 return res.json();
             })
             .then((payload: FileLibraryResponse) => {
@@ -116,7 +125,7 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
             })
             .catch((error: unknown) => {
                 if (!isActive) return;
-                setErrorMessage(error instanceof Error ? error.message : 'Failed to load files.');
+                setErrorMessage(error instanceof Error ? error.message : 'Gagal memuat file.');
             })
             .finally(() => {
                 if (!isActive) return;
@@ -128,6 +137,7 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
         };
     }, [open, query, reloadKey]);
 
+    // Upload
     const handleUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
 
@@ -141,33 +151,32 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
 
         setUploading(true);
         setErrorMessage('');
+
         try {
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-            const response = await fetch('/backend/files', {
+            const response = await apiFetch('/backend/files', {
                 method: 'POST',
                 body: formData,
-                credentials: 'same-origin',
                 headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': token,
+                    // Jangan set Content-Type — browser yang set multipart/form-data + boundary
+                    'X-CSRF-TOKEN': getCsrfToken(),
                 },
             });
 
             if (!response.ok) {
-                const maybeJson = await response.json().catch(() => null) as { message?: string } | null;
-                throw new Error(maybeJson?.message ?? 'Upload failed.');
+                const maybeJson = (await response.json().catch(() => null)) as { message?: string } | null;
+                throw new Error(maybeJson?.message ?? 'Upload gagal.');
             }
 
             setPage(1);
-            setReloadKey((value) => value + 1);
+            setReloadKey((v) => v + 1);
         } catch (error: unknown) {
-            setErrorMessage(error instanceof Error ? error.message : 'Upload failed.');
+            setErrorMessage(error instanceof Error ? error.message : 'Upload gagal.');
         } finally {
             setUploading(false);
         }
     };
 
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden">
@@ -190,7 +199,9 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                             <SelectContent>
                                 <SelectItem value="__ROOT__">Root folder</SelectItem>
                                 {folders.map((folder) => (
-                                    <SelectItem key={folder.id} value={String(folder.id)}>{folder.name}</SelectItem>
+                                    <SelectItem key={folder.id} value={String(folder.id)}>
+                                        {folder.name}
+                                    </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -207,56 +218,58 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                         <Button type="button" size="icon" className="h-9 w-9">
                             <Search className="h-4 w-4" />
                         </Button>
-                        <label className="inline-flex">
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                multiple
-                                onChange={(event) => {
-                                    void handleUpload(event.target.files);
-                                    event.currentTarget.value = '';
-                                }}
-                            />
-                            <Button type="button" size="sm" variant="outline" disabled={uploading}>
-                                <UploadCloud className="mr-1 h-4 w-4" />
-                                {uploading ? 'Uploading...' : 'Upload'}
-                            </Button>
-                        </label>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            onChange={(event) => {
+                                void handleUpload(event.target.files);
+                                event.currentTarget.value = '';
+                            }}
+                        />
+                        <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                            <UploadCloud className="mr-1 h-4 w-4" />
+                            {uploading ? 'Uploading...' : 'Upload'}
+                        </Button>
                     </div>
 
-                    {errorMessage !== '' ? (
-                        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
-                            {errorMessage}
-                        </div>
-                    ) : null}
+                    {errorMessage !== '' && (
+                        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{errorMessage}</div>
+                    )}
+
+                    <div className="text-muted-foreground text-xs">
+                        Pilih gambar: klik tombol Upload untuk tambah file baru, atau klik salah satu kartu gambar untuk memilih.
+                    </div>
 
                     <div className="grid max-h-[55vh] grid-cols-2 gap-3 overflow-y-auto md:grid-cols-4">
                         {loading ? (
-                            <div className="col-span-full text-sm text-muted-foreground">Loading files...</div>
+                            <div className="text-muted-foreground col-span-full text-sm">Loading files...</div>
                         ) : rows.length === 0 ? (
-                            <div className="col-span-full text-sm text-muted-foreground">No files found.</div>
+                            <div className="text-muted-foreground col-span-full text-sm">No files found.</div>
                         ) : (
                             rows.map((item) => (
                                 <button
                                     key={item.id}
                                     type="button"
-                                    className="overflow-hidden rounded-md border border-border bg-card text-left transition hover:border-primary"
+                                    className="border-border bg-card hover:border-primary overflow-hidden rounded-md border text-left transition"
                                     onClick={() => {
                                         onSelect(item);
                                         onOpenChange(false);
                                     }}
                                 >
-                                    <div className="aspect-video w-full bg-muted">
+                                    <div className="bg-muted aspect-video w-full">
                                         {item.mime_type.startsWith('image/') ? (
                                             <img src={item.url} alt={item.name} className="h-full w-full object-cover" />
                                         ) : (
-                                            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">File</div>
+                                            <div className="text-muted-foreground flex h-full items-center justify-center text-xs">File</div>
                                         )}
                                     </div>
                                     <div className="space-y-1 p-2">
                                         <p className="truncate text-xs font-medium">{item.name}</p>
-                                        <p className="truncate text-[11px] text-muted-foreground">{item.size}</p>
+                                        <p className="text-muted-foreground truncate text-[11px]">{item.size}</p>
                                     </div>
                                 </button>
                             ))
@@ -267,8 +280,16 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                         <Button type="button" variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
                             Prev
                         </Button>
-                        <div className="text-xs text-muted-foreground">Page {page} / {lastPage}</div>
-                        <Button type="button" variant="outline" size="sm" onClick={() => setPage((p) => Math.min(lastPage, p + 1))} disabled={page >= lastPage}>
+                        <div className="text-muted-foreground text-xs">
+                            Page {page} / {lastPage}
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                            disabled={page >= lastPage}
+                        >
                             Next
                         </Button>
                     </div>

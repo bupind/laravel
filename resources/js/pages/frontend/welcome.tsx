@@ -1,128 +1,124 @@
-﻿import { Head, Link, usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
 import { type SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowRight, CheckCircle2, LayoutDashboard, LogIn, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function Welcome() {
-  const { auth, setting } = usePage<SharedData>().props;
+    const { auth, setting } = usePage<SharedData>().props;
 
-  const primaryColor = setting?.warna || '#0ea5e9';
-  const primaryForeground = '#ffffff';
+    const primaryColor = setting?.warna || '#2563eb';
+    const appName = setting?.nama_app ?? 'Laravel Starter';
+    const appDesc = setting?.deskripsi ?? 'Kelola aplikasi dari satu dashboard yang ringkas dan terstruktur.';
+    const title = setting?.seo?.title ?? appName;
+    const isAuthenticated = Boolean(auth?.user);
+    const dashboardHref = route('dashboard');
+    const loginHref = route('login');
+    const actionHref = isAuthenticated ? dashboardHref : loginHref;
+    const actionLabel = isAuthenticated ? 'Buka Dashboard' : 'Login';
+    const ActionIcon = isAuthenticated ? LayoutDashboard : LogIn;
 
-  useEffect(() => {
-    document.documentElement.style.setProperty('--primary', primaryColor);
-    document.documentElement.style.setProperty('--color-primary', primaryColor);
-    document.documentElement.style.setProperty('--primary-foreground', primaryForeground);
-    document.documentElement.style.setProperty('--color-primary-foreground', primaryForeground);
-  }, [primaryColor, primaryForeground]);
+    useEffect(() => {
+        document.documentElement.style.setProperty('--primary', primaryColor);
+        document.documentElement.style.setProperty('--color-primary', primaryColor);
+    }, [primaryColor]);
 
-  return (
-    <>
-      <Head title="Welcome" />
-      <div className="relative min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-br from-background to-gray-50 dark:to-gray-900">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-32 h-32 rounded-full bg-[var(--primary)]/10 blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-40 h-40 rounded-full bg-secondary/10 blur-3xl" />
-        </div>
+    return (
+        <>
+            <Head title={title}>
+                {setting?.seo?.description && <meta name="description" content={setting.seo.description} />}
+                {setting?.seo?.keywords && <meta name="keywords" content={setting.seo.keywords} />}
+            </Head>
 
-        <div className="relative w-full max-w-4xl text-center space-y-8 z-10">
-          {/* Header section */}
-          <div className="space-y-6">
-            <h1 className="text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-[var(--primary)]/80">
-              Laravel 12 + React Starter Kit
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Accelerate your development with a production-ready foundation featuring authentication, role management, customizable settings, and a modern UI.
-            </p>
-          </div>
+            <main className="bg-background text-foreground min-h-screen">
+                <header className="border-border border-b">
+                    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
+                        <Link href="/" className="flex items-center gap-3 font-semibold">
+                            {setting?.logo ? (
+                                <img src={`/storage/${setting.logo}`} alt={appName} className="h-8 max-w-40 object-contain" />
+                            ) : (
+                                <span
+                                    className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold text-white"
+                                    style={{ backgroundColor: primaryColor }}
+                                >
+                                    {appName.slice(0, 1).toUpperCase()}
+                                </span>
+                            )}
+                            <span>{appName}</span>
+                        </Link>
 
-          {/* CTA section */}
-          {auth.user ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link
-                  href="/blogs"
-                  className="inline-flex items-center justify-center px-8 py-3 rounded-lg border border-border bg-white dark:bg-gray-800 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all transform hover:-translate-y-0.5 shadow-sm hover:shadow-md"
-                >
-                  Read Blogs
-                </Link>
-                <Link
-                  href="/backend/dashboard"
-                  className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-all transform hover:-translate-y-0.5 shadow-md hover:shadow-lg"
-                >
-                  Go to Dashboard
-                  <svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <Link
-                href="/blogs"
-                className="px-8 py-3 rounded-lg border border-border bg-white dark:bg-gray-800 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all transform hover:-translate-y-0.5 shadow-sm hover:shadow-md"
-              >
-                Read Blogs
-              </Link>
-              <Link
-                href="/backend/login"
-                className="px-8 py-3 rounded-lg border border-border bg-white dark:bg-gray-800 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all transform hover:-translate-y-0.5 shadow-sm hover:shadow-md"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/backend/register"
-                className="px-8 py-3 rounded-lg bg-[var(--primary)] text-white font-medium hover:bg-[var(--primary)]/90 transition-all transform hover:-translate-y-0.5 shadow-md hover:shadow-lg"
-              >
-                Get Started
-              </Link>
-            </div>
-          )}
+                        <nav className="flex items-center gap-2">
+                            {!isAuthenticated && (
+                                <Button asChild size="sm" variant="outline">
+                                    <Link href={loginHref}>
+                                        <LogIn className="h-4 w-4" />
+                                        Login
+                                    </Link>
+                                </Button>
+                            )}
+                            <Button asChild size="sm" variant="default" style={{ backgroundColor: primaryColor }}>
+                                <Link href={dashboardHref}>
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    Dashboard
+                                </Link>
+                            </Button>
+                        </nav>
+                    </div>
+                </header>
 
-          {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-            <div className="bg-white dark:bg-gray-800/50 p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[var(--primary)] mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Secure Authentication</h3>
-              <p className="text-muted-foreground text-sm">Built-in user authentication with email verification and password reset.</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800/50 p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[var(--primary)] mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Role Management</h3>
-              <p className="text-muted-foreground text-sm">Flexible role-based permissions system for controlling access.</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800/50 p-6 rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-[var(--primary)] mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Modern Dashboard</h3>
-              <p className="text-muted-foreground text-sm">Clean, responsive interface with dark mode support.</p>
-            </div>
-          </div>
+                <section className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-[1fr_0.86fr] md:px-6">
+                    <div className="max-w-2xl">
+                        <div className="border-border text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm">
+                            <ShieldCheck className="h-4 w-4" style={{ color: primaryColor }} />
+                            Admin workspace
+                        </div>
 
-          {/* Footer links */}
-          <div className="pt-8 space-y-2 text-sm text-muted-foreground">
-            <p>
-              Read the <a href="https://laravel.com/docs" target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline font-medium">Laravel documentation</a> or explore <a href="https://laracasts.com" target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline font-medium">Laracasts tutorials</a>.
-            </p>
-            <p>
-              Need quick deployment? Try <a href="https://cloud.laravel.com" target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline font-medium">Laravel Cloud</a>.
-            </p>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+                        <h1 className="text-4xl leading-tight font-bold tracking-tight md:text-5xl">{appName}</h1>
+                        <p className="text-muted-foreground mt-5 max-w-xl text-base leading-7 md:text-lg">{appDesc}</p>
+
+                        <div className="mt-8 flex flex-wrap gap-3">
+                            <Button asChild size="lg" style={{ backgroundColor: primaryColor }}>
+                                <Link href={actionHref}>
+                                    <ActionIcon className="h-4 w-4" />
+                                    {actionLabel}
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="border-border bg-card text-card-foreground rounded-lg border p-5 shadow-sm">
+                        <div className="mb-5 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium">Status Aplikasi</p>
+                                <p className="text-muted-foreground text-xs">Ringkasan akses saat ini</p>
+                            </div>
+                            <CheckCircle2 className="h-5 w-5" style={{ color: primaryColor }} />
+                        </div>
+
+                        <dl className="space-y-4 text-sm">
+                            <div className="flex items-center justify-between gap-4 border-b pb-4">
+                                <dt className="text-muted-foreground">Nama</dt>
+                                <dd className="font-medium">{appName}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 border-b pb-4">
+                                <dt className="text-muted-foreground">Status</dt>
+                                <dd className="font-medium">Aktif</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <dt className="text-muted-foreground">Sesi</dt>
+                                <dd className="font-medium">{auth?.user ? auth.user.name : 'Tamu'}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <footer className="border-border border-t">
+                    <div className="text-muted-foreground mx-auto max-w-6xl px-4 py-5 text-sm md:px-6">
+                        (c) {new Date().getFullYear()} {appName}
+                    </div>
+                </footer>
+            </main>
+        </>
+    );
 }

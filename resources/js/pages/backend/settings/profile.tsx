@@ -118,4 +118,3 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
         </AppLayout>
     );
 }
-

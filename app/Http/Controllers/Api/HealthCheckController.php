@@ -11,7 +11,7 @@ class HealthCheckController extends Controller
     {
         return response()->json([
             'status' => 'ok',
-            'app' => config('app.name'),
+            'app'    => config('app.name'),
         ]);
     }
 }

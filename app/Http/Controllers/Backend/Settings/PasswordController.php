@@ -20,7 +20,7 @@ class PasswordController extends Controller
     {
         return Inertia::render('backend/settings/password', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => $request->session()->get('status'),
+            'status'          => $request->session()->get('status'),
         ]);
     }
 
@@ -30,14 +30,19 @@ class PasswordController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
+            'current_password' => [
+                'required',
+                'current_password'
+            ],
+            'password'         => [
+                'required',
+                Password::defaults(),
+                'confirmed'
+            ],
         ]);
-
         $request->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
-
         return back();
     }
 }

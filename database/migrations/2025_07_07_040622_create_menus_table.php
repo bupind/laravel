@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('menus', function (Blueprint $table) {
-            $table->id();
+        Schema::create('menus', function(Blueprint $table) {
+            $table->uuid('id')->primary();
             $table->string('title');
             $table->string('icon')->nullable();
             $table->string('route')->nullable();
-            $table->foreignId('parent_id')->nullable()->constrained('menus')->nullOnDelete();
+            $table->foreignUuid('parent_id')->nullable()->constrained('menus')->nullOnDelete();
             $table->integer('order')->default(0);
             $table->json('roles')->nullable();
             $table->timestamps();

@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
+    use UsesUuid;
+
     protected $fillable = [
         'title',
+        'translation_key',
         'icon',
         'route',
         'parent_id',
@@ -48,7 +52,7 @@ class Menu extends Model
      */
     public function scopeForUser($query, $user)
     {
-        return $query->where(function ($q) use ($user) {
+        return $query->where(function($q) use ($user) {
             $q->whereNull('permission_name')
                 ->orWhereIn('permission_name', $user->getAllPermissions()->pluck('name'));
         });

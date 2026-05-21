@@ -1,9 +1,4 @@
-import React, { useMemo } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { type BreadcrumbItem } from '@/types';
+import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -15,19 +10,17 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/use-language';
+import { usePermissions } from '@/hooks/use-permissions';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem, type Role } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Role Management',
-        href: '/backend/roles',
-    },
-];
-
-interface Role {
-    id: number;
-    name: string;
+interface RoleRow extends Role {
     permissions_count: number;
     created_at: string;
 }
@@ -38,7 +31,7 @@ interface DatatableState {
 }
 
 interface Props {
-    roles: PaginatedResponse<Role>;
+    roles: PaginatedResponse<RoleRow>;
     filters?: {
         search?: string;
         sort_by?: string;
@@ -48,139 +41,156 @@ interface Props {
     datatable?: DatatableState;
 }
 
-function buildQueryString(query: Record<string, string | number | undefined>) {
+function buildQueryString(query: Record<string, string | number | undefined>): string {
     const params = new URLSearchParams();
-
     Object.entries(query).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') {
-            return;
-        }
-
+        if (value === undefined || value === null || value === '') return;
         params.set(key, String(value));
     });
-
     const serialized = params.toString();
     return serialized ? `?${serialized}` : '';
 }
 
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Role Management', href: '/backend/roles' }];
+
 export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
+    const { t } = useLanguage();
+    const { can } = usePermissions();
     const { delete: destroy, processing } = useForm();
 
-    const activeQuery = useMemo(() => ({
-        search: filters.search ?? '',
-        sort_by: filters.sort_by ?? 'created_at',
-        sort_dir: filters.sort_dir ?? 'desc',
-        per_page: filters.per_page ?? roles.per_page,
-    }), [filters, roles.per_page]);
+    const canCreate = can('roles-create');
+    const canUpdate = can('roles-update');
+    const canDelete = can('roles-delete');
+
+    const activeQuery = useMemo(
+        () => ({
+            search: filters.search ?? '',
+            sort_by: filters.sort_by ?? 'created_at',
+            sort_dir: filters.sort_dir ?? 'desc',
+            per_page: filters.per_page ?? roles.per_page,
+        }),
+        [filters, roles.per_page],
+    );
 
     const activeQueryString = useMemo(() => buildQueryString(activeQuery), [activeQuery]);
     const canSort = (column: string) => datatable?.sortable_columns?.includes(column) ?? false;
 
-    const columns: DataTableColumn<Role>[] = [
+    const columns: DataTableColumn<RoleRow>[] = [
         {
             key: 'name',
-            label: 'Role',
+            label: t('columns.role'),
             sortable: canSort('name'),
             render: (role) => <div className="font-medium">{role.name}</div>,
         },
         {
             key: 'permissions_count',
-            label: 'Permissions',
+            label: t('columns.permissions'),
             sortable: canSort('permissions_count'),
             render: (role) => <Badge variant="secondary">{role.permissions_count}</Badge>,
         },
         {
             key: 'created_at',
-            label: 'Created At',
+            label: t('columns.createdAt'),
             sortable: canSort('created_at'),
-            render: (role) => new Date(role.created_at).toLocaleString(),
+            render: (role) => new Date(role.created_at).toLocaleString('id-ID'),
         },
-        {
-            key: 'actions',
-            label: 'Actions',
-            width: '72px',
-            minWidth: '72px',
-            maxWidth: '72px',
-            grow: 0,
-            right: true,
-            render: (role) => (
-                <div className="flex justify-end">
-                    <div className="inline-flex overflow-hidden rounded-md border border-border bg-background">
-                        <Button
-                            asChild
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 rounded-none border-r border-border"
-                            aria-label="Edit role"
-                            title="Edit role"
-                        >
-                            <Link href={`/backend/roles/${role.id}/edit${activeQueryString}`}>
-                                <Pencil className="h-4 w-4" />
-                            </Link>
-                        </Button>
+        ...(canUpdate || canDelete
+            ? [
+                  {
+                      key: 'actions',
+                      label: t('columns.actions'),
+                      width: '72px',
+                      minWidth: '72px',
+                      maxWidth: '72px',
+                      grow: 0,
+                      right: true,
+                      render: (role: RoleRow) => (
+                          <div className="flex justify-end">
+                              <div className="border-border bg-background inline-flex overflow-hidden rounded-md border">
+                                  {canUpdate && (
+                                      <Button
 
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 rounded-none text-destructive hover:text-destructive"
-                                    aria-label="Delete role"
-                                    title="Delete role"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Role <strong>{role.name}</strong> will be permanently deleted.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={() => destroy(`/backend/roles/${role.id}`, { preserveScroll: true })}
-                                        disabled={processing}
-                                    >
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </div>
-            ),
-        },
+                                          size="icon"
+                                          variant="ghost"
+                                          className="border-border h-7 w-7 rounded-none border-r"
+                                          aria-label="Edit role"
+                                          title="Edit role"
+                                      >
+                                          <Link href={`/backend/roles/${role.id}/edit${activeQueryString}`}>
+                                              <Pencil className="h-4 w-4" />
+                                          </Link>
+                                      </Button>
+                                  )}
+
+                                  {canDelete && (
+                                      <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                              <Button
+                                                  size="icon"
+                                                  variant="ghost"
+                                                  className="text-destructive hover:text-destructive h-7 w-7 rounded-none"
+                                                  aria-label="Delete role"
+                                                  title="Delete role"
+                                              >
+                                                  <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                              <AlertDialogHeader>
+                                                  <AlertDialogTitle>Hapus role?</AlertDialogTitle>
+                                                  <AlertDialogDescription>
+                                                      Role <strong>{role.name}</strong> akan dihapus secara permanen.
+                                                  </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                  <AlertDialogAction
+                                                      onClick={() => destroy(`/backend/roles/${role.id}`, { preserveScroll: true })}
+                                                      disabled={processing}
+                                                  >
+                                                      Hapus
+                                                  </AlertDialogAction>
+                                              </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                      </AlertDialog>
+                                  )}
+                              </div>
+                          </div>
+                      ),
+                  } as DataTableColumn<RoleRow>,
+              ]
+            : []),
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Role Management" />
+            <Head title={t('pages.roles.title')} />
+
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Role Management</h1>
-                    <p className="text-muted-foreground">Manage roles with server-side pagination and search.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.roles.title')}</h1>
+                    <p className="text-muted-foreground">{t('pages.roles.description')}</p>
                 </div>
 
-                <ServerDataTable<Role>
+                <ServerDataTable<RoleRow>
                     endpoint="/backend/roles"
                     data={roles}
                     columns={columns}
                     filters={activeQuery}
                     perPageOptions={datatable?.per_page_options ?? [10, 25, 50, 100]}
-                    searchPlaceholder="Search role..."
-                    emptyMessage="No role data available."
+                    searchPlaceholder={t('pages.roles.search')}
+                    emptyMessage={t('pages.roles.empty')}
                     reloadOnly={['roles', 'filters', 'datatable']}
-                    toolbarLeft={(
-                        <Button asChild size="sm">
-                            <Link href={`/backend/roles/create${activeQueryString}`}>
-                                <Plus className="h-4 w-4" />
-                                Add Role
-                            </Link>
-                        </Button>
-                    )}
+                    toolbarLeft={
+                        canCreate ? (
+                            <Button  size="sm">
+                                <Link href={`/backend/roles/create${activeQueryString}`}>
+                                    <Plus className="h-4 w-4" />
+
+                                </Link>
+                            </Button>
+                        ) : undefined
+                    }
                 />
             </div>
         </AppLayout>

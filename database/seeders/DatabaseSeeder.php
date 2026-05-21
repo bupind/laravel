@@ -13,15 +13,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
         ]);
-
         $user = User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@admin.com',
-            'password' => Hash::make('admin123'),
+            'name'     => 'Superuser',
+            'email'    => 'superuser@mail.com',
+            'password' => Hash::make('password'),
         ]);
-
-        $user->assignRole('admin');
-
+        $user->assignRole('superuser');
         $this->call([
             MenuSeeder::class,
         ]);

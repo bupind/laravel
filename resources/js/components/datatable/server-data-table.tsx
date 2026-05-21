@@ -6,19 +6,8 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Do
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/hooks/use-language';
 
 export interface PaginationLink {
@@ -123,18 +112,19 @@ export function ServerDataTable<T>({
     };
 
     const tableColumns = useMemo<TableColumn<T>[]>(
-        () => columns.map((column) => ({
-            id: column.key,
-            name: column.label,
-            sortable: Boolean(column.sortable),
-            width: column.width,
-            minWidth: column.minWidth,
-            maxWidth: column.maxWidth,
-            grow: column.grow,
-            right: column.right,
-            center: column.center,
-            cell: (row) => column.render(row),
-        })),
+        () =>
+            columns.map((column) => ({
+                id: column.key,
+                name: column.label,
+                sortable: Boolean(column.sortable),
+                width: column.width,
+                minWidth: column.minWidth,
+                maxWidth: column.maxWidth,
+                grow: column.grow,
+                right: column.right,
+                center: column.center,
+                cell: (row) => column.render(row),
+            })),
         [columns],
     );
 
@@ -163,7 +153,13 @@ export function ServerDataTable<T>({
     };
 
     const onPageChange = (page: number) => {
-        visit({ page });
+        const nextPage = Math.min(Math.max(1, page), data.last_page || 1);
+
+        if (nextPage === data.current_page) {
+            return;
+        }
+
+        visit({ page: nextPage });
     };
 
     const onRefresh = () => {
@@ -191,8 +187,11 @@ export function ServerDataTable<T>({
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const paginationComponent = ({ currentPage, rowCount, rowsPerPage, onChangePage }: PaginationComponentProps) => {
-        const totalPages = Math.max(1, Math.ceil(rowCount / rowsPerPage));
+    const paginationComponent = (_props: PaginationComponentProps) => {
+        const currentPage = data.current_page;
+        const rowCount = data.total;
+        const rowsPerPage = data.per_page;
+        const totalPages = Math.max(1, data.last_page);
         const start = Math.max(1, currentPage - 4);
         const end = Math.min(totalPages, start + 9);
         const pages: number[] = [];
@@ -217,7 +216,7 @@ export function ServerDataTable<T>({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 rounded-md"
-                        onClick={() => onChangePage(1)}
+                        onClick={() => onPageChange(1)}
                         disabled={currentPage <= 1}
                     >
                         <ChevronsLeft className="h-4 w-4" />
@@ -227,7 +226,7 @@ export function ServerDataTable<T>({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 rounded-md"
-                        onClick={() => onChangePage(currentPage - 1)}
+                        onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage <= 1}
                     >
                         <ChevronLeft className="h-4 w-4" />
@@ -238,11 +237,8 @@ export function ServerDataTable<T>({
                             key={page}
                             type="button"
                             variant={page === currentPage ? 'default' : 'ghost'}
-                            className={cn(
-                                'h-8 min-w-8 rounded-md px-2',
-                                page === currentPage ? '' : 'text-muted-foreground hover:text-foreground',
-                            )}
-                            onClick={() => onChangePage(page)}
+                            className={cn('h-8 min-w-8 rounded-md px-2', page === currentPage ? '' : 'text-muted-foreground hover:text-foreground')}
+                            onClick={() => onPageChange(page)}
                         >
                             {page}
                         </Button>
@@ -253,7 +249,7 @@ export function ServerDataTable<T>({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 rounded-md"
-                        onClick={() => onChangePage(currentPage + 1)}
+                        onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage >= totalPages}
                     >
                         <ChevronRight className="h-4 w-4" />
@@ -263,7 +259,7 @@ export function ServerDataTable<T>({
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 rounded-md"
-                        onClick={() => onChangePage(totalPages)}
+                        onClick={() => onPageChange(totalPages)}
                         disabled={currentPage >= totalPages}
                     >
                         <ChevronsRight className="h-4 w-4" />
@@ -292,7 +288,14 @@ export function ServerDataTable<T>({
 
                     {toolbarLeft}
 
-                    <Button type="button" size="icon" variant="outline" className="h-9 w-9 rounded-md" onClick={onRefresh} aria-label={t('datatable.refresh')}>
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9 rounded-md"
+                        onClick={onRefresh}
+                        aria-label={t('datatable.refresh')}
+                    >
                         <RefreshCw className="h-4 w-4" />
                     </Button>
                 </div>
@@ -313,12 +316,7 @@ export function ServerDataTable<T>({
                     {toolbarRight}
                     {exportEndpoint ? (
                         <>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                className="h-9 rounded-md px-3 font-medium"
-                                onClick={() => onExport('all')}
-                            >
+                            <Button type="button" variant="secondary" className="h-9 rounded-md px-3 font-medium" onClick={() => onExport('all')}>
                                 {t('datatable.exportAll')}
                             </Button>
                             <DropdownMenu>

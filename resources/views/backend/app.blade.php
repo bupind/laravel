@@ -5,7 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     @php
         $setting = $page['props']['setting'] ?? null;
         $appName = $setting['nama_app'] ?? config('app.name', 'Laravel');
@@ -35,7 +34,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    @inertia
+@inertia
 </body>
 
 </html>

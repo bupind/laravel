@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('media_folders', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        Schema::create('media_folders', function(Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->foreignId('parent_id')->nullable()->constrained('media_folders')->onDelete('cascade');
+            $table->foreignUuid('parent_id')->nullable()->constrained('media_folders')->onDelete('cascade');
             $table->timestamps();
         });
     }

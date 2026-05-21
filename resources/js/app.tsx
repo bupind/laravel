@@ -18,7 +18,9 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);
-        const translationOverrides = ((props as { initialPage?: { props?: { setting?: { translations?: Record<string, Record<string, string>> } } } }).initialPage?.props?.setting?.translations) ?? {};
+        const translationOverrides =
+            (props as { initialPage?: { props?: { setting?: { translations?: Record<string, Record<string, string>> } } } }).initialPage?.props
+                ?.setting?.translations ?? {};
 
         root.render(
             <LanguageProvider overrides={translationOverrides}>
@@ -31,5 +33,4 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on load...
 initializeTheme();

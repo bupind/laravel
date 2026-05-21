@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class SettingApp extends Model
 {
-    protected $table = 'settingapp';
+    use UsesUuid;
 
+    protected $table = 'settingapp';
     protected $fillable = [
         'nama_app',
         'deskripsi',
@@ -17,9 +19,8 @@ class SettingApp extends Model
         'seo',
         'translations',
     ];
-
     protected $casts = [
-        'seo' => 'array',
+        'seo'          => 'array',
         'translations' => 'array',
     ];
 }

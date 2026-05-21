@@ -1,146 +1,291 @@
-﻿import React from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Save, ArrowLeft } from 'lucide-react';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select';
-import { BreadcrumbItem } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { Plus, X } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
 
-interface PermissionFormProps {
-  permission?: {
-    id: number;
+const NONE_GROUP = '__NONE__';
+
+export interface PermissionChild {
+    id: string;
     name: string;
+    action: string;
+    label: string;
     group: string | null;
-  };
-  groups?: string[];
+    created_at?: string;
 }
 
-export default function PermissionForm({ permission, groups = [] }: PermissionFormProps) {
-  const isEdit = !!permission;
+export interface PermissionModuleForm {
+    key: string;
+    module: string;
+    module_label: string;
+    group: string;
+    children: PermissionChild[];
+    created_at?: string;
+}
 
-  const { data, setData, processing, errors, reset } = useForm({
-    name: permission?.name || '',
-    group: permission?.group || '',
-    newGroup: '',
-  });
+interface PermissionFormFieldsProps {
+    permission?: PermissionModuleForm | null;
+    groups?: string[];
+    standardActions?: string[];
+    onCancel?: () => void;
+    onSuccess?: () => void;
+    shortcutOpen?: boolean;
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+interface PermissionFormPageProps {
+    permission?: PermissionModuleForm | null;
+    groups?: string[];
+    standardActions?: string[];
+}
 
-    const payload = {
-      name: data.name,
-      group: data.newGroup.trim() !== '' ? data.newGroup.trim() : data.group,
+export function PermissionFormFields({
+    permission = null,
+    groups = [],
+    standardActions = [],
+    onCancel,
+    onSuccess,
+    shortcutOpen = false,
+}: PermissionFormFieldsProps) {
+    const isEdit = Boolean(permission?.module);
+    const groupOptions = useMemo(
+        () => (permission?.group && !groups.includes(permission.group) ? [permission.group, ...groups] : groups),
+        [groups, permission?.group],
+    );
+
+    const { data, setData, post, put, processing, errors } = useForm({
+        module: permission?.module ?? '',
+        group: permission?.group ?? '',
+        new_group: '',
+        privileges: permission?.children.map((child) => child.action) ?? [],
+        custom_privilege: '',
+    });
+
+    useEffect(() => {
+        setData({
+            module: permission?.module ?? '',
+            group: permission?.group ?? '',
+            new_group: '',
+            privileges: permission?.children.map((child) => child.action) ?? [],
+            custom_privilege: '',
+        });
+    }, [permission?.module]);
+
+    const addPrivilege = (value: string) => {
+        const privilege = value.trim().toLowerCase();
+        if (!privilege || data.privileges.includes(privilege)) {
+            return;
+        }
+
+        setData({
+            ...data,
+            privileges: [...data.privileges, privilege],
+            custom_privilege: '',
+        });
     };
 
-    if (isEdit) {
-      router.put(`/backend/permissions/${permission?.id}`, payload);
-    } else {
-      router.post('/backend/permissions', payload);
-    }
-  };
+    const removePrivilege = (value: string) => {
+        setData('privileges', data.privileges.filter((privilege) => privilege !== value));
+    };
 
-  const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Permission Management', href: '/backend/permissions' },
-    { title: isEdit ? 'Edit Permission' : 'Add Permission', href: '#' },
-  ];
+    const submitForm = () => {
+        if (!data.module.trim() || data.privileges.length === 0) {
+            return;
+        }
 
-  return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={isEdit ? 'Edit Permission' : 'Add Permission'} />
+        const options = {
+            preserveScroll: true,
+            onSuccess,
+        };
 
-      <div className="flex-1 p-4 md:p-6 max-w-xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">
-              {isEdit ? 'Edit Permission' : 'Add Permission'}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {isEdit ? 'Edit permission details' : 'Create a new permission'}
-            </p>
-          </CardHeader>
+        if (isEdit && permission?.module) {
+            put(`/backend/permissions/${encodeURIComponent(permission.module)}`, options);
+            return;
+        }
 
-          <Separator />
+        post('/backend/permissions', options);
+    };
 
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Permission Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Permission Name</Label>
+    useModalShortcuts({
+        open: shortcutOpen,
+        onSubmit: submitForm,
+        onClose: onCancel,
+        disabled: processing,
+    });
+
+    return (
+        <form
+            className="space-y-4"
+            onSubmit={(event) => {
+                event.preventDefault();
+                submitForm();
+            }}
+        >
+            <div className="space-y-1.5">
+                <Label htmlFor="module">
+                    Path <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="name"
-                  placeholder="example: manage-users"
-                  value={data.name}
-                  onChange={(e) => setData('name', e.target.value)}
-                  className={errors.name ? 'border-red-500' : ''}
+                    id="module"
+                    placeholder="users"
+                    value={data.module}
+                    disabled={isEdit}
+                    onChange={(event) => setData('module', event.target.value)}
                 />
-                {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-              </div>
+                {errors.module && <p className="text-sm text-red-500">{errors.module}</p>}
+            </div>
 
-              {/* Select Group */}
-              <div className="space-y-2">
-                <Label htmlFor="group">Select Group</Label>
-                <Select value={data.group || ''} onValueChange={(val) => setData('group', val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select group..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group} value={group}>
-                        {group}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.group && <p className="text-sm text-red-500">{errors.group}</p>}
-              </div>
+            <div className="space-y-1.5">
+                <Label>Group</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    <Select
+                        value={data.group || NONE_GROUP}
+                        onValueChange={(value) => {
+                            setData({
+                                ...data,
+                                group: value === NONE_GROUP ? '' : value,
+                                new_group: '',
+                            });
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Pilih grup" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={NONE_GROUP}>Tanpa grup</SelectItem>
+                            {groupOptions.map((group) => (
+                                <SelectItem key={group} value={group}>
+                                    {group}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Input
+                        placeholder="Grup baru"
+                        value={data.new_group}
+                        onChange={(event) => {
+                            setData({
+                                ...data,
+                                group: '',
+                                new_group: event.target.value,
+                            });
+                        }}
+                    />
+                </div>
+                {(errors.group || errors.new_group) && <p className="text-sm text-red-500">{errors.group || errors.new_group}</p>}
+            </div>
 
-              {/* New Group */}
-              <div className="space-y-2">
-                <Label htmlFor="newGroup">Or type a new group</Label>
-                <Input
-                  id="newGroup"
-                  placeholder="example: Tender / Article / User"
-                  value={data.newGroup}
-                  onChange={(e) => setData('newGroup', e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+                <Label>
+                    Privileges <span className="text-destructive">*</span>
+                </Label>
 
-              <Separator />
+                {data.privileges.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 rounded-md border p-2">
+                        {data.privileges.map((privilege) => (
+                            <span key={privilege} className="bg-muted flex items-center gap-1 rounded-md px-2 py-0.5 text-sm">
+                                {privilege}
+                                <button
+                                    type="button"
+                                    onClick={() => removePrivilege(privilege)}
+                                    className="text-muted-foreground hover:text-foreground ml-0.5"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-2">
-                <Link href="/backend/permissions">
-                  <Button type="button" variant="secondary">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                </Link>
-                <Button type="submit" disabled={processing} >
-                  <Save className="mr-2 h-4 w-4" />
-                  {processing
-                    ? isEdit
-                      ? 'Saving...'
-                      : 'Adding...'
-                    : isEdit
-                    ? 'Save Changes'
-                    : 'Add'}
+                <div className="flex flex-wrap gap-1.5">
+                    {standardActions
+                        .filter((action) => !data.privileges.includes(action))
+                        .map((action) => (
+                            <button
+                                key={action}
+                                type="button"
+                                onClick={() => addPrivilege(action)}
+                                className="border-border text-muted-foreground hover:border-primary hover:text-primary rounded-full border px-2.5 py-0.5 text-xs transition-colors"
+                            >
+                                + {action}
+                            </button>
+                        ))}
+                </div>
+
+                <div className="flex gap-2">
+                    <Input
+                        placeholder="Privilege custom"
+                        value={data.custom_privilege}
+                        onChange={(event) => setData('custom_privilege', event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                addPrivilege(data.custom_privilege);
+                            }
+                        }}
+                    />
+                    <Button type="button" variant="secondary" onClick={() => addPrivilege(data.custom_privilege)} disabled={!data.custom_privilege.trim()}>
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+                {errors.privileges && <p className="text-sm text-red-500">{errors.privileges}</p>}
+            </div>
+
+            {data.module.trim() && data.privileges.length > 0 && (
+                <div className="bg-muted/40 rounded-md p-3">
+                    <div className="flex flex-wrap gap-1">
+                        {data.privileges.map((privilege) => (
+                            <Badge key={privilege} variant="outline" className="font-mono text-xs">
+                                {data.module.trim()}-{privilege}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+                {onCancel ? (
+                    <Button type="button" variant="secondary" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                ) : (
+                    <Button type="button" variant="secondary" asChild>
+                        <Link href="/backend/permissions">Back</Link>
+                    </Button>
+                )}
+                <Button type="submit" disabled={processing || !data.module.trim() || data.privileges.length === 0}>
+                    {processing ? 'Menyimpan...' : 'Save'}
                 </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </AppLayout>
-  );
+            </div>
+        </form>
+    );
 }
 
+export default function PermissionForm({ permission = null, groups = [], standardActions = [] }: PermissionFormPageProps) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Permission Management', href: '/backend/permissions' },
+        { title: permission ? 'Update' : 'Create', href: '#' },
+    ];
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={permission ? 'Update Permission' : 'Create Permission'} />
+            <div className="space-y-6 p-4 md:p-6">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">{permission ? 'Update Permission' : 'Create Permission'}</h1>
+                    <p className="text-muted-foreground">Define module path, group, and privileges.</p>
+                </div>
+
+                <div className="max-w-2xl">
+                    <PermissionFormFields permission={permission} groups={groups} standardActions={standardActions} />
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

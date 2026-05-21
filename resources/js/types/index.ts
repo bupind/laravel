@@ -2,6 +2,7 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
+    permissions: string[];
 }
 
 export interface BreadcrumbItem {
@@ -23,26 +24,33 @@ export interface NavItem {
 
 export interface Setting {
     nama_app: string;
+    deskripsi?: string;
     logo?: string;
+    favicon?: string;
     warna?: string;
     translations?: {
-      id?: Record<string, string>;
-      en?: Record<string, string>;
+        id?: Record<string, string>;
+        en?: Record<string, string>;
     };
     seo?: {
-      title?: string;
-      description?: string;
-      keywords?: string;
+        title?: string;
+        description?: string;
+        keywords?: string;
     };
-  }
-  
-  export interface SharedData {
-      name: string;
-      quote: { message: string; author: string };
-      auth: Auth;
-      setting?: Setting;
-      [key: string]: unknown;
-  }
+}
+
+export interface SharedData {
+    name: string;
+    quote: { message: string; author: string };
+    auth: Auth;
+    setting?: Setting;
+    flash?: {
+        success?: string | { key?: string; replacements?: Record<string, string | number> };
+        error?: string | { key?: string; replacements?: Record<string, string | number> };
+    };
+    menus?: MenuItem[];
+    [key: string]: unknown;
+}
 
 export interface User {
     id: number;
@@ -52,7 +60,14 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
+}
+
+export interface Role {
+    id: number;
+    name: string;
+    permissions_count?: number;
+    created_at?: string;
 }
 
 export interface Permission {
@@ -62,5 +77,16 @@ export interface Permission {
     guard_name?: string;
     created_at?: string;
     updated_at?: string;
-  }
-  
+}
+
+export interface MenuItem {
+    id: number;
+    title: string;
+    translation_key?: string | null;
+    route: string | null;
+    icon: string;
+    parent_id?: number | null;
+    order?: number;
+    permission_name?: string | null;
+    children?: MenuItem[];
+}

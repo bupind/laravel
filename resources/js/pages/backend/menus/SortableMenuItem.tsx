@@ -1,32 +1,36 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import React from 'react';
 
 interface Props {
-  id: string;
-  title: string;
+    id: string;
+    title: string;
 }
 
 export default function SortableMenuItem({ id, title }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    cursor: 'grab', // tambahkan cursor grab
-  };
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center gap-3 rounded border bg-background px-4 py-2 shadow-sm hover:shadow transition-shadow" // sesuaikan classname
-    >
-      <GripVertical className="text-muted-foreground size-4" />
-      <span className="font-medium text-sm">{title}</span>
-    </div>
-  );
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            className={`bg-background flex items-center gap-3 rounded px-4 py-2 ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+        >
+            <button
+                type="button"
+                {...listeners}
+                className="text-muted-foreground hover:text-foreground cursor-grab touch-none"
+                aria-label="Drag to reorder"
+            >
+                <GripVertical className="size-4" />
+            </button>
+            <span className="text-sm font-medium">{title}</span>
+        </div>
+    );
 }

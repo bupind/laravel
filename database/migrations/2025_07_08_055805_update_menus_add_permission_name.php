@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('menus', function (Blueprint $table) {
+        Schema::table('menus', function(Blueprint $table) {
             $table->string('permission_name')->nullable()->after('route');
             $table->dropColumn('roles');
         });
@@ -15,7 +15,7 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::table('menus', function (Blueprint $table) {
+        Schema::table('menus', function(Blueprint $table) {
             $table->json('roles')->nullable();
             $table->dropColumn('permission_name');
         });

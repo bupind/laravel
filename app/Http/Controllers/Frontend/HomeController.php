@@ -10,6 +10,6 @@ class HomeController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('frontend/welcome');
+        return Inertia::render('frontend/welcome', []);
     }
 }

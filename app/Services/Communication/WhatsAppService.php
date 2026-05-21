@@ -10,13 +10,14 @@ class WhatsAppService
 {
     public function __construct(
         protected BaseQueueService $queueService,
-    ) {
+    )
+    {
     }
 
     public function queueWelcomeMessage(string $phoneNumber, string $name): void
     {
         $this->queueMessage(
-            to: $phoneNumber,
+            to     : $phoneNumber,
             message: sprintf('Halo %s, selamat datang.', $name),
         );
     }
@@ -24,9 +25,9 @@ class WhatsAppService
     public function queueMessage(string $to, string $message, array $meta = []): void
     {
         $this->queueService->dispatchTask(SendWhatsAppTask::class, [
-            'to' => $to,
+            'to'      => $to,
             'message' => $message,
-            'meta' => $meta,
+            'meta'    => $meta,
         ], QueueName::WHATSAPP);
     }
 }

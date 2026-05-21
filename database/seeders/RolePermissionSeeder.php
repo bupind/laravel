@@ -2,54 +2,24 @@
 
 namespace Database\Seeders;
 
+use App\Models\Permission;
+use App\Models\Role;
+use App\Support\Permissions\PermissionCatalog;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Buat role admin dan user jika belum ada
-        $admin = Role::firstOrCreate(['name' => 'admin']);
-        $user = Role::firstOrCreate(['name' => 'user']);
-
-        // Daftar permission berdasarkan menu structure
-        $permissions = [
-            'Dashboard' => [
-                'dashboard-view',
-            ],
-            'Access' => [
-                'access-view',
-                'permission-view',
-                'users-view',
-                'roles-view',
-            ],
-            'Settings' => [
-                'settings-view',
-                'menu-view',
-                'app-settings-view',
-                'backup-view',
-            ],
-            'Utilities' => [
-                'utilities-view',
-                'log-view',
-                'filemanager-view',
-            ],
-        ];
-
-        foreach ($permissions as $group => $perms) {
-            foreach ($perms as $name) {
-                $permission = Permission::firstOrCreate([
-                    'name' => $name,
-                    'group' => $group,
-                ]);
-
-                // Assign ke admin
-                if (!$admin->hasPermissionTo($permission)) {
-                    $admin->givePermissionTo($permission);
-                }
+        $superuser = Role::firstOrCreate(['name' => 'superuser']);
+        foreach(PermissionCatalog::grouped() as $group => $permissions) {
+            foreach($permissions as $name) {
+                $permission = Permission::firstOrCreate(['name' => $name]);
+                $permission->forceFill(['group' => $group])->save();
             }
         }
+        $superuser->syncPermissions(Permission::query()->pluck('name')->all());
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

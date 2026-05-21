@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MediaFolder;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MediaFolderPolicy
 {
@@ -47,7 +46,6 @@ class MediaFolderPolicy
     {
         return $user->id === $folder->user_id;
     }
-
 
     /**
      * Determine whether the user can restore the model.

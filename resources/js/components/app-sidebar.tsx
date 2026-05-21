@@ -1,23 +1,118 @@
-﻿import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+﻿import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+} from '@/components/ui/sidebar';
 
 import { NavUser } from '@/components/nav-user';
+import { useLanguage } from '@/hooks/use-language';
 import { iconMapper } from '@/lib/iconMapper';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import AppLogo from './app-logo';
 
 interface MenuItem {
     id: number;
     title: string;
+    translation_key?: string | null;
     route: string | null;
     icon: string;
     children?: MenuItem[];
 }
 
+const menuTitleTranslationKeys: Record<string, string> = {
+    'app settings': 'menus.app_settings',
+    'audit logs': 'menus.audit_logs',
+    backup: 'menus.backup',
+    dashboard: 'menus.dashboard',
+    access: 'menus.access',
+    'file manager': 'menus.file_manager',
+    'menu manager': 'menus.menu_manager',
+    permissions: 'menus.permissions',
+    roles: 'menus.roles',
+    settings: 'menus.settings',
+    translations: 'menus.translations',
+    tags: 'menus.tags',
+    users: 'menus.users',
+    utilities: 'menus.utilities',
+};
+
+function getMenuTranslationKey(menu: MenuItem): string | null {
+    if (menu.translation_key) {
+        return menu.translation_key;
+    }
+
+    return menuTitleTranslationKeys[menu.title.trim().toLowerCase()] ?? null;
+}
+
+function getMenuTitle(menu: MenuItem, t: (key: string) => string): string {
+    const translationKey = getMenuTranslationKey(menu);
+
+    if (!translationKey) {
+        return menu.title;
+    }
+
+    const translatedTitle = t(translationKey);
+
+    return translatedTitle === translationKey ? menu.title : translatedTitle;
+}
+
+function hasActiveChild(items: MenuItem[], currentUrl: string): boolean {
+    return items.some((item) => (item.route && currentUrl.startsWith(item.route)) || (item.children && hasActiveChild(item.children, currentUrl)));
+}
+
+function CollapsibleMenuItem({ menu, level, currentUrl }: { menu: MenuItem; level: number; icon: LucideIcon; currentUrl: string }) {
+    const { t } = useLanguage();
+    const Icon = iconMapper(menu.icon || 'Folder') as LucideIcon;
+    const children = (menu.children ?? []).filter(Boolean);
+    const defaultOpen = hasActiveChild(children, currentUrl);
+    const [open, setOpen] = useState(defaultOpen);
+
+    return (
+        <Collapsible open={open} onOpenChange={setOpen} className="w-full">
+            <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                        className={cn(
+                            'group flex w-full items-center justify-between rounded-md transition-colors',
+                            level === 0 ? 'my-1 px-4 py-3' : 'px-3 py-2',
+                            open ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                        )}
+                    >
+                        <div className="flex items-center">
+                            <Icon className="mr-3 size-4 opacity-80 group-hover:opacity-100" />
+                            <span>{getMenuTitle(menu, t)}</span>
+                        </div>
+                        <ChevronDown
+                            className={cn('size-4 opacity-50 transition-transform duration-200 group-hover:opacity-70', open && 'rotate-180')}
+                        />
+                    </SidebarMenuButton>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                    <SidebarMenuSub>
+                        <RenderMenu items={children} level={level + 1} />
+                    </SidebarMenuSub>
+                </CollapsibleContent>
+            </SidebarMenuItem>
+        </Collapsible>
+    );
+}
+
 function RenderMenu({ items, level = 0 }: { items: MenuItem[]; level?: number }) {
     const { url: currentUrl } = usePage();
+    const { t } = useLanguage();
 
     if (!Array.isArray(items)) return null;
 
@@ -25,56 +120,48 @@ function RenderMenu({ items, level = 0 }: { items: MenuItem[]; level?: number })
         <>
             {items.map((menu) => {
                 if (!menu) return null;
+
                 const Icon = iconMapper(menu.icon || 'Folder') as LucideIcon;
                 const children = Array.isArray(menu.children) ? menu.children.filter(Boolean) : [];
                 const hasChildren = children.length > 0;
-                const isActive = menu.route && currentUrl.startsWith(menu.route);
-                const indentClass = level > 0 ? `pl-${4 + level * 3}` : '';
-
-                const activeClass = isActive
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground';
 
                 if (!menu.route && !hasChildren) return null;
+                if (hasChildren) {
+                    return <CollapsibleMenuItem key={menu.id} menu={menu} level={level} icon={Icon} currentUrl={currentUrl} />;
+                }
+                const isActive = Boolean(menu.route && currentUrl.startsWith(menu.route));
 
-                return (
-                    <SidebarMenuItem key={menu.id}>
-                        {hasChildren ? (
-                            <>
-                                <SidebarMenuButton
-                                    className={cn(
-                                        `group flex items-center justify-between rounded-md transition-colors ${indentClass}`,
-                                        activeClass,
-                                        level === 0 ? 'my-1 px-4 py-3' : 'px-3 py-2',
-                                    )}
-                                >
-                                    <div className="flex items-center">
-                                        <Icon className="mr-3 size-4 opacity-80 group-hover:opacity-100" />
-                                        <span>{menu.title}</span>
-                                    </div>
-                                    <ChevronDown className="size-4 opacity-50 transition-transform group-hover:opacity-70 group-data-[state=open]:rotate-180" />
-                                </SidebarMenuButton>
-                                <SidebarMenu className="border-muted ml-2 border-l pl-2">
-                                    <RenderMenu items={children} level={level + 1} />
-                                </SidebarMenu>
-                            </>
-                        ) : (
+                if (level === 0) {
+                    return (
+                        <SidebarMenuItem key={menu.id}>
                             <SidebarMenuButton
                                 asChild
+                                isActive={isActive}
                                 className={cn(
-                                    `group flex items-center rounded-md transition-colors ${indentClass}`,
-                                    activeClass,
-                                    level === 0 ? 'my-1 px-4 py-3' : 'px-3 py-2',
+                                    'group my-1 flex items-center rounded-md px-4 py-3 transition-colors',
+                                    isActive
+                                        ? 'bg-primary/10 text-primary font-medium'
+                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                                 )}
                             >
                                 <Link href={menu.route || '#'} prefetch>
                                     <Icon className="mr-3 size-4 opacity-80 group-hover:opacity-100" />
-                                    <span>{menu.title}</span>
-                                    {level > 0 && <ChevronRight className="ml-auto size-4 opacity-0 group-hover:opacity-50" />}
+                                    <span>{getMenuTitle(menu, t)}</span>
                                 </Link>
                             </SidebarMenuButton>
-                        )}
-                    </SidebarMenuItem>
+                        </SidebarMenuItem>
+                    );
+                }
+
+                return (
+                    <SidebarMenuSubItem key={menu.id}>
+                        <SidebarMenuSubButton asChild isActive={isActive}>
+                            <Link href={menu.route || '#'} prefetch>
+                                <Icon className="size-4" />
+                                <span>{getMenuTitle(menu, t)}</span>
+                            </Link>
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
                 );
             })}
         </>
@@ -83,6 +170,7 @@ function RenderMenu({ items, level = 0 }: { items: MenuItem[]; level?: number })
 
 export function AppSidebar() {
     const { menus = [] } = usePage().props as { menus?: MenuItem[] };
+
     return (
         <Sidebar collapsible="icon" variant="inset" className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-r backdrop-blur">
             <SidebarHeader className="border-b px-4 py-3">
@@ -102,6 +190,7 @@ export function AppSidebar() {
                     <RenderMenu items={menus} />
                 </SidebarMenu>
             </SidebarContent>
+
             <SidebarFooter className="border-t">
                 <NavUser />
             </SidebarFooter>

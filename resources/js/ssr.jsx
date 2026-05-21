@@ -1,7 +1,5 @@
 /* prettier-ignore */
-import {
-createInertiaApp
-} from '@inertiajs/react';
+import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
 import { LanguageProvider } from './hooks/use-language';
@@ -16,7 +14,6 @@ createServer((page) =>
             });
             return pages[`./pages/${name}.tsx`];
         },
-        // prettier-ignore
         setup: ({ App, props }) => (
             <LanguageProvider>
                 <App {...props} />

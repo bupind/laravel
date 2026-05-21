@@ -18,16 +18,20 @@ abstract class BaseQueueJob implements ShouldQueue
     use SerializesModels;
 
     public int $tries = 5;
-
     public int $timeout = 180;
-
-    public array $backoff = [10, 30, 60, 120, 300];
+    public array $backoff = [
+        10,
+        30,
+        60,
+        120,
+        300
+    ];
 
     public function failed(Throwable $exception): void
     {
         Log::error('Queue job failed.', [
-            'job' => static::class,
-            'queue' => $this->queue,
+            'job'     => static::class,
+            'queue'   => $this->queue,
             'message' => $exception->getMessage(),
         ]);
     }

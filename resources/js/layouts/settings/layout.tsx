@@ -16,11 +16,6 @@ const sidebarNavItems: NavItem[] = [
         url: '/backend/settings/password',
         icon: null,
     },
-    {
-        title: 'Translations',
-        url: '/backend/settings/translations',
-        icon: null,
-    },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -60,4 +55,3 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         </div>
     );
 }
-

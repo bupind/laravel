@@ -40,34 +40,21 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
                     <div className="flex flex-col gap-8">
                         {/* Logo and Header Section */}
                         <div className="flex flex-col items-center gap-6">
-                            <Link 
-                                href={route('home')} 
-                                className="flex flex-col items-center gap-3 font-medium transition-opacity hover:opacity-90"
-                            >
+                            <Link href={route('home')} className="flex flex-col items-center gap-3 font-medium transition-opacity hover:opacity-90">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--primary)] p-2 shadow-sm">
                                     <AppLogoIcon className="size-8 fill-current text-[var(--primary-foreground)]" />
                                 </div>
-                                <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {setting?.nama_app}
-                                </span>
+                                <span className="text-lg font-semibold text-gray-900 dark:text-white">{setting?.nama_app}</span>
                             </Link>
 
                             <div className="space-y-1.5 text-center">
-                                <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                                    {title}
-                                </h1>
-                                {description && (
-                                    <p className="text-muted-foreground text-center text-sm leading-5">
-                                        {description}
-                                    </p>
-                                )}
+                                <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{title}</h1>
+                                {description && <p className="text-muted-foreground text-center text-sm leading-5">{description}</p>}
                             </div>
                         </div>
 
                         {/* Form Content */}
-                        <div className="space-y-6">
-                            {children}
-                        </div>
+                        <div className="space-y-6">{children}</div>
                     </div>
                 </div>
 

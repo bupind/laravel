@@ -1,5 +1,5 @@
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import AppearanceDropdown from '@/components/appearance-dropdown';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLanguage } from '@/hooks/use-language';

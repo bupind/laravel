@@ -1,25 +1,19 @@
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-  } from '@/components/ui/command';
-  import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-  import { Button } from '@/components/ui/button';
-  import { Check, ChevronsUpDown } from 'lucide-react';
-  import { cn } from '@/lib/utils';
-  import React, { useState } from 'react';
-  
-  interface ComboboxPermissionProps {
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+
+interface ComboboxPermissionProps {
     value: string;
     onChange: (value: string) => void;
     options: string[];
   }
-  
+
   export default function ComboboxPermission({ value, onChange, options }: ComboboxPermissionProps) {
     const [open, setOpen] = useState(false);
-  
+
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -62,4 +56,3 @@ import {
       </Popover>
     );
   }
-  

@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsesUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MediaFolder extends Model
 {
-    protected $fillable = ['user_id', 'name', 'parent_id'];
+    use UsesUuid;
+
+    protected $fillable = [
+        'user_id',
+        'name',
+        'parent_id'
+    ];
 
     public function user(): BelongsTo
     {
