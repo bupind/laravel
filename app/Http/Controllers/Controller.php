@@ -1,4 +1,9 @@
 <?php
+/**
+ * Controller
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers;
 abstract class Controller

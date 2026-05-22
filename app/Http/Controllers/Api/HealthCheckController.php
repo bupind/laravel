@@ -1,4 +1,9 @@
 <?php
+/**
+ * HealthCheckController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Api;
 

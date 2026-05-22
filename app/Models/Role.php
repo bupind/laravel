@@ -1,4 +1,9 @@
 <?php
+/**
+ * Role
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 
@@ -9,8 +14,6 @@ class Role extends SpatieRole
 {
     use HasUuids;
 
-    // SpatieRole inherits from Model which already defines $incrementing.
-    // We set these directly to avoid trait property conflicts.
     public    $incrementing = false;
     protected $keyType      = 'string';
 }

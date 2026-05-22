@@ -1,8 +1,5 @@
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { NavUser } from '@/components/nav-user';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     Sidebar,
     SidebarContent,
@@ -15,7 +12,6 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { NavUser } from '@/components/nav-user';
 import { useLanguage } from '@/hooks/use-language';
 import { iconMapper } from '@/lib/iconMapper';
 import { cn } from '@/lib/utils';
@@ -24,8 +20,6 @@ import type { LucideIcon } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { memo, useState } from 'react';
 import AppLogo from './app-logo';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface MenuItem {
     id: number;
@@ -36,8 +30,6 @@ export interface MenuItem {
     children?: MenuItem[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function getMenuTitle(menu: MenuItem, t: (key: string) => string): string {
     if (!menu.translation_key) return menu.title;
     const translated = t(menu.translation_key);
@@ -45,14 +37,8 @@ function getMenuTitle(menu: MenuItem, t: (key: string) => string): string {
 }
 
 function hasActiveChild(items: MenuItem[], currentUrl: string): boolean {
-    return items.some(
-        (item) =>
-            (item.route && currentUrl.startsWith(item.route)) ||
-            (item.children && hasActiveChild(item.children, currentUrl)),
-    );
+    return items.some((item) => (item.route && currentUrl.startsWith(item.route)) || (item.children && hasActiveChild(item.children, currentUrl)));
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface CollapsibleMenuItemProps {
     menu: MenuItem;
@@ -60,12 +46,7 @@ interface CollapsibleMenuItemProps {
     currentUrl: string;
 }
 
-/** Menu item with collapsible children. */
-const CollapsibleMenuItem = memo(function CollapsibleMenuItem({
-    menu,
-    level,
-    currentUrl,
-}: CollapsibleMenuItemProps) {
+const CollapsibleMenuItem = memo(function CollapsibleMenuItem({ menu, level, currentUrl }: CollapsibleMenuItemProps) {
     const { t } = useLanguage();
     const Icon = iconMapper(menu.icon || 'Folder') as LucideIcon;
     const children = (menu.children ?? []).filter(Boolean);
@@ -79,9 +60,7 @@ const CollapsibleMenuItem = memo(function CollapsibleMenuItem({
                         className={cn(
                             'group flex w-full items-center justify-between rounded-md transition-colors',
                             level === 0 ? 'my-1 px-4 py-3' : 'px-3 py-2',
-                            open
-                                ? 'bg-primary/10 text-primary font-medium'
-                                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                            open ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                         )}
                     >
                         <div className="flex items-center">
@@ -89,10 +68,7 @@ const CollapsibleMenuItem = memo(function CollapsibleMenuItem({
                             <span>{getMenuTitle(menu, t)}</span>
                         </div>
                         <ChevronDown
-                            className={cn(
-                                'size-4 opacity-50 transition-transform duration-200 group-hover:opacity-70',
-                                open && 'rotate-180',
-                            )}
+                            className={cn('size-4 opacity-50 transition-transform duration-200 group-hover:opacity-70', open && 'rotate-180')}
                         />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -124,23 +100,13 @@ function RenderMenu({ items, level = 0 }: RenderMenuProps) {
                 if (!menu) return null;
 
                 const Icon = iconMapper(menu.icon || 'Folder') as LucideIcon;
-                const children = Array.isArray(menu.children)
-                    ? menu.children.filter(Boolean)
-                    : [];
+                const children = Array.isArray(menu.children) ? menu.children.filter(Boolean) : [];
                 const hasChildren = children.length > 0;
 
-                // Jangan render item yang tidak punya route dan tidak punya anak
                 if (!menu.route && !hasChildren) return null;
 
                 if (hasChildren) {
-                    return (
-                        <CollapsibleMenuItem
-                            key={menu.id}
-                            menu={menu}
-                            level={level}
-                            currentUrl={currentUrl}
-                        />
-                    );
+                    return <CollapsibleMenuItem key={menu.id} menu={menu} level={level} currentUrl={currentUrl} />;
                 }
 
                 const isActive = Boolean(menu.route && currentUrl.startsWith(menu.route));
@@ -182,17 +148,11 @@ function RenderMenu({ items, level = 0 }: RenderMenuProps) {
     );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export function AppSidebar() {
     const { menus = [] } = usePage().props as { menus?: MenuItem[] };
 
     return (
-        <Sidebar
-            collapsible="icon"
-            variant="inset"
-            className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-r backdrop-blur"
-        >
+        <Sidebar collapsible="icon" variant="inset" className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-r backdrop-blur">
             <SidebarHeader className="border-b px-4 py-3">
                 <SidebarMenu>
                     <SidebarMenuItem>

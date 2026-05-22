@@ -1,6 +1,6 @@
+import { FrontendHeader } from '@/components/frontend-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FrontendHeader } from '@/components/frontend-header';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
 import { type SharedData } from '@/types';
@@ -48,7 +48,7 @@ function ProductImage({ product }: { product: Product }) {
 
     if (!product.image_url || failed) {
         return (
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground">
+            <div className="bg-muted text-muted-foreground flex h-16 w-16 shrink-0 items-center justify-center rounded-md border">
                 <ImageIcon className="h-5 w-5" />
             </div>
         );
@@ -92,23 +92,23 @@ export default function Products({ products, filters }: ProductsPageProps) {
         <>
             <Head title={t('pages.products.title', { fallback: 'Products' })} />
 
-            <main className="bg-background min-h-screen text-foreground">
+            <main className="bg-background text-foreground min-h-screen">
                 <FrontendHeader setting={setting} auth={auth} />
 
                 <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
                     {/* Header row */}
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <div className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <div className="text-muted-foreground mb-2 inline-flex items-center gap-2 text-sm font-medium">
                                 <Boxes className="h-4 w-4" />
                                 {t('pages.products.category', { fallback: 'Product Catalog' })}
                             </div>
-                            <h1 className="text-3xl font-semibold tracking-tight">
-                                {t('pages.products.title', { fallback: 'Products' })}
-                            </h1>
+                            <h1 className="text-3xl font-semibold tracking-tight">{t('pages.products.title', { fallback: 'Products' })}</h1>
                         </div>
 
-                        <Badge variant="outline" className="w-fit">{summary}</Badge>
+                        <Badge variant="outline" className="w-fit">
+                            {summary}
+                        </Badge>
 
                         {/* Search — same inline style as translations module */}
                         <form onSubmit={submitSearch} className="relative flex w-full items-center gap-2 md:w-[360px]">
@@ -118,7 +118,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder={t('pages.products.search', { fallback: 'Cari nama, SKU...' })}
-                                    className="h-9 pl-8 pr-8"
+                                    className="h-9 pr-8 pl-8"
                                 />
                                 {search && (
                                     <button
@@ -140,9 +140,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                     {/* Active filter chip */}
                     {filters.search && (
                         <div className="mb-4 flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground">
-                                {t('pages.products.filterActive', { fallback: 'Filter:' })}
-                            </span>
+                            <span className="text-muted-foreground">{t('pages.products.filterActive', { fallback: 'Filter:' })}</span>
                             <Badge variant="secondary" className="gap-1">
                                 {filters.search}
                                 <button type="button" onClick={clearSearch} className="ml-1 hover:opacity-70">
@@ -157,7 +155,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
 
                     {/* Table */}
                     {products.data.length === 0 ? (
-                        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
+                        <div className="text-muted-foreground rounded-lg border p-8 text-center text-sm">
                             {filters.search
                                 ? t('pages.products.notFound', { fallback: 'Tidak ada product yang cocok.' })
                                 : t('pages.products.empty', { fallback: 'Product aktif belum tersedia.' })}
@@ -167,41 +165,31 @@ export default function Products({ products, filters }: ProductsPageProps) {
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/60 text-left">
                                     <tr>
-                                        <th className="px-4 py-3 font-medium">
-                                            {t('columns.product', { fallback: 'Product' })}
-                                        </th>
+                                        <th className="px-4 py-3 font-medium">{t('columns.product', { fallback: 'Product' })}</th>
                                         <th className="px-4 py-3 font-medium">SKU</th>
-                                        <th className="px-4 py-3 text-right font-medium">
-                                            {t('columns.price', { fallback: 'Harga' })}
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-medium">
-                                            {t('columns.stock', { fallback: 'Stok' })}
-                                        </th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('columns.price', { fallback: 'Harga' })}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('columns.stock', { fallback: 'Stok' })}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {products.data.map((product) => (
-                                        <tr key={product.id} className="border-t hover:bg-muted/30 transition-colors">
+                                        <tr key={product.id} className="hover:bg-muted/30 border-t transition-colors">
                                             <td className="px-4 py-3">
                                                 <div className="flex min-w-[260px] items-center gap-3">
                                                     <ProductImage product={product} />
                                                     <div className="min-w-0">
                                                         <div className="truncate font-medium">{product.name}</div>
                                                         {product.description && (
-                                                            <div className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                                                            <div className="text-muted-foreground mt-1 line-clamp-1 text-xs">
                                                                 {product.description}
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">{product.sku}</td>
-                                            <td className="px-4 py-3 text-right tabular-nums">
-                                                {formatCurrency(product.price)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right tabular-nums">
-                                                {product.stock.toLocaleString('id-ID')}
-                                            </td>
+                                            <td className="text-muted-foreground px-4 py-3">{product.sku}</td>
+                                            <td className="px-4 py-3 text-right tabular-nums">{formatCurrency(product.price)}</td>
+                                            <td className="px-4 py-3 text-right tabular-nums">{product.stock.toLocaleString('id-ID')}</td>
                                         </tr>
                                     ))}
                                 </tbody>

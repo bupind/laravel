@@ -6,7 +6,6 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
         logo?: string;
     } | null;
 
-    // Fallback ke SVG default
     if (!setting?.logo) {
         return (
             <svg {...props} viewBox="0 0 40 42" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

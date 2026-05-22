@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
-import { useLanguage } from '@/hooks/use-language';
 
 const NONE_GROUP = '__NONE__';
 
@@ -93,7 +93,10 @@ export function PermissionFormFields({
     };
 
     const removePrivilege = (value: string) => {
-        setData('privileges', data.privileges.filter((privilege) => privilege !== value));
+        setData(
+            'privileges',
+            data.privileges.filter((privilege) => privilege !== value),
+        );
     };
 
     const submitForm = () => {
@@ -232,7 +235,12 @@ export function PermissionFormFields({
                             }
                         }}
                     />
-                    <Button type="button" variant="secondary" onClick={() => addPrivilege(data.custom_privilege)} disabled={!data.custom_privilege.trim()}>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => addPrivilege(data.custom_privilege)}
+                        disabled={!data.custom_privilege.trim()}
+                    >
                         <Plus className="h-4 w-4" />
                     </Button>
                 </div>
@@ -253,7 +261,9 @@ export function PermissionFormFields({
 
             <div className="flex justify-end gap-2 pt-2">
                 {onCancel ? (
-                    <Button type="button" variant="secondary" onClick={onCancel}>{t('buttons.cancel')}</Button>
+                    <Button type="button" variant="secondary" onClick={onCancel}>
+                        {t('buttons.cancel')}
+                    </Button>
                 ) : (
                     <Button type="button" variant="secondary" asChild>
                         <Link href="/backend/permissions">{t('buttons.back')}</Link>

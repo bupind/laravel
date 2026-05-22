@@ -1,4 +1,9 @@
 <?php
+/**
+ * BaseQueueService
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Services\Queue;
 
@@ -25,9 +30,6 @@ class BaseQueueService
         return $batch->finished();
     }
 
-    /**
-     * @param list<int|string> $ids
-     */
     public function dispatchImport(
         string $handlerClass,
         array  $ids,
@@ -45,9 +47,6 @@ class BaseQueueService
         );
     }
 
-    /**
-     * @param list<int|string> $ids
-     */
     public function dispatchChunkedIds(
         string  $handlerClass,
         array   $ids,
@@ -70,9 +69,6 @@ class BaseQueueService
             ->dispatch();
     }
 
-    /**
-     * @param list<int|string> $ids
-     */
     public function dispatchExport(
         string $handlerClass,
         array  $ids,

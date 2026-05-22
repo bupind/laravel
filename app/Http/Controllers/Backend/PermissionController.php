@@ -1,4 +1,9 @@
 <?php
+/**
+ * PermissionController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -27,20 +32,20 @@ class PermissionController extends BaseCrudController
         'import',
         'approve',
     ];
-    protected bool    $modal             = true;
-    protected bool    $searchPrefix      = true;
-    protected string  $orderBy           = 'created_at';
-    protected ?string $permissionPrefix  = 'permission';
-    protected array   $sortableColumns   = [
+    protected bool $modal = true;
+    protected bool $searchPrefix = true;
+    protected string $orderBy = 'created_at';
+    protected ?string $permissionPrefix = 'permission';
+    protected array $sortableColumns = [
         'name',
         'group',
         'created_at',
     ];
-    protected array   $searchableColumns = [
+    protected array $searchableColumns = [
         'name',
         'group',
     ];
-    protected array   $select            = [
+    protected array $select = [
         'id',
         'name',
         'group',

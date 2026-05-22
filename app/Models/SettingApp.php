@@ -1,4 +1,9 @@
 <?php
+/**
+ * SettingApp
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 
@@ -10,7 +15,7 @@ class SettingApp extends Model
 {
     use UsesUuid;
 
-    public const DEFAULTS = [
+    public const DEFAULTS      = [
         'nama_app'  => null,
         'deskripsi' => null,
         'logo'      => null,
@@ -30,7 +35,7 @@ class SettingApp extends Model
         'warna',
         'seo',
     ];
-    public const FIELD_TYPES = [
+    public const FIELD_TYPES   = [
         'nama_app'  => 'text',
         'deskripsi' => 'textarea',
         'logo'      => 'file',
@@ -46,7 +51,7 @@ class SettingApp extends Model
 
     public static function settings(): array
     {
-        $settings = static::query()
+        $settings             = static::query()
             ->orderBy('key')
             ->pluck('value', 'key')
             ->map(fn($value) => static::decodeValue($value))

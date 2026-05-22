@@ -1,4 +1,9 @@
 <?php
+/**
+ * ApiClientController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -12,15 +17,15 @@ use Throwable;
 class ApiClientController extends BaseCrudController
 {
     protected ?string $resourceRouteName = 'api-clients';
-    protected ?string $resourceLabel     = 'API Clients';
-    protected ?string $resourceTitle     = 'API Client Credentials';
-    protected string  $orderBy           = 'created_at';
-    protected array   $searchableColumns = [
+    protected ?string $resourceLabel = 'API Clients';
+    protected ?string $resourceTitle = 'API Client Credentials';
+    protected string $orderBy = 'created_at';
+    protected array $searchableColumns = [
         'name',
         'client_key',
         'description',
     ];
-    protected array   $sortableColumns   = [
+    protected array $sortableColumns = [
         'name',
         'client_key',
         'is_active',
@@ -29,77 +34,77 @@ class ApiClientController extends BaseCrudController
         'total_requests',
         'created_at',
     ];
-    protected array   $tableColumns      = [
+    protected array $tableColumns = [
         'name',
         'client_key',
         'client_secret',
         [
             'key'   => 'is_active',
             'label' => 'Active',
-            'type'  => 'checkbox'
+            'type'  => 'checkbox',
         ],
         [
             'key'   => 'last_used_at',
             'label' => 'Last Used',
-            'type'  => 'datetime'
+            'type'  => 'datetime',
         ],
         [
             'key'   => 'last_request_ip',
-            'label' => 'Last IP'
+            'label' => 'Last IP',
         ],
         [
             'key'   => 'last_response_status',
             'label' => 'Last Status',
-            'type'  => 'number'
+            'type'  => 'number',
         ],
         [
             'key'   => 'total_requests',
             'label' => 'Requests',
-            'type'  => 'number'
+            'type'  => 'number',
         ],
         [
             'key'   => 'expires_at',
             'label' => 'Expires At',
-            'type'  => 'datetime'
+            'type'  => 'datetime',
         ],
     ];
-    protected array   $formFields        = [
+    protected array $formFields = [
         [
             'name'     => 'name',
             'label'    => 'Name',
-            'required' => true
+            'required' => true,
         ],
         [
             'name'        => 'client_key',
             'label'       => 'Client Key',
-            'placeholder' => 'Kosongkan untuk generate otomatis'
+            'placeholder' => 'Kosongkan untuk generate otomatis',
         ],
         [
             'name'        => 'client_secret',
             'label'       => 'Client Secret',
-            'placeholder' => 'Isi untuk membuat/mengganti secret'
+            'placeholder' => 'Isi untuk membuat/mengganti secret',
         ],
         [
             'name'  => 'description',
             'label' => 'Description',
-            'type'  => 'textarea'
+            'type'  => 'textarea',
         ],
         [
             'name'        => 'allowed_ips',
             'label'       => 'Allowed IPs',
             'type'        => 'textarea',
-            'placeholder' => 'Satu IP per baris atau pisahkan dengan koma'
+            'placeholder' => 'Satu IP per baris atau pisahkan dengan koma',
         ],
         [
             'name'    => 'is_active',
             'label'   => 'Active',
             'type'    => 'checkbox',
-            'default' => true
+            'default' => true,
         ],
         [
             'name'  => 'expires_at',
             'label' => 'Expires At',
-            'type'  => 'datetime'
+            'type'  => 'datetime',
         ],
     ];
 

@@ -1,4 +1,9 @@
 <?php
+/**
+ * SendWhatsAppTask
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Services\Queue\Handlers;
 
@@ -34,4 +39,3 @@ class SendWhatsAppTask implements QueueTaskHandler
             ->throw();
     }
 }
-

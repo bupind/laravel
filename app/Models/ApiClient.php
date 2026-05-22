@@ -1,4 +1,9 @@
 <?php
+/**
+ * ApiClient
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Models;
 
@@ -23,8 +28,7 @@ class ApiClient extends Model
         'created_by',
         'updated_by',
     ];
-
-    protected $casts = [
+    protected $casts    = [
         'allowed_ips'          => 'array',
         'is_active'            => 'boolean',
         'expires_at'           => 'datetime',
@@ -32,9 +36,7 @@ class ApiClient extends Model
         'last_response_status' => 'integer',
         'total_requests'       => 'integer',
     ];
-
-    // Never expose client_secret in JSON responses
-    protected $hidden = ['client_secret'];
+    protected $hidden   = ['client_secret'];
 
     public static function generateClientKey(): string
     {
@@ -46,50 +48,35 @@ class ApiClient extends Model
         return Str::random(64);
     }
 
-    /**
-     * Look up an active, non-expired client by key, then verify the secret
-     * with a constant-time comparison to prevent timing attacks.
-     */
     public static function findForCredentials(string $clientKey, string $clientSecret): ?self
     {
-        /** @var self|null $client */
         $client = self::query()
             ->where('client_key', $clientKey)
             ->where('is_active', true)
-            ->where(function ($query) {
+            ->where(function($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             })
             ->first();
-
-        if ($client === null) {
-            // Run hash_equals against a dummy value to prevent timing differences
+        if($client === null) {
             hash_equals(hash('sha256', 'dummy'), hash('sha256', $clientSecret));
             return null;
         }
-
-        if (! hash_equals((string) $client->client_secret, $clientSecret)) {
+        if(!hash_equals((string)$client->client_secret, $clientSecret)) {
             return null;
         }
-
         return $client;
     }
 
     public function allowsIp(?string $ip): bool
     {
         $allowedIps = $this->allowed_ips ?? [];
-
-        if ($allowedIps === [] || $ip === null) {
+        if($allowedIps === [] || $ip === null) {
             return true;
         }
-
         return in_array($ip, $allowedIps, true);
     }
 
-    /**
-     * Record usage without touching updated_at on the model instance
-     * (avoids triggering observers or extra events).
-     */
     public function recordUsage(Request $request, ?int $status = null): void
     {
         self::query()

@@ -1,4 +1,9 @@
 <?php
+/**
+ * RegisteredUserController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Backend\Auth;
 
@@ -16,11 +21,6 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -29,7 +29,7 @@ class RegisteredUserController extends Controller
             'password' => [
                 'required',
                 'confirmed',
-                Rules\Password::defaults()
+                Rules\Password::defaults(),
             ],
         ]);
         $user = User::create([
@@ -43,14 +43,8 @@ class RegisteredUserController extends Controller
         return to_route('dashboard');
     }
 
-    /**
-     * Show the registration page.
-     */
     public function create(): Response
     {
         return Inertia::render('backend/auth/register');
     }
 }
-
-
-

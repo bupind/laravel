@@ -1,4 +1,3 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
@@ -19,17 +18,10 @@ export default function VerifyEmail({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout
-            title={t('auth.verifyEmail.head')}
-            description={t('auth.verifyEmail.description')}
-        >
+        <AuthLayout title={t('auth.verifyEmail.head')} description={t('auth.verifyEmail.description')}>
             <Head title={t('auth.verifyEmail.title')} />
 
-            {status === 'verification-link-sent' && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {t('auth.verifyEmail.sent')}
-                </div>
-            )}
+            {status === 'verification-link-sent' && <div className="mb-4 text-sm font-medium text-green-600">{t('auth.verifyEmail.sent')}</div>}
 
             <form onSubmit={submit} className="space-y-6 text-center">
                 <Button disabled={processing} variant="secondary">

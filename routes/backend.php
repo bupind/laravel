@@ -1,5 +1,4 @@
 <?php
-
 /*
 |--------------------------------------------------------------------------
 | Backend Routes
@@ -21,6 +20,7 @@ use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FileLibraryController;
 use App\Http\Controllers\Backend\MediaFolderController;
 use App\Http\Controllers\Backend\MenuController;
+use App\Http\Controllers\Backend\NotificationController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\RoleController;
@@ -30,105 +30,106 @@ use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\UserFileController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('backend')->name('backend.')->group(function () {
-
-    // ─── File Upload (auth only, no menu.permission) ───────────────────────
-    Route::middleware('auth')->group(function () {
-        // File library browser (dipakai oleh widget FileLibraryPicker)
+Route::prefix('backend')->group(function() {
+    Route::middleware('auth')->group(function() {
         Route::controller(FileLibraryController::class)
             ->prefix('files/library')
             ->name('files.library.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('/', 'index')->name('index');
                 Route::get('/folders', 'folders')->name('folders');
             });
-
-        // Upload file baru
-        Route::post('files', [UserFileController::class, 'store'])->name('files.store');
+        Route::post('files', [
+            UserFileController::class,
+            'store'
+        ])->name('files.store');
+        Route::post('notifications/{notification}/read', [
+            NotificationController::class,
+            'read'
+        ])->name('notifications.read');
+        Route::get('notifications', [
+            NotificationController::class,
+            'index'
+        ])->name('notifications.index');
+        Route::get('notifications/{notification}', [
+            NotificationController::class,
+            'show'
+        ])->name('notifications.show');
     });
-
-    // ─── Protected Admin Routes ────────────────────────────────────────────
-    Route::middleware(['auth', 'menu.permission'])->group(function () {
-
-        // Dashboard
+    Route::middleware([
+        'auth',
+        'menu.permission'
+    ])->group(function() {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
-
-        // Roles
         Route::resource('roles', RoleController::class)->except('show');
-
-        // Menus
-        Route::post('menus/reorder', [MenuController::class, 'reorder'])->name('menus.reorder');
+        Route::post('menus/reorder', [
+            MenuController::class,
+            'reorder'
+        ])->name('menus.reorder');
         Route::resource('menus', MenuController::class);
-
-        // API Clients
         Route::resource('api-clients', ApiClientController::class)->except('show');
-
-        // Products
+        Route::controller(ProductController::class)
+            ->prefix('products')
+            ->name('products.')
+            ->group(function() {
+                Route::get('import-template', 'importTemplate')->name('import-template');
+                Route::post('import', 'import')->name('import');
+            });
         Route::resource('products', ProductController::class)->except('show');
-
-        // Permissions
         Route::controller(PermissionController::class)
             ->prefix('permissions')
             ->name('permissions.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('export', 'export')->name('export');
                 Route::delete('modules/{module}', 'destroyModule')->name('destroy-module');
                 Route::post('bulk', 'storeBulk')->name('bulk');
             });
         Route::resource('permissions', PermissionController::class)->except('show');
-
-        // Users
         Route::controller(UserController::class)
             ->prefix('users')
             ->name('users.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('export', 'export')->name('export');
                 Route::put('{user}/reset-password', 'resetPassword')->name('reset-password');
             });
         Route::resource('users', UserController::class)->except('show');
-
         // App Settings
         Route::controller(SettingAppController::class)
             ->prefix('settingsapp')
             ->name('setting.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('/', 'edit')->name('edit');
                 Route::post('/', 'update')->name('update');
             });
-
         // Translations
         Route::controller(TranslationController::class)
             ->prefix('translations')
             ->name('translations.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('/', 'edit')->name('edit');
                 Route::put('/', 'update')->name('update');
                 Route::post('sync', 'sync')->name('sync');
             });
-
         // Audit Logs
         Route::controller(AuditLogController::class)
             ->prefix('audit-logs')
             ->name('audit-logs.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('/', 'index')->name('index');
                 Route::get('export', 'export')->name('export');
                 Route::delete('delete-all', 'destroyAll')->name('destroy-all');
             });
-
         // File Manager (index & delete — upload sudah di grup auth-only di atas)
         Route::controller(UserFileController::class)
             ->prefix('files')
             ->name('files.')
-            ->group(function () {
+            ->group(function() {
                 Route::get('/', 'index')->name('index');
                 Route::delete('{id}', 'destroy')->name('destroy');
             });
-
         // Media Folders
         Route::resource('media', MediaFolderController::class);
     });
-
     // Settings sub-routes (profile, password, appearance)
     require __DIR__ . '/backend/settings.php';
 });

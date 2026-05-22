@@ -1,4 +1,9 @@
 <?php
+/**
+ * Permission
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 

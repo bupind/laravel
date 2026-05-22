@@ -1,5 +1,4 @@
 <?php
-
 return [
     /*
     |--------------------------------------------------------------------------
@@ -10,7 +9,6 @@ return [
     | ke JavaScript. API tetap diamankan lewat middleware api.client / sanctum.
     |
     */
-
     'groups' => [
         'frontend' => [
             'home',
@@ -25,7 +23,6 @@ return [
             'dashboard',
             'logout',
         ],
-
         'backend' => [
             'home',
             'login',
@@ -50,7 +47,6 @@ return [
             'appearance',
         ],
     ],
-
     'except' => [
         'api.*',
         'sanctum.*',

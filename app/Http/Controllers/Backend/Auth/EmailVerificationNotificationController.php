@@ -1,4 +1,9 @@
 <?php
+/**
+ * EmailVerificationNotificationController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Backend\Auth;
 
@@ -8,9 +13,6 @@ use Illuminate\Http\Request;
 
 class EmailVerificationNotificationController extends Controller
 {
-    /**
-     * Send a new email verification notification.
-     */
     public function store(Request $request): RedirectResponse
     {
         if($request->user()->hasVerifiedEmail()) {
@@ -20,6 +22,3 @@ class EmailVerificationNotificationController extends Controller
         return back()->with('status', 'verification-link-sent');
     }
 }
-
-
-

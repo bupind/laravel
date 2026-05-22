@@ -1,4 +1,9 @@
 <?php
+/**
+ * Product
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Models;
 
@@ -23,11 +28,11 @@ class Product extends Model
         'stock',
         'status',
     ];
-    protected $casts = [
+    protected $casts    = [
         'price' => 'decimal:2',
         'stock' => 'integer',
     ];
-    protected $appends = [
+    protected $appends  = [
         'image_url',
     ];
 

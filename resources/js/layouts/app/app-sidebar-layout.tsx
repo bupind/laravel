@@ -9,8 +9,6 @@ import { Head, usePage } from '@inertiajs/react';
 import { type CSSProperties, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type FlashMessage = string | { key?: string; replacements?: Record<string, string | number> };
 
 interface FlashProps {
@@ -24,16 +22,12 @@ interface Props {
     title?: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function resolveFlashMessage(message: FlashMessage | undefined, t: (key: string, replacements?: Record<string, string | number>) => string): string {
     if (!message) return '';
     if (typeof message === 'string') return t(message);
     if (typeof message.key === 'string') return t(message.key, message.replacements ?? {});
     return '';
 }
-
-// ─── Flash Hook ───────────────────────────────────────────────────────────────
 
 function useFlashToast(flash: FlashProps | undefined) {
     const { t } = useLanguage();
@@ -44,14 +38,8 @@ function useFlashToast(flash: FlashProps | undefined) {
 
         if (successText) toast.success(successText);
         if (errorText) toast.error(errorText);
-
-        // Hanya bergantung pada nilai flash, bukan referensi fungsi `t`,
-        // agar tidak menyebabkan re-trigger saat referensi `t` berubah.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [flash?.success, flash?.error]);
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AppSidebarLayout({ children, breadcrumbs = [], title }: Props) {
     const { props } = usePage();
@@ -65,7 +53,6 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
     const primaryColor = setting?.warna ?? '#0ea5e9';
     const primaryForeground = '#ffffff';
 
-    // Inline CSS variables untuk wrapper div
     const themeVars = useMemo<CSSProperties>(
         () => ({
             '--primary': primaryColor,
@@ -76,7 +63,6 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
         [primaryColor],
     );
 
-    // Global <style> diinjeksi ke <head> agar CSS variables tersedia secara global
     const themeStyle = useMemo(
         () => `
             :root {

@@ -1,11 +1,15 @@
 <?php
+/**
+ * MenuController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\Permission;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,7 +17,6 @@ class MenuController extends Controller
 {
     public function index(Request $request)
     {
-        /** @var User $user */
         $user  = $request->user();
         $menus = Menu::with([
             'children' => fn($q) => $q->orderBy('order')->with([

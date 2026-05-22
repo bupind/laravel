@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/button';
 import { FrontendHeader } from '@/components/frontend-header';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/use-language';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, CheckCircle2, LayoutDashboard, LogIn, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
-import { useLanguage } from '@/hooks/use-language';
 
 export default function Welcome() {
     const { t } = useLanguage();

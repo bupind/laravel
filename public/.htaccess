@@ -5,17 +5,54 @@
 
     RewriteEngine On
 
-    # Handle Authorization Header
+    RewriteCond %{HTTP:Accept-Encoding} br
+    RewriteCond %{REQUEST_FILENAME}.br -s
+    RewriteRule ^(build/.+\.(js|css|svg|json))$ $1.br [L]
+
+    RewriteCond %{HTTP:Accept-Encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}.gz -s
+    RewriteRule ^(build/.+\.(js|css|svg|json))$ $1.gz [L]
+
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddEncoding br .br
+    AddEncoding gzip .gz
+    AddType text/css .css.br .css.gz
+    AddType application/javascript .js.br .js.gz
+    AddType image/svg+xml .svg.br .svg.gz
+    AddType application/json .json.br .json.gz
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.js\.(br|gz)$">
+        ForceType application/javascript
+    </FilesMatch>
+    <FilesMatch "\.css\.(br|gz)$">
+        ForceType text/css
+    </FilesMatch>
+    <FilesMatch "\.svg\.(br|gz)$">
+        ForceType image/svg+xml
+    </FilesMatch>
+    <FilesMatch "\.json\.(br|gz)$">
+        ForceType application/json
+    </FilesMatch>
+    <FilesMatch "\.(js|css|svg|json)\.br$">
+        Header set Content-Encoding br
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+    <FilesMatch "\.(js|css|svg|json)\.gz$">
+        Header set Content-Encoding gzip
+        Header append Vary Accept-Encoding
+    </FilesMatch>
 </IfModule>

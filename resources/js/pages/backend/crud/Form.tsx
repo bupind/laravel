@@ -45,7 +45,7 @@ export default function CrudForm(props: CrudFormProps) {
 
     const initialData = useMemo(
         () => buildFormData(formSchema, isEdit ? formRecord : null),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
         [],
     );
 
@@ -54,7 +54,6 @@ export default function CrudForm(props: CrudFormProps) {
     useEffect(() => {
         const populated = buildFormData(formSchema, isEdit ? formRecord : null);
         Object.entries(populated).forEach(([k, v]) => setData(k as never, v as never));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formRecord?.id, mode]);
 
     const goBack = useCallback(() => {

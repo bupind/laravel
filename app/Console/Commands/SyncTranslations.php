@@ -1,4 +1,9 @@
 <?php
+/**
+ * SyncTranslations
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Console\Commands;
 
@@ -30,7 +35,7 @@ class SyncTranslations extends Command
                 $result['deleted'],
                 $result['kept'],
                 $result['dry_run'] ? 'yes' : 'no',
-            ]
+            ],
         ]);
         return self::SUCCESS;
     }

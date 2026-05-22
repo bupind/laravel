@@ -1,4 +1,9 @@
 <?php
+/**
+ * AuthServiceProvider
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Providers;
 
@@ -12,8 +17,5 @@ class AuthServiceProvider extends ServiceProvider
         MediaFolder::class => MediaFolderPolicy::class,
     ];
 
-    public function boot(): void
-    {
-        //
-    }
+    public function boot(): void { }
 }

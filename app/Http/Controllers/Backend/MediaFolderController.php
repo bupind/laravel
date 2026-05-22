@@ -1,4 +1,9 @@
 <?php
+/**
+ * MediaFolderController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -16,9 +21,7 @@ class MediaFolderController extends Controller
     {
         $user     = $request->user();
         $folderId = $request->input('folder_id');
-        // Ambil semua folder
         $folders = $user->mediaFolders()->orderBy('name')->get();
-        // Pastikan folder valid
         $currentFolder = null;
         if($folderId) {
             $currentFolder = $user->mediaFolders()->find($folderId);
@@ -26,7 +29,6 @@ class MediaFolderController extends Controller
                 return redirect('/files');
             }
         }
-        // Ambil file sesuai folder
         $files = $user->media()
             ->where('collection_name', 'files')
             ->when($folderId, function($query) use ($folderId) {
@@ -42,8 +44,7 @@ class MediaFolderController extends Controller
             'folders'         => $folders,
             'currentFolderId' => $folderId,
             'currentFolder'   => $currentFolder,
-            // wajib!
-            'files'           => $files->map(fn($media) => [
+            'files' => $files->map(fn($media) => [
                 'id'         => $media->id,
                 'name'       => $media->name,
                 'size'       => $media->humanReadableSize,
@@ -71,7 +72,6 @@ class MediaFolderController extends Controller
     {
         $folder = $medium;
         $user   = $folder->user;
-        // ðŸ” Hapus semua file dalam folder ini
         $files = $user->media()
             ->where('collection_name', 'files')
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_properties, '$.folder_id')) = ?", [(string)$folder->id])
@@ -79,16 +79,11 @@ class MediaFolderController extends Controller
         foreach($files as $file) {
             $file->delete();
         }
-        // ðŸ” Hapus subfolder langsung (1 level)
         $childFolders = $user->mediaFolders()->where('parent_id', $folder->id)->get();
         foreach($childFolders as $child) {
             $child->delete();
         }
-        // ðŸ—‘ï¸ Hapus folder utama
         $folder->delete();
         return redirect('/files')->with('success', $this->flashMessage('notifications.common.deleted'));
     }
 }
-
-
-

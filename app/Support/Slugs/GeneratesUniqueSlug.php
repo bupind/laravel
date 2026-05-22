@@ -1,8 +1,12 @@
 <?php
+/**
+ * GeneratesUniqueSlug
+ * @author  bupind
+ * @created 2026-05-18
+ */
 
 namespace App\Support\Slugs;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 trait GeneratesUniqueSlug
@@ -26,8 +30,7 @@ trait GeneratesUniqueSlug
 
     protected function slugExists(string $modelClass, string $slug, string|int|null $ignoreId = null): bool
     {
-        /** @var Model $model */
-        $model = new $modelClass();
+        $model = new $modelClass;
         $query = $model->newQuery()->where('slug', $slug);
         if($ignoreId !== null) {
             $query->whereKeyNot($ignoreId);

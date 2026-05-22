@@ -1,4 +1,9 @@
 <?php
+/**
+ * RoleController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -10,25 +15,25 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends BaseCrudController
 {
-    protected bool   $modal             = false;
-    protected bool   $useTransactions   = true;
-    protected int    $perPage           = 10;
-    protected array  $select            = [
+    protected bool $modal = false;
+    protected bool $useTransactions = true;
+    protected int $perPage = 10;
+    protected array $select = [
         'id',
         'name',
-        'created_at'
+        'created_at',
     ];
-    protected array  $withCount         = ['permissions'];
-    protected array  $searchableColumns = ['name'];
-    protected bool   $searchPrefix      = true;
-    protected array  $sortableColumns   = [
+    protected array $withCount = ['permissions'];
+    protected array $searchableColumns = ['name'];
+    protected bool $searchPrefix = true;
+    protected array $sortableColumns = [
         'name',
         'permissions_count',
-        'created_at'
+        'created_at',
     ];
-    protected string $orderBy           = 'created_at';
-    protected string $orderDirection    = 'desc';
-    private array    $permissionsToSync = [];
+    protected string $orderBy = 'created_at';
+    protected string $orderDirection = 'desc';
+    private array $permissionsToSync = [];
 
     protected function modelClass(): string
     {
@@ -61,11 +66,11 @@ class RoleController extends BaseCrudController
             ],
             'permissions'   => [
                 'nullable',
-                'array'
+                'array',
             ],
             'permissions.*' => [
                 'string',
-                Rule::exists('permissions', 'name')
+                Rule::exists('permissions', 'name'),
             ],
         ];
     }
@@ -109,7 +114,7 @@ class RoleController extends BaseCrudController
                 ->select([
                     'id',
                     'name',
-                    'group'
+                    'group',
                 ])
                 ->orderBy('group')
                 ->orderBy('name')

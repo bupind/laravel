@@ -1,4 +1,9 @@
 <?php
+/**
+ * ShareMenus
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Middleware;
 
@@ -27,8 +32,7 @@ class ShareMenus
                 $buildTree = function($parentId = null) use (&$buildTree, $indexed, $user, $menuScope) {
                     return $indexed
                         ->filter(
-                            fn($menu) => $menu->parent_id === $parentId
-                                         && (!$menu->permission_name || ($user && $user->can($menu->permission_name)))
+                            fn($menu) => $menu->parent_id === $parentId && (!$menu->permission_name || ($user && $user->can($menu->permission_name)))
                         )
                         ->map(function($menu) use (&$buildTree, $menuScope) {
                             if(

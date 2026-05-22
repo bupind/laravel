@@ -1,4 +1,9 @@
 <?php
+/**
+ * FileLibraryController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -22,20 +27,20 @@ class FileLibraryController extends Controller
             'search'    => [
                 'nullable',
                 'string',
-                'max:100'
+                'max:100',
             ],
             'folder_id' => [
                 'nullable',
                 'string',
                 'uuid',
                 Rule::exists('media_folders', 'id')
-                    ->where(fn ($query) => $query->where('user_id', $request->user()->id)),
+                    ->where(fn($query) => $query->where('user_id', $request->user()->id)),
             ],
             'per_page'  => [
                 'nullable',
                 'integer',
                 'min:10',
-                'max:100'
+                'max:100',
             ],
         ]);
         $perPage   = (int)($validated['per_page'] ?? 20);
@@ -73,7 +78,7 @@ class FileLibraryController extends Controller
             ->select([
                 'id',
                 'name',
-                'parent_id'
+                'parent_id',
             ])
             ->orderBy('name')
             ->get();

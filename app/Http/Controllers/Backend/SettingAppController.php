@@ -1,4 +1,9 @@
 <?php
+/**
+ * SettingAppController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -41,7 +46,7 @@ class SettingAppController extends Controller
             ->values();
         foreach([
                     'logo',
-                    'favicon'
+                    'favicon',
                 ] as $fileKey) {
             $file = $request->file("files.{$fileKey}");
             if($file instanceof UploadedFile && $file->isValid()) {

@@ -24,7 +24,7 @@ import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ImageIcon, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { FileSpreadsheet, ImageIcon, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo } from 'react';
 
 export type FieldType = 'text' | 'email' | 'password' | 'textarea' | 'checkbox' | 'select' | 'datetime' | 'number' | 'media';
@@ -61,6 +61,8 @@ export interface ResourceRoutes {
     create: string;
     store: string;
     export?: string | null;
+    import?: string | null;
+    import_template?: string | null;
 }
 
 export interface CrudPermissions {
@@ -358,6 +360,8 @@ export default function CrudIndex(props: CrudIndexProps) {
     const initialData = useMemo(() => buildFormData(formSchema, null), [collKey]);
 
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm<Record<string, FormValue>>(initialData);
+    const importInputRef = React.useRef<HTMLInputElement>(null);
+    const [importing, setImporting] = React.useState(false);
 
     const activeQuery = useMemo(
         () => ({
@@ -386,7 +390,7 @@ export default function CrudIndex(props: CrudIndexProps) {
         reset();
         clearErrors();
         if (routes?.index) {
-            router.get(routes.index, activeQuery as Record<string, string>, { preserveScroll: true, replace: true });
+            router.get(routes.index, activeQuery as Record<string, string | number>, { preserveScroll: true, replace: true });
         }
     }, [reset, clearErrors, routes?.index, activeQuery]);
 
@@ -412,6 +416,43 @@ export default function CrudIndex(props: CrudIndexProps) {
         e.preventDefault();
         submitForm();
     };
+
+    const handleImportFileChange = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+
+            if (!file || !routes?.import) return;
+
+            setImporting(true);
+
+            try {
+                const csvContent = await file.text();
+
+                router.post(
+                    routes.import,
+                    {
+                        csv_content: csvContent,
+                        filename: file.name,
+                    },
+                    {
+                        preserveScroll: true,
+                        onFinish: () => {
+                            setImporting(false);
+                            if (importInputRef.current) {
+                                importInputRef.current.value = '';
+                            }
+                        },
+                    },
+                );
+            } catch {
+                setImporting(false);
+                if (importInputRef.current) {
+                    importInputRef.current.value = '';
+                }
+            }
+        },
+        [routes?.import],
+    );
 
     // Keyboard shortcuts saat modal terbuka
     useModalShortcuts({
@@ -520,7 +561,7 @@ export default function CrudIndex(props: CrudIndexProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tableSchema, sortableSet, canUpdate, canDelete, activeQueryString, processing, resource, routes]);
 
-    if (!crud || !resource || !collection) {
+    if (!crud || !resource || !collection || !routes) {
         return (
             <AppLayout breadcrumbs={[]}>
                 <div className="text-muted-foreground flex h-64 items-center justify-center text-sm">
@@ -559,6 +600,36 @@ export default function CrudIndex(props: CrudIndexProps) {
                             <Button size="sm" onClick={() => router.get(`${routes.create}${activeQueryString}`, {}, { preserveScroll: true })}>
                                 <Plus className="mr-1.5 h-4 w-4" />
                             </Button>
+                        ) : undefined
+                    }
+                    toolbarRight={
+                        canCreate && (routes.import || routes.import_template) ? (
+                            <div className="flex items-center gap-2">
+                                <input ref={importInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportFileChange} />
+                                {routes.import_template && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-9 px-3 font-medium"
+                                        onClick={() => window.open(routes.import_template ?? '', '_blank')}
+                                    >
+                                        <FileSpreadsheet className="h-4 w-4" />
+                                        Template CSV
+                                    </Button>
+                                )}
+                                {routes.import && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-9 px-3 font-medium"
+                                        disabled={importing}
+                                        onClick={() => importInputRef.current?.click()}
+                                    >
+                                        <Upload className="h-4 w-4" />
+                                        {importing ? 'Uploading...' : 'Import CSV'}
+                                    </Button>
+                                )}
+                            </div>
                         ) : undefined
                     }
                 />

@@ -1,4 +1,9 @@
 <?php
+/**
+ * UsesUuid
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Models\Concerns;
 

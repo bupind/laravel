@@ -1,4 +1,9 @@
 <?php
+/**
+ * UserController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -12,42 +17,42 @@ use Illuminate\Validation\Rule;
 
 class UserController extends BaseCrudController
 {
-    protected array  $with                   = ['roles:id,name'];
-    protected array  $select                 = [
+    protected array $with = ['roles:id,name'];
+    protected array $select = [
         'id',
         'name',
         'email',
         'created_at',
     ];
-    protected array  $searchableColumns      = [
+    protected array $searchableColumns = [
         'name',
         'email',
     ];
-    protected array  $excludeSortableColumns = [
+    protected array $excludeSortableColumns = [
         'password',
         'remember_token',
         'email_verified_at',
     ];
-    protected array  $exportColumns          = [
+    protected array $exportColumns = [
         'id',
         'name',
         'email',
         'roles',
         'created_at',
     ];
-    protected array  $excludeExportColumns   = [
+    protected array $excludeExportColumns = [
         'password',
         'remember_token',
     ];
-    protected array  $exportColumnLabels     = [
+    protected array $exportColumnLabels = [
         'id'         => 'ID',
         'name'       => 'Name',
         'email'      => 'Email',
         'roles'      => 'Roles',
         'created_at' => 'Created At',
     ];
-    protected string $orderBy                = 'created_at';
-    private array    $rolesToSync            = [];
+    protected string $orderBy = 'created_at';
+    private array $rolesToSync = [];
 
     public function resetPassword(User $user): RedirectResponse
     {
@@ -68,7 +73,6 @@ class UserController extends BaseCrudController
 
     protected function afterStore(Model $record, array $validated, Request $request): void
     {
-        /** @var User $record */
         $record->assignRole($this->rolesToSync);
     }
 
@@ -124,7 +128,6 @@ class UserController extends BaseCrudController
 
     protected function afterUpdate(Model $record, array $validated, Request $request): void
     {
-        /** @var User $record */
         $record->syncRoles($this->rolesToSync);
     }
 

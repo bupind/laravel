@@ -1,7 +1,12 @@
 <?php
+/**
+ * User
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+
 use App\Models\Concerns\UsesUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,25 +17,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements HasMedia
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, InteractsWithMedia, UsesUuid;
+    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, UsesUuid;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
+    protected $hidden   = [
         'password',
         'remember_token',
     ];
@@ -40,11 +34,6 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(MediaFolder::class);
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [

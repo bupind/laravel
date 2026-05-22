@@ -1,4 +1,9 @@
 <?php
+/**
+ * GlobalActivityLogger
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Observers;
 
@@ -14,7 +19,9 @@ class GlobalActivityLogger
 
     protected function logActivity(string $action, Model $model, array $properties = [])
     {
-        if($model->getTable() === 'activity_log') return;
+        if($model->getTable() === 'activity_log') {
+            return;
+        }
         activity(class_basename($model))
             ->causedBy(Auth::user())
             ->performedOn($model)

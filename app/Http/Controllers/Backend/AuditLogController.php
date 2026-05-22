@@ -1,4 +1,9 @@
 <?php
+/**
+ * AuditLogController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -13,7 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AuditLogController extends BaseCrudController
 {
     protected ?string $permissionPrefix = 'activity-logs';
-    protected array   $permissionMap    = [
+    protected array $permissionMap = [
         'export' => 'activity-logs-view',
     ];
 

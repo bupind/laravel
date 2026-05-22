@@ -1,4 +1,9 @@
 <?php
+/**
+ * ConfirmablePasswordController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Backend\Auth;
 
@@ -12,17 +17,11 @@ use Inertia\Response;
 
 class ConfirmablePasswordController extends Controller
 {
-    /**
-     * Show the confirm password page.
-     */
     public function show(): Response
     {
         return Inertia::render('backend/auth/confirm-password');
     }
 
-    /**
-     * Confirm the user's password.
-     */
     public function store(Request $request): RedirectResponse
     {
         if(!Auth::guard('web')->validate([
@@ -37,6 +36,3 @@ class ConfirmablePasswordController extends Controller
         return redirect()->intended(route('dashboard', absolute: false));
     }
 }
-
-
-

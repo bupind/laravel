@@ -29,13 +29,10 @@ export default function Dashboard({ stats }: Props) {
         { label: t('pages.dashboard.activityLogs'), value: stats?.totalLogs ?? 0, icon: Activity, color: 'text-cyan-500' },
     ];
 
-    // @ts-ignore
-    // @ts-ignore
     return (
         <AppLayout breadcrumbs={[{ title: t('pages.dashboard.title'), href: '/backend/dashboard' }]}>
             <Head title={t('pages.dashboard.title')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
-                {/* Metric Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
                     {metricCards.map((card) => {
                         const Icon = card.icon;

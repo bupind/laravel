@@ -1,4 +1,9 @@
 <?php
+/**
+ * TranslationSyncService
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Services\Translations;
 
@@ -10,14 +15,14 @@ use Illuminate\Support\Str;
 
 class TranslationSyncService
 {
-    private const DEFAULT_SCOPES    = [
+    private const DEFAULT_SCOPES = [
         'common',
         'backend',
         'frontend',
         'api',
         'mobile',
     ];
-    private const KNOWN_NAMESPACES  = [
+    private const KNOWN_NAMESPACES = [
         'auth',
         'buttons',
         'columns',
@@ -55,9 +60,6 @@ class TranslationSyncService
         'theme',
     ];
 
-    /**
-     * @return array{scanned:int, added:int, deleted:int, kept:int, dry_run:bool}
-     */
     public function sync(bool $deleteUnused = true, bool $dryRun = false): array
     {
         $sourceKeys = $this->scanSourceKeys();
@@ -111,9 +113,6 @@ class TranslationSyncService
         ];
     }
 
-    /**
-     * @return array<int, array{full_key:string, scope:string, namespace:string, key:string}>
-     */
     public function scanSourceKeys(): array
     {
         $items = [];

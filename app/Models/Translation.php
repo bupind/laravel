@@ -1,4 +1,9 @@
 <?php
+/**
+ * Translation
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 
@@ -27,7 +32,7 @@ class Translation extends Model
         if(!str_contains($fullKey, '.')) {
             return [
                 'common',
-                $fullKey
+                $fullKey,
             ];
         }
         [
@@ -36,7 +41,7 @@ class Translation extends Model
         ] = explode('.', $fullKey, 2);
         return [
             $namespace,
-            $key
+            $key,
         ];
     }
 

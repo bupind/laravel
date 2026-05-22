@@ -1,4 +1,9 @@
 <?php
+/**
+ * BaseResourceController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Api;
 
@@ -11,12 +16,12 @@ use Illuminate\Support\Facades\Validator;
 
 abstract class BaseResourceController extends ApiController
 {
-    protected int    $perPage           = 10;
-    protected array  $searchableColumns = [];
-    protected array  $sortableColumns   = [];
-    protected string $orderBy           = 'id';
-    protected string $orderDirection    = 'desc';
-    protected bool   $useTransactions   = false;
+    protected int $perPage = 10;
+    protected array $searchableColumns = [];
+    protected array $sortableColumns = [];
+    protected string $orderBy = 'id';
+    protected string $orderDirection = 'desc';
+    protected bool $useTransactions = false;
 
     public function index(Request $request): JsonResponse
     {
@@ -32,7 +37,6 @@ abstract class BaseResourceController extends ApiController
 
     protected function makeQuery(Request $request): Builder
     {
-        /** @var class-string<Model> $modelClass */
         $modelClass = $this->modelClass();
         $query      = $modelClass::query();
         $this->applyFilters($query, $request);
@@ -43,9 +47,7 @@ abstract class BaseResourceController extends ApiController
 
     abstract protected function modelClass(): string;
 
-    protected function applyFilters(Builder $query, Request $request): void
-    {
-    }
+    protected function applyFilters(Builder $query, Request $request): void { }
 
     protected function applySearch(Builder $query, Request $request): void
     {
@@ -102,7 +104,6 @@ abstract class BaseResourceController extends ApiController
 
     protected function resolveRecord(mixed $id): Model
     {
-        /** @var Model $model */
         $model  = new ($this->modelClass())();
         $record = $model->resolveRouteBinding($id);
         abort_unless($record !== null, 404);
@@ -166,7 +167,6 @@ abstract class BaseResourceController extends ApiController
 
     protected function createRecord(array $validated, Request $request): Model
     {
-        /** @var Model $record */
         $record = new ($this->modelClass())();
         $record->fill($validated);
         $record->save();

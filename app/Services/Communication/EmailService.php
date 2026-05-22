@@ -1,4 +1,9 @@
 <?php
+/**
+ * EmailService
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Services\Communication;
 
@@ -38,4 +43,3 @@ class EmailService
         ], QueueName::EMAIL);
     }
 }
-

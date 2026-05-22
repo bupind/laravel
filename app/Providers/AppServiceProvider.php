@@ -1,4 +1,9 @@
 <?php
+/**
+ * AppServiceProvider
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Providers;
 
@@ -17,10 +22,7 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void { }
 
     public function boot(): void
     {
@@ -32,21 +34,17 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        // Used by throttle:api in routes/api.php
-        RateLimiter::for('api', function (Request $request) {
-            $limit = (int) config('app.api_rate_limit', 60);
-
-            // Authenticated API clients get their own bucket per client key
+        RateLimiter::for('api', function(Request $request) {
+            $limit     = (int)config('app.api_rate_limit', 60);
             $clientKey = $request->header('X-Client-Key');
             $bucket    = $clientKey ? 'client:' . $clientKey : 'ip:' . $request->ip();
-
             return Limit::perMinute($limit)->by($bucket);
         });
     }
 
     private function configureGates(): void
     {
-        Gate::before(function (User $user, string $ability): ?bool {
+        Gate::before(function(User $user, string $ability): ?bool {
             return $user->hasRole('superuser') ? true : null;
         });
     }
@@ -62,11 +60,9 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureCacheInvalidation(): void
     {
-        SettingApp::saved(fn () => Cache::forget('setting_app'));
-        SettingApp::deleted(fn () => Cache::forget('setting_app'));
-
-        // Flush menu caches selectively instead of Cache::flush() (too broad)
-        $clearMenuCache = fn () => Cache::flush(); // replace with tagged cache if your driver supports it
+        SettingApp::saved(fn() => Cache::forget('setting_app'));
+        SettingApp::deleted(fn() => Cache::forget('setting_app'));
+        $clearMenuCache = fn() => Cache::flush();
         Menu::saved($clearMenuCache);
         Menu::deleted($clearMenuCache);
     }

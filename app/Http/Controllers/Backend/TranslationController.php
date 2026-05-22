@@ -1,4 +1,9 @@
 <?php
+/**
+ * TranslationController
+ * @author  bupind
+ * @created 2026-05-22
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -29,12 +34,11 @@ class TranslationController extends Controller
                 'namespace',
                 'key',
                 'value',
-                'is_active'
+                'is_active',
             ]);
         $rows         = $translations
             ->groupBy(fn(Translation $translation) => "{$translation->scope}|{$translation->namespace}|{$translation->key}")
             ->map(function($items) {
-                /** @var Translation $first */
                 $first = $items->first();
                 return [
                     'scope'     => $first->scope,
@@ -54,7 +58,7 @@ class TranslationController extends Controller
                 'backend',
                 'frontend',
                 'api',
-                'mobile'
+                'mobile',
             ],
             'locales'       => $translationService->locales(),
             'localeOptions' => $translationService->localeOptions(),
@@ -90,7 +94,6 @@ class TranslationController extends Controller
                     return true;
                 }
             } catch(Throwable) {
-                // Ignore missing permission during fresh install.
             }
         }
         return false;
@@ -131,34 +134,34 @@ class TranslationController extends Controller
         $validated = $request->validate([
             'rows'             => [
                 'required',
-                'array'
+                'array',
             ],
             'rows.*.scope'     => [
                 'required',
                 'string',
-                'max:50'
+                'max:50',
             ],
             'rows.*.namespace' => [
                 'required',
                 'string',
-                'max:100'
+                'max:100',
             ],
             'rows.*.key'       => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'rows.*.is_active' => [
                 'nullable',
-                'boolean'
+                'boolean',
             ],
             'rows.*.values'    => [
                 'required',
-                'array'
+                'array',
             ],
             'rows.*.values.*'  => [
                 'nullable',
-                'string'
+                'string',
             ],
         ]);
         foreach($validated['rows'] as $row) {

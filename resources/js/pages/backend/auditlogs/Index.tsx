@@ -71,18 +71,18 @@ function buildQueryString(query: Record<string, string | number | undefined>) {
 export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: Props) {
     const { t } = useLanguage();
 
-    const canExport    = crud?.permissions?.export ?? false;
+    const canExport = crud?.permissions?.export ?? false;
     const canDeleteAll = crud?.permissions?.delete_all ?? crud?.permissions?.delete ?? false;
-    const routes       = crud?.resource?.routes ?? {};
-    const indexRoute   = routes.index ?? '/backend/audit-logs';
-    const exportRoute  = routes.export ?? '/backend/audit-logs/export';
+    const routes = crud?.resource?.routes ?? {};
+    const indexRoute = routes.index ?? '/backend/audit-logs';
+    const exportRoute = routes.export ?? '/backend/audit-logs/export';
     const deleteAllRoute = routes.delete_all ?? '/backend/audit-logs/delete-all';
 
     const activeQuery = useMemo(
         () => ({
-            search:   filters.search ?? '',
-            event:    filters.event ?? '',
-            sort_by:  filters.sort_by ?? 'created_at',
+            search: filters.search ?? '',
+            event: filters.event ?? '',
+            sort_by: filters.sort_by ?? 'created_at',
             sort_dir: filters.sort_dir ?? 'desc',
             per_page: filters.per_page ?? logs.per_page,
         }),
@@ -93,11 +93,7 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
     const canSort = (col: string) => datatable?.sortable_columns?.includes(col) ?? false;
 
     const applyFilter = (params: Record<string, string | number>) => {
-        router.get(
-            indexRoute,
-            { ...activeQuery, ...params },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+        router.get(indexRoute, { ...activeQuery, ...params }, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const columns: DataTableColumn<LogItem>[] = [
@@ -119,16 +115,14 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
             key: 'description',
             label: t('columns.description'),
             sortable: false,
-            render: (log) => <span className="max-w-[240px] truncate block">{log.description}</span>,
+            render: (log) => <span className="block max-w-[240px] truncate">{log.description}</span>,
         },
         {
             key: 'subject_type',
             label: t('columns.subject'),
             sortable: false,
             render: (log) => (
-                <span className="text-muted-foreground">
-                    {log.subject_type ? `${log.subject_type.split('\\').pop()} #${log.subject_id}` : '-'}
-                </span>
+                <span className="text-muted-foreground">{log.subject_type ? `${log.subject_type.split('\\').pop()} #${log.subject_id}` : '-'}</span>
             ),
         },
         {
@@ -149,11 +143,7 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
             key: 'created_at',
             label: t('columns.time'),
             sortable: canSort('created_at'),
-            render: (log) => (
-                <span className="text-muted-foreground whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleString('id-ID')}
-                </span>
-            ),
+            render: (log) => <span className="text-muted-foreground whitespace-nowrap">{new Date(log.created_at).toLocaleString('id-ID')}</span>,
         },
     ];
 
@@ -165,9 +155,7 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">{t('pages.auditLogs.title')}</h1>
-                        <p className="text-muted-foreground text-sm">
-                            {t('pages.auditLogs.description', { total: logs.total.toLocaleString() })}
-                        </p>
+                        <p className="text-muted-foreground text-sm">{t('pages.auditLogs.description', { total: logs.total.toLocaleString() })}</p>
                     </div>
 
                     <div className="flex gap-2">

@@ -1,4 +1,9 @@
 <?php
+/**
+ * MediaFolder
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 
@@ -14,7 +19,7 @@ class MediaFolder extends Model
     protected $fillable = [
         'user_id',
         'name',
-        'parent_id'
+        'parent_id',
     ];
 
     public function user(): BelongsTo

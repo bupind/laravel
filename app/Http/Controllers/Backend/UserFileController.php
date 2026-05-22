@@ -1,4 +1,9 @@
 <?php
+/**
+ * UserFileController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -14,10 +19,8 @@ class UserFileController extends Controller
         $user     = $request->user();
         $folderId = $request->input('folder_id');
         $folders  = $user->mediaFolders()->orderBy('name')->get();
-        // âœ… Cek folder aktif
         $currentFolder = $folderId ? $user->mediaFolders()->find($folderId) : null;
         if($folderId && !$currentFolder) {
-            // ðŸ›‘ Jika folder tidak ada, redirect ke root
             return redirect('/files');
         }
         $files = $user
@@ -77,6 +80,3 @@ class UserFileController extends Controller
         return back()->with('success', $this->flashMessage('notifications.common.deleted'));
     }
 }
-
-
-

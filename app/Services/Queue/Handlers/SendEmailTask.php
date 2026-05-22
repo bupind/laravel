@@ -1,4 +1,9 @@
 <?php
+/**
+ * SendEmailTask
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Services\Queue\Handlers;
 
@@ -20,4 +25,3 @@ class SendEmailTask implements QueueTaskHandler
         });
     }
 }
-

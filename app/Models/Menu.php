@@ -1,4 +1,9 @@
 <?php
+/**
+ * Menu
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Models;
 
@@ -22,9 +27,6 @@ class Menu extends Model
         'permission_name',
     ];
 
-    /**
-     * Relasi menu anak (nested menu)
-     */
     public function children(): HasMany
     {
         return $this->hasMany(Menu::class, 'parent_id')
@@ -32,25 +34,16 @@ class Menu extends Model
             ->orderBy('order');
     }
 
-    /**
-     * Relasi menu induk (jika nested)
-     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Menu::class, 'parent_id');
     }
 
-    /**
-     * Scope: hanya menu root (tanpa parent)
-     */
     public function scopeRoot($query)
     {
         return $query->whereNull('parent_id');
     }
 
-    /**
-     * Scope: menu yang dapat diakses oleh user (berdasarkan permission)
-     */
     public function scopeForUser($query, $user)
     {
         return $query->where(function($q) use ($user) {

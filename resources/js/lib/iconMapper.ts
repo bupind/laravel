@@ -13,6 +13,6 @@ const iconMap = icons.reduce(
 export function iconMapper(name?: string): LucideIcon {
     if (!name) return LayoutGrid;
 
-    const formatted = name.charAt(0).toUpperCase() + name.slice(1); // e.g. user → User
+    const formatted = name.charAt(0).toUpperCase() + name.slice(1);
     return iconMap[formatted] || LayoutGrid;
 }

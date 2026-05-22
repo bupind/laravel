@@ -1,5 +1,4 @@
 <?php
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -17,36 +16,38 @@ use App\Http\Controllers\Api\TranslationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// ─── Public (throttle ketat) ──────────────────────────────────────────────────
-Route::middleware('throttle:30,1')->group(function () {
+Route::middleware('throttle:30,1')->group(function() {
     Route::get('health', HealthCheckController::class)->name('api.health');
     Route::get('translations', TranslationController::class)->name('api.translations');
 });
-
-// ─── API Client (key + secret authentication) ─────────────────────────────────
-Route::middleware(['api.client', 'throttle:api'])
+Route::middleware([
+    'api.client',
+    'throttle:api'
+])
     ->controller(ProductController::class)
     ->prefix('products')
     ->name('api.products.')
-    ->group(function () {
-        // Non-resourceful helpers — harus didaftarkan SEBELUM apiResource
-        // agar Laravel tidak mencegat {product} sebagai ID numerik.
+    ->group(function() {
         Route::get('form/{product?}', 'form')->name('form');
         Route::post('list-filter', 'listFilter')->name('list-filter');
         Route::patch('{product}/change-status', 'changeStatus')->name('change-status');
     });
-
-Route::middleware(['api.client', 'throttle:api'])
+Route::middleware([
+    'api.client',
+    'throttle:api'
+])
     ->apiResource('products', ProductController::class)
     ->names('api.products');
-
-// ─── Sanctum-authenticated user routes ────────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('me', function (Request $request) {
-        // Hanya return field yang dibutuhkan frontend — jangan expose semua kolom user.
+Route::middleware('auth:sanctum')->group(function() {
+    Route::get('me', function(Request $request) {
         return response()->json([
             'user' => array_merge(
-                $request->user()->only(['id', 'name', 'email', 'avatar']),
+                $request->user()->only([
+                    'id',
+                    'name',
+                    'email',
+                    'avatar'
+                ]),
                 ['roles' => $request->user()->roles->pluck('name')],
             ),
         ]);

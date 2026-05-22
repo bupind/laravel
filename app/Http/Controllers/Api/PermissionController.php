@@ -1,4 +1,9 @@
 <?php
+/**
+ * PermissionController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Api;
 
@@ -14,7 +19,7 @@ class PermissionController extends Controller
             ->select([
                 'id',
                 'name',
-                'group'
+                'group',
             ])
             ->orderBy('group')
             ->orderBy('name')

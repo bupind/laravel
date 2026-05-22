@@ -1,4 +1,9 @@
 <?php
+/**
+ * ApiResponse
+ * @author  bupind
+ * @created 2026-05-18
+ */
 
 namespace App\Support\Api;
 

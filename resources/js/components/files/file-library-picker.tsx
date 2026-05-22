@@ -117,9 +117,7 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect, accept
             .then((payload: { data?: FolderItem[] }) => {
                 if (active) setFolders(payload.data ?? []);
             })
-            .catch(() => {
-                /* silent */
-            });
+            .catch(() => {});
 
         return () => {
             active = false;

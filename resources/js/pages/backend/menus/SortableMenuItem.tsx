@@ -1,7 +1,7 @@
+import { useLanguage } from '@/hooks/use-language';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { useLanguage } from '@/hooks/use-language';
 
 interface Props {
     id: string;

@@ -1,4 +1,9 @@
 <?php
+/**
+ * PasswordController
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Http\Controllers\Backend\Settings;
 
@@ -13,9 +18,6 @@ use Inertia\Response;
 
 class PasswordController extends Controller
 {
-    /**
-     * Show the user's password settings page.
-     */
     public function edit(Request $request): Response
     {
         return Inertia::render('backend/settings/password', [
@@ -24,20 +26,17 @@ class PasswordController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's password.
-     */
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'current_password' => [
                 'required',
-                'current_password'
+                'current_password',
             ],
             'password'         => [
                 'required',
                 Password::defaults(),
-                'confirmed'
+                'confirmed',
             ],
         ]);
         $request->user()->update([
@@ -46,6 +45,3 @@ class PasswordController extends Controller
         return back();
     }
 }
-
-
-

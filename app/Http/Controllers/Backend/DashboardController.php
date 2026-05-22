@@ -1,4 +1,9 @@
 <?php
+/**
+ * DashboardController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend;
 
@@ -47,7 +52,7 @@ class DashboardController extends Controller
             $month     = $monthStart->format('M');
             $total     = User::whereBetween('created_at', [
                 $monthStart,
-                $monthEnd
+                $monthEnd,
             ])->count();
             $results[] = compact('month', 'total');
         }

@@ -1,4 +1,9 @@
 <?php
+/**
+ * ProductController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Api;
 
@@ -12,13 +17,13 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends BaseResourceController
 {
-    protected int    $perPage           = 10;
-    protected array  $searchableColumns = [
+    protected int $perPage = 10;
+    protected array $searchableColumns = [
         'name',
         'sku',
         'description',
     ];
-    protected array  $sortableColumns   = [
+    protected array $sortableColumns = [
         'name',
         'sku',
         'price',
@@ -26,7 +31,7 @@ class ProductController extends BaseResourceController
         'status',
         'created_at',
     ];
-    protected string $orderBy           = 'created_at';
+    protected string $orderBy = 'created_at';
 
     public function behaviors(): array
     {
@@ -154,34 +159,41 @@ class ProductController extends BaseResourceController
     protected function formSchema(Request $request, ?Model $record = null): array
     {
         return [
-            ['name'     => 'name',
-             'type'     => 'text',
-             'required' => true
+            [
+                'name'     => 'name',
+                'type'     => 'text',
+                'required' => true,
             ],
-            ['name'     => 'sku',
-             'type'     => 'text',
-             'required' => true
+            [
+                'name'     => 'sku',
+                'type'     => 'text',
+                'required' => true,
             ],
-            ['name'     => 'media_id',
-             'type'     => 'media',
-             'required' => false
+            [
+                'name'     => 'media_id',
+                'type'     => 'media',
+                'required' => false,
             ],
-            ['name'     => 'description',
-             'type'     => 'textarea',
-             'required' => false
+            [
+                'name'     => 'description',
+                'type'     => 'textarea',
+                'required' => false,
             ],
-            ['name'     => 'price',
-             'type'     => 'number',
-             'required' => true
+            [
+                'name'     => 'price',
+                'type'     => 'number',
+                'required' => true,
             ],
-            ['name'     => 'stock',
-             'type'     => 'number',
-             'required' => true
+            [
+                'name'     => 'stock',
+                'type'     => 'number',
+                'required' => true,
             ],
-            ['name'     => 'status',
-             'type'     => 'select',
-             'required' => true,
-             'options'  => Product::statuses()
+            [
+                'name'     => 'status',
+                'type'     => 'select',
+                'required' => true,
+                'options'  => Product::statuses(),
             ],
         ];
     }

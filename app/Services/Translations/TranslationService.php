@@ -1,4 +1,9 @@
 <?php
+/**
+ * TranslationService
+ * @author  bupind
+ * @created 2026-05-21
+ */
 
 namespace App\Services\Translations;
 
@@ -19,9 +24,6 @@ class TranslationService
         'id' => 'Bahasa Indonesia',
     ];
 
-    /**
-     * Ambil semua bahasa yang dibutuhkan Inertia/React.
-     */
     public function getDictionaries(string $scope = 'backend', ?array $namespaces = null, ?array $locales = null): array
     {
         $locales      = $locales === null ? $this->locales() : $this->normalizeLocales($locales);
@@ -65,10 +67,6 @@ class TranslationService
         return $locales;
     }
 
-    /**
-     * Ambil translation untuk 1 locale + scope. Scope common selalu ikut.
-     * Return format flat: buttons.save => Simpan.
-     */
     public function getMessages(string $locale = 'id', string $scope = 'backend', ?array $namespaces = null): array
     {
         $locale       = $this->normalizeLocale($locale);
@@ -83,7 +81,7 @@ class TranslationService
                 ->where('is_active', true)
                 ->whereIn('scope', [
                     'common',
-                    $scope
+                    $scope,
                 ])
                 ->orderByRaw("CASE WHEN scope = 'common' THEN 0 ELSE 1 END")
                 ->orderBy('namespace')
@@ -96,7 +94,7 @@ class TranslationService
                 'scope',
                 'namespace',
                 'key',
-                'value'
+                'value',
             ]) as $translation) {
                 $messages["{$translation->namespace}.{$translation->key}"] = $translation->value;
             }
@@ -118,7 +116,7 @@ class TranslationService
             'backend',
             'frontend',
             'api',
-            'mobile'
+            'mobile',
         ];
         return in_array($scope, $allowed, true) ? $scope : 'backend';
     }

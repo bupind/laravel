@@ -1,4 +1,9 @@
 <?php
+/**
+ * FileLibraryService
+ * @author  bupind
+ * @created 2026-05-19
+ */
 
 namespace App\Services\Files;
 
@@ -36,4 +41,3 @@ class FileLibraryService
             ->withQueryString();
     }
 }
-

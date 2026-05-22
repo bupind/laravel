@@ -1,4 +1,9 @@
 <?php
+/**
+ * PasswordResetLinkController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Backend\Auth;
 
@@ -11,9 +16,6 @@ use Inertia\Response;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Show the password reset link request page.
-     */
     public function create(Request $request): Response
     {
         return Inertia::render('backend/auth/forgot-password', [
@@ -21,11 +23,6 @@ class PasswordResetLinkController extends Controller
         ]);
     }
 
-    /**
-     * Handle an incoming password reset link request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -37,6 +34,3 @@ class PasswordResetLinkController extends Controller
         return back()->with('status', __('A reset link will be sent if the account exists.'));
     }
 }
-
-
-

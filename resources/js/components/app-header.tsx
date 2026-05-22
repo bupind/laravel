@@ -1,19 +1,9 @@
-/**
- * AppHeader – Header bar untuk halaman backend.
- * Menampilkan logo, navigasi desktop, search, external links, dan avatar user.
- */
-
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import {
-    NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuList,
-    navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
@@ -27,17 +17,14 @@ import { memo } from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
-// ─── Types & Constants ────────────────────────────────────────────────────────
-
 interface HeaderNavItem {
     translationKey: string;
-    /** Gunakan route() helper — jangan hard-code path */
+
     url: string;
     icon: LucideIcon;
     external?: boolean;
 }
 
-/** Item navigasi utama (internal) */
 const MAIN_NAV_ITEMS: HeaderNavItem[] = [
     {
         translationKey: 'pages.dashboard.title',
@@ -46,7 +33,6 @@ const MAIN_NAV_ITEMS: HeaderNavItem[] = [
     },
 ];
 
-/** External links di kanan header */
 const RIGHT_NAV_ITEMS: HeaderNavItem[] = [
     {
         translationKey: 'navigation.repository',
@@ -64,13 +50,9 @@ const RIGHT_NAV_ITEMS: HeaderNavItem[] = [
 
 const ACTIVE_ITEM_STYLES = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
@@ -82,8 +64,6 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
         <>
             <div className="border-sidebar-border/80 border-b">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
-
-                    {/* Mobile menu */}
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
@@ -93,31 +73,22 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                 </Button>
                             </SheetTrigger>
 
-                            <SheetContent
-                                side="left"
-                                className="flex h-full w-64 flex-col items-stretch justify-between bg-neutral-50"
-                            >
+                            <SheetContent side="left" className="flex h-full w-64 flex-col items-stretch justify-between bg-neutral-50">
                                 <SheetTitle className="sr-only">{t('navigation.menu')}</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
                                 </SheetHeader>
 
                                 <div className="mt-6 flex h-full flex-1 flex-col justify-between space-y-4 text-sm">
-                                    {/* Main nav */}
                                     <div className="flex flex-col space-y-4">
                                         {MAIN_NAV_ITEMS.map((item) => (
-                                            <Link
-                                                key={item.translationKey}
-                                                href={item.url}
-                                                className="flex items-center space-x-2 font-medium"
-                                            >
+                                            <Link key={item.translationKey} href={item.url} className="flex items-center space-x-2 font-medium">
                                                 <Icon iconNode={item.icon} className="h-5 w-5" />
                                                 <span>{t(item.translationKey)}</span>
                                             </Link>
                                         ))}
                                     </div>
 
-                                    {/* External links */}
                                     <div className="flex flex-col space-y-4">
                                         {RIGHT_NAV_ITEMS.map((item) => (
                                             <a
@@ -137,22 +108,17 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                         </Sheet>
                     </div>
 
-                    {/* Logo */}
                     <Link href="/backend/dashboard" prefetch className="flex items-center space-x-2">
                         <AppLogo />
                     </Link>
 
-                    {/* Desktop navigation */}
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
                                 {MAIN_NAV_ITEMS.map((item) => {
                                     const isActive = page.url === item.url;
                                     return (
-                                        <NavigationMenuItem
-                                            key={item.translationKey}
-                                            className="relative flex h-full items-center"
-                                        >
+                                        <NavigationMenuItem key={item.translationKey} className="relative flex h-full items-center">
                                             <Link
                                                 href={item.url}
                                                 className={cn(
@@ -174,7 +140,6 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                         </NavigationMenu>
                     </div>
 
-                    {/* Right side actions */}
                     <div className="ml-auto flex items-center space-x-2">
                         <Button variant="ghost" size="icon" className="group h-9 w-9">
                             <Search className="!size-5 opacity-80 group-hover:opacity-100" />
@@ -204,7 +169,6 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                             ))}
                         </div>
 
-                        {/* Avatar dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
@@ -224,7 +188,6 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                 </div>
             </div>
 
-            {/* Breadcrumbs */}
             {breadcrumbs.length > 1 && (
                 <div className="border-sidebar-border/70 flex w-full border-b">
                     <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">

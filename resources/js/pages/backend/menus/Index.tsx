@@ -92,28 +92,18 @@ function MenuRow({ menu, level, isExpanded, sensors, onToggleExpand, onDelete, o
 
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                title={t('buttons.delete')}
-                            >
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" title={t('buttons.delete')}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
                                 <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    {t('dialog.delete.description', { item: menu.title })}
-                                </AlertDialogDescription>
+                                <AlertDialogDescription>{t('dialog.delete.description', { item: menu.title })}</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={() => onDelete(menu.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                >
+                                <AlertDialogAction onClick={() => onDelete(menu.id)} className="bg-destructive hover:bg-destructive/90">
                                     {t('buttons.delete')}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
@@ -124,11 +114,7 @@ function MenuRow({ menu, level, isExpanded, sensors, onToggleExpand, onDelete, o
 
             {hasChildren && isExpanded && (
                 <div className="mt-1 space-y-1">
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={(event) => onChildDragEnd(menu.id, event)}
-                    >
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => onChildDragEnd(menu.id, event)}>
                         <SortableContext items={menu.children!.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                             {menu.children!.map((child) => (
                                 <MenuRow
@@ -152,15 +138,15 @@ function MenuRow({ menu, level, isExpanded, sensors, onToggleExpand, onDelete, o
 
 export default function MenuIndex({ menuItems }: Props) {
     const { t } = useLanguage();
-    const [menus, setMenus]           = useState<MenuItem[]>(menuItems);
+    const [menus, setMenus] = useState<MenuItem[]>(menuItems);
     const [activeScope, setActiveScope] = useState<MenuScope>('backend');
-    const [isSaving, setIsSaving]     = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [expandedIds, setExpandedIds] = useState<string[]>([]);
-    const [keyword, setKeyword]       = useState('');
+    const [keyword, setKeyword] = useState('');
 
     const menusByScope = useMemo(
         () => ({
-            backend:  menus.filter((m) => (m.scope ?? 'backend') === 'backend'),
+            backend: menus.filter((m) => (m.scope ?? 'backend') === 'backend'),
             frontend: menus.filter((m) => m.scope === 'frontend'),
         }),
         [menus],
@@ -174,10 +160,7 @@ export default function MenuIndex({ menuItems }: Props) {
         return scope.filter((m) => m.title.toLowerCase().includes(q));
     }, [menusByScope, activeScope, keyword]);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-    );
+    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
     const toggleExpand = useCallback((id: string) => {
         setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -213,28 +196,19 @@ export default function MenuIndex({ menuItems }: Props) {
 
     const handleSave = () => {
         setIsSaving(true);
-        router.post(
-            '/backend/menus/reorder',
-            { menus: buildOrderPayload(menusByScope[activeScope]) },
-            { onFinish: () => setIsSaving(false) },
-        );
+        router.post('/backend/menus/reorder', { menus: buildOrderPayload(menusByScope[activeScope]) }, { onFinish: () => setIsSaving(false) });
     };
 
     const handleDelete = useCallback((id: string) => {
         router.delete(`/backend/menus/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                setMenus((prev) =>
-                    prev
-                        .map((m) => ({ ...m, children: m.children?.filter((c) => c.id !== id) }))
-                        .filter((m) => m.id !== id),
-                );
+                setMenus((prev) => prev.map((m) => ({ ...m, children: m.children?.filter((c) => c.id !== id) })).filter((m) => m.id !== id));
             },
         });
     }, []);
 
-    const activeScopeLabel =
-        activeScope === 'backend' ? t('pages.menus.scopeBackend') : t('pages.menus.scopeFrontend');
+    const activeScopeLabel = activeScope === 'backend' ? t('pages.menus.scopeBackend') : t('pages.menus.scopeFrontend');
 
     return (
         <AppLayout breadcrumbs={[{ title: t('pages.menus.breadcrumb'), href: '/backend/menus' }]}>
@@ -245,9 +219,7 @@ export default function MenuIndex({ menuItems }: Props) {
                     <CardHeader className="pb-3">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <CardTitle className="text-2xl font-bold tracking-tight">
-                                    {t('pages.menus.title')}
-                                </CardTitle>
+                                <CardTitle className="text-2xl font-bold tracking-tight">{t('pages.menus.title')}</CardTitle>
                                 <p className="text-muted-foreground text-sm">{t('pages.menus.description')}</p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -274,36 +246,31 @@ export default function MenuIndex({ menuItems }: Props) {
                                 <button
                                     key={scope}
                                     type="button"
-                                    onClick={() => { setActiveScope(scope); setKeyword(''); }}
+                                    onClick={() => {
+                                        setActiveScope(scope);
+                                        setKeyword('');
+                                    }}
                                     className={`rounded-lg border p-4 text-left transition-colors ${
-                                        activeScope === scope
-                                            ? 'border-primary bg-primary/5'
-                                            : 'bg-background hover:bg-muted/40'
+                                        activeScope === scope ? 'border-primary bg-primary/5' : 'bg-background hover:bg-muted/40'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-3">
                                             {scope === 'backend' ? (
-                                                <Server className="h-5 w-5 text-muted-foreground" />
+                                                <Server className="text-muted-foreground h-5 w-5" />
                                             ) : (
-                                                <Globe2 className="h-5 w-5 text-muted-foreground" />
+                                                <Globe2 className="text-muted-foreground h-5 w-5" />
                                             )}
                                             <div>
                                                 <p className="font-semibold">
-                                                    {scope === 'backend'
-                                                        ? t('pages.menus.scopeBackend')
-                                                        : t('pages.menus.scopeFrontend')}
+                                                    {scope === 'backend' ? t('pages.menus.scopeBackend') : t('pages.menus.scopeFrontend')}
                                                 </p>
                                                 <p className="text-muted-foreground text-sm">
-                                                    {scope === 'backend'
-                                                        ? 'Menu sidebar area admin'
-                                                        : 'Menu navigasi halaman publik'}
+                                                    {scope === 'backend' ? 'Menu sidebar area admin' : 'Menu navigasi halaman publik'}
                                                 </p>
                                             </div>
                                         </div>
-                                        <Badge variant={activeScope === scope ? 'default' : 'secondary'}>
-                                            {menusByScope[scope].length}
-                                        </Badge>
+                                        <Badge variant={activeScope === scope ? 'default' : 'secondary'}>{menusByScope[scope].length}</Badge>
                                     </div>
                                 </button>
                             ))}
@@ -314,9 +281,7 @@ export default function MenuIndex({ menuItems }: Props) {
                             <div>
                                 <h2 className="font-semibold">{activeScopeLabel}</h2>
                                 <p className="text-muted-foreground text-sm">
-                                    {activeScope === 'backend'
-                                        ? 'Sedang mengelola menu backend.'
-                                        : 'Sedang mengelola menu frontend.'}
+                                    {activeScope === 'backend' ? 'Sedang mengelola menu backend.' : 'Sedang mengelola menu frontend.'}
                                 </p>
                             </div>
 
@@ -352,15 +317,8 @@ export default function MenuIndex({ menuItems }: Props) {
                                 )}
                             </div>
                         ) : (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext
-                                    items={activeMenus.map((m) => m.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={activeMenus.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-3">
                                         {activeMenus.map((menu) => (
                                             <MenuRow

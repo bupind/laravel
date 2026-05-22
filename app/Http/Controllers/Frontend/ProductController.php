@@ -1,4 +1,9 @@
 <?php
+/**
+ * ProductController
+ * @author  bupind
+ * @created 2026-05-20
+ */
 
 namespace App\Http\Controllers\Frontend;
 

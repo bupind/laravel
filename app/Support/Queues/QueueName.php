@@ -1,4 +1,9 @@
 <?php
+/**
+ * QueueName
+ * @author  bupind
+ * @created 2026-05-17
+ */
 
 namespace App\Support\Queues;
 final class QueueName
@@ -11,4 +16,3 @@ final class QueueName
     public const TRANSACTION = 'transactions';
     public const INTEGRATION = 'integrations';
 }
-
