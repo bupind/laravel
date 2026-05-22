@@ -28,6 +28,7 @@ class RoleController extends BaseCrudController
     ];
     protected string $orderBy           = 'created_at';
     protected string $orderDirection    = 'desc';
+    private array    $permissionsToSync = [];
 
     protected function modelClass(): string
     {
@@ -74,6 +75,13 @@ class RoleController extends BaseCrudController
         return $this->extractPermissions($validated);
     }
 
+    private function extractPermissions(array $validated): array
+    {
+        $this->permissionsToSync = $validated['permissions'] ?? [];
+        unset($validated['permissions']);
+        return $validated;
+    }
+
     protected function afterStore(Model $record, array $validated, Request $request): void
     {
         $record->syncPermissions($this->permissionsToSync);
@@ -108,14 +116,5 @@ class RoleController extends BaseCrudController
                 ->get()
                 ->groupBy(fn(Permission $p) => $p->group ?: 'ungrouped'),
         ];
-    }
-
-    private array $permissionsToSync = [];
-
-    private function extractPermissions(array $validated): array
-    {
-        $this->permissionsToSync = $validated['permissions'] ?? [];
-        unset($validated['permissions']);
-        return $validated;
     }
 }

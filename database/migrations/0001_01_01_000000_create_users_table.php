@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+            $table->index('name', 'users_name_idx');
+            $table->index('created_at', 'users_created_at_idx');
         });
         Schema::create('password_reset_tokens', function(Blueprint $table) {
             $table->string('email')->primary();

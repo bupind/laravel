@@ -1,503 +1,114 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-type Language = 'id' | 'en';
+export type LocaleOption = {
+    code: string;
+    label: string;
+};
+
+type Language = string;
 type Dictionary = Record<string, string>;
 type Dictionaries = Record<Language, Dictionary>;
 
-export const defaultDictionaries: Dictionaries = {
-    id: {
-        'language.label': 'Bahasa',
-        'language.indonesian': 'Bahasa Indonesia',
-        'language.english': 'English',
-        'theme.toggle': 'Ubah tema',
-        'theme.light': 'Terang',
-        'theme.dark': 'Gelap',
-        'theme.system': 'Sistem',
-        'datatable.search': 'Cari...',
-        'datatable.searchButton': 'Cari',
-        'datatable.empty': 'Data tidak tersedia.',
-        'datatable.page': 'halaman',
-        'datatable.rowsPerPage': 'Baris per halaman',
-        'datatable.of': 'dari',
-        'datatable.refresh': 'Muat Ulang',
-        'datatable.exportCurrent': 'Export Halaman Ini',
-        'datatable.exportAll': 'Export Semua',
-        'datatable.showing': 'Menampilkan :from-:to dari :total data.',
-        'buttons.add': 'Tambah',
-        'buttons.back': 'Kembali',
-        'buttons.cancel': 'Batal',
-        'buttons.choose': 'Pilih',
-        'buttons.clear': 'Bersihkan',
-        'buttons.clearFilters': 'Bersihkan Filter',
-        'buttons.create': 'Buat',
-        'buttons.createAccount': 'Buat',
-        'buttons.createBackup': 'Buat',
-        'buttons.creating': 'Membuat...',
-        'buttons.delete': 'Hapus',
-        'buttons.deleteAccount': 'Hapus Akun',
-        'buttons.download': 'Unduh',
-        'buttons.export': 'Export',
-        'buttons.login': 'Masuk',
-        'buttons.newFolder': 'Folder Baru',
-        'buttons.next': 'Berikutnya',
-        'buttons.previous': 'Sebelumnya',
-        'buttons.save': 'Simpan',
-        'buttons.saveAndApply': 'Simpan',
-        'buttons.saveChanges': 'Simpan',
-        'buttons.saveOrder': 'Simpan',
-        'buttons.savePassword': 'Simpan',
-        'buttons.saveSettings': 'Simpan',
-        'buttons.saving': 'Menyimpan...',
-        'buttons.search': 'Cari',
-        'buttons.sync': 'Sinkron',
-        'buttons.syncAll': 'Sinkron',
-        'buttons.update': 'Perbarui',
-        'buttons.upload': 'Upload',
-        'buttons.uploadFirstFile': 'Upload File Pertama',
-        'buttons.uploading': 'Mengupload...',
-        'columns.actions': 'Aksi',
-        'columns.createdAt': 'Dibuat',
-        'columns.description': 'Deskripsi',
-        'columns.event': 'Event',
-        'columns.group': 'Grup',
-        'columns.module': 'Modul',
-        'columns.permission': 'Permission',
-        'columns.permissions': 'Permissions',
-        'columns.published': 'Dipublikasi',
-        'columns.role': 'Role',
-        'columns.status': 'Status',
-        'columns.subject': 'Subjek',
-        'columns.tag': 'Tag',
-        'columns.tags': 'Tag',
-        'columns.time': 'Waktu',
-        'columns.user': 'User',
-        'pages.auditLogs.title': 'Log Audit',
-        'pages.auditLogs.description': ':total total event',
-        'pages.auditLogs.empty': 'Log tidak ditemukan.',
-        'pages.auditLogs.search': 'Cari deskripsi atau user...',
-        'pages.backup.title': 'Backup',
-        'pages.backup.heading': 'Backup Database',
-        'pages.backup.description': 'Kelola file backup sistem',
-        'pages.backup.empty': 'Backup tidak tersedia.',
-        'pages.files.title': 'Manajer File',
-        'pages.files.folderStructure': 'Struktur Folder',
-        'pages.files.rootFolder': 'Folder Root',
-        'pages.files.item': 'item',
-        'pages.files.items': 'item',
-        'pages.files.emptyFolder': 'Tidak ada file di folder ini',
-        'pages.files.deleteFolderTitle': 'Hapus Folder?',
-        'pages.files.deleteFolderDescriptionStart': 'Folder',
-        'pages.files.deleteFolderDescriptionEnd': 'dan semua isinya akan dihapus permanen.',
-        'pages.files.deleteFileTitle': 'Hapus File?',
-        'pages.files.deleteFileDescriptionStart': 'File',
-        'pages.files.deleteFileDescriptionEnd': 'akan dihapus permanen.',
-        'pages.files.createFolderTitle': 'Buat Folder Baru',
-        'pages.files.folderNamePlaceholder': 'Nama folder',
-        'pages.files.previewNotAvailable': 'Preview tidak tersedia',
-        'pages.files.downloadFile': 'Unduh file',
-        'pages.menus.title': 'Manajemen Menu',
-        'pages.menus.description': 'Drag & drop untuk mengatur urutan menu dan submenu',
-        'pages.menus.empty': 'Belum ada menu tersedia',
-        'pages.permissions.title': 'Manajemen Permission',
-        'pages.permissions.description': 'Kelola permission dengan filter dan pagination server-side.',
-        'pages.permissions.empty': 'Data permission tidak tersedia.',
-        'pages.permissions.search': 'Cari permission...',
-        'permissions.form.singleTitle': 'Buat Permission Tunggal',
-        'permissions.form.singleDesc': 'Tambahkan satu permission secara manual.',
-        'permissions.form.editDesc': 'Edit detail permission.',
-        'permissions.form.nameLabel': 'Nama Permission',
-        'permissions.form.nameRequired': 'Nama permission wajib diisi.',
-        'permissions.form.groupLabel': 'Pilih Grup',
-        'permissions.form.groupPlaceholder': 'Pilih grup...',
-        'permissions.form.newGroupLabel': 'Atau ketik grup baru',
-        'permissions.bulk.title': 'Bulk Create dari Catalog',
-        'permissions.bulk.desc': 'Pilih permissions dari catalog lalu simpan sekaligus. Yang sudah ada dicoret.',
-        'permissions.bulk.search': 'Cari modul...',
-        'permissions.bulk.allGroups': 'Semua grup',
-        'permissions.bulk.checkAll': 'Pilih semua',
-        'permissions.bulk.uncheckAll': 'Batal semua',
-        'permissions.bulk.saveBtn': 'Simpan :count Permission',
-        'permissions.bulk.selected': ':count dipilih',
-        'permissions.bulk.alreadyExists': 'Sudah ada di database',
-        'permissions.bulk.empty': 'Tidak ada modul ditemukan.',
-        'pages.roles.title': 'Manajemen Role',
-        'pages.roles.description': 'Kelola role dan permission di dalam sistem.',
-        'pages.roles.empty': 'Data role tidak tersedia.',
-        'pages.roles.search': 'Cari role...',
-        'users.title': 'Manajemen User',
-        'users.description': 'Kelola data user dan role di dalam sistem.',
-        'users.add': 'Tambah User',
-        'users.edit': 'Ubah User',
-        'users.create': 'Tambah User',
-        'users.updateDescription': 'Perbarui data user dan role.',
-        'users.createDescription': 'Isi data user dan pilih role.',
-        'users.user': 'User',
-        'users.role': 'Role',
-        'users.noRole': 'Belum ada role',
-        'users.createdAt': 'Dibuat',
-        'users.actions': 'Aksi',
-        'users.registered': 'Terdaftar',
-        'users.editAction': 'Ubah',
-        'users.reset': 'Reset',
-        'users.delete': 'Hapus',
-        'users.resetTitle': 'Reset password?',
-        'users.resetDescription': 'Password untuk :name akan direset menjadi:',
-        'users.deleteTitle': 'Hapus user?',
-        'users.deleteDescription': 'User :name akan dihapus permanen.',
-        'users.cancel': 'Batal',
-        'users.confirmReset': 'Ya, reset',
-        'users.confirmDelete': 'Ya, hapus',
-        'users.name': 'Nama',
-        'users.fullName': 'Nama lengkap',
-        'users.email': 'Email',
-        'users.emailAddress': 'Alamat email',
-        'users.password': 'Password',
-        'users.optional': 'opsional',
-        'users.save': 'Simpan',
-        'users.saving': 'Menyimpan...',
-        'users.empty': 'Data user tidak tersedia.',
-        'users.search': 'Cari nama atau email...',
-        'notifications.common.created': 'Berhasil disimpan.',
-        'notifications.common.updated': 'Berhasil disimpan.',
-        'notifications.common.deleted': 'Data berhasil dihapus.',
-        'notifications.common.file_not_found': 'File tidak ditemukan.',
-        'notifications.common.failed': 'Gagal diproses.',
-        'notifications.common.saved': 'Berhasil disimpan.',
-        'notifications.common.save_failed': 'Gagal disimpan.',
-        'notifications.backup.created': 'Berhasil disimpan.',
-        'notifications.backup.deleted': 'Data berhasil dihapus.',
-        'notifications.backup.failed': 'Gagal diproses.',
-        'notifications.backup.failed_with_reason': 'Gagal diproses: :message',
-        'notifications.menu.created': 'Berhasil disimpan.',
-        'notifications.menu.updated': 'Berhasil disimpan.',
-        'notifications.menu.deleted': 'Data berhasil dihapus.',
-        'notifications.menu.order_saved': 'Berhasil disimpan.',
-        'notifications.role.created': 'Berhasil disimpan.',
-        'notifications.role.updated': 'Berhasil disimpan.',
-        'notifications.role.deleted': 'Data berhasil dihapus.',
-        'notifications.permission.created': 'Berhasil disimpan.',
-        'notifications.permission.updated': 'Berhasil disimpan.',
-        'notifications.permission.deleted': 'Data berhasil dihapus.',
-        'notifications.user.created': 'Berhasil disimpan.',
-        'notifications.user.updated': 'Berhasil disimpan.',
-        'notifications.user.deleted': 'Data berhasil dihapus.',
-        'notifications.user.password_reset': 'Berhasil disimpan.',
-        'notifications.folder.created': 'Berhasil disimpan.',
-        'notifications.folder.deleted': 'Data berhasil dihapus.',
-        'notifications.file.uploaded': 'Berhasil disimpan.',
-        'notifications.file.deleted': 'Data berhasil dihapus.',
-        'notifications.settings.saved': 'Berhasil disimpan.',
-        'notifications.permission.delete_success': 'Data berhasil dihapus.',
-        'notifications.permission.delete_failed': 'Gagal diproses.',
-        'notifications.file.upload_failed': 'Gagal disimpan.',
-        'notifications.file.delete_failed': 'Gagal diproses.',
-        'notifications.folder.create_failed': 'Gagal disimpan.',
-        'notifications.folder.delete_failed': 'Gagal diproses.',
-        'notifications.folder.empty_name': 'Nama folder tidak boleh kosong.',
-        'notifications.menu.delete_failed': 'Gagal diproses.',
-        'notifications.menu.order_save_failed': 'Gagal disimpan.',
-        'notifications.menu.order_save_success': 'Berhasil disimpan.',
-        'notifications.backup.create_success': 'Berhasil disimpan.',
-        'notifications.backup.create_failed': 'Gagal disimpan.',
-        'notifications.backup.delete_success': 'Data berhasil dihapus.',
-        'notifications.backup.delete_failed': 'Gagal diproses.',
-        'settings.translations.title': 'Pengaturan Terjemahan',
-        'settings.translations.description': 'Ubah value terjemahan untuk Indonesia dan English.',
-        'settings.translations.save': 'Simpan Terjemahan',
-        'settings.translations.saved': 'Terjemahan berhasil disimpan.',
-        'settings.translations.search': 'Cari key translation...',
-        'settings.translations.key': 'Key',
-        'settings.translations.indonesian': 'Bahasa Indonesia',
-        'settings.translations.english': 'English',
-        'menus.dashboard': 'Dashboard',
-        'menus.access': 'Akses',
-        'menus.permissions': 'Hak Akses',
-        'menus.users': 'Pengguna',
-        'menus.roles': 'Peran',
-        'menus.settings': 'Pengaturan',
-        'menus.menu_manager': 'Manajemen Menu',
-        'menus.app_settings': 'Pengaturan Aplikasi',
-        'menus.translations': 'Terjemahan',
-        'menus.backup': 'Cadangan',
-        'menus.content': 'Konten',
-        'menus.utilities': 'Utilitas',
-        'menus.audit_logs': 'Log Audit',
-        'menus.file_manager': 'Manajer File',
-    },
-    en: {
-        'language.label': 'Language',
-        'language.indonesian': 'Indonesian',
-        'language.english': 'English',
-        'theme.toggle': 'Change theme',
-        'theme.light': 'Light',
-        'theme.dark': 'Dark',
-        'theme.system': 'System',
-        'datatable.search': 'Search...',
-        'datatable.searchButton': 'Search',
-        'datatable.empty': 'No data available.',
-        'datatable.page': 'page',
-        'datatable.rowsPerPage': 'Rows per page',
-        'datatable.of': 'of',
-        'datatable.refresh': 'Refresh',
-        'datatable.exportCurrent': 'Export Current Page',
-        'datatable.exportAll': 'Export All',
-        'datatable.showing': 'Showing :from-:to of :total items.',
-        'buttons.add': 'Add',
-        'buttons.back': 'Back',
-        'buttons.cancel': 'Cancel',
-        'buttons.choose': 'Choose',
-        'buttons.clear': 'Clear',
-        'buttons.clearFilters': 'Clear Filters',
-        'buttons.create': 'Create',
-        'buttons.createAccount': 'Create',
-        'buttons.createBackup': 'Create',
-        'buttons.creating': 'Creating...',
-        'buttons.delete': 'Delete',
-        'buttons.deleteAccount': 'Delete Account',
-        'buttons.download': 'Download',
-        'buttons.export': 'Export',
-        'buttons.login': 'Log in',
-        'buttons.newFolder': 'New Folder',
-        'buttons.next': 'Next',
-        'buttons.previous': 'Previous',
-        'buttons.save': 'Save',
-        'buttons.saveAndApply': 'Save',
-        'buttons.saveChanges': 'Save',
-        'buttons.saveOrder': 'Save',
-        'buttons.savePassword': 'Save',
-        'buttons.saveSettings': 'Save',
-        'buttons.saving': 'Saving...',
-        'buttons.search': 'Search',
-        'buttons.sync': 'Sync',
-        'buttons.syncAll': 'Sync',
-        'buttons.update': 'Update',
-        'buttons.upload': 'Upload',
-        'buttons.uploadFirstFile': 'Upload the First File',
-        'buttons.uploading': 'Uploading...',
-        'columns.actions': 'Actions',
-        'columns.createdAt': 'Created At',
-        'columns.description': 'Description',
-        'columns.event': 'Event',
-        'columns.group': 'Group',
-        'columns.module': 'Module',
-        'columns.permission': 'Permission',
-        'columns.permissions': 'Permissions',
-        'columns.published': 'Published',
-        'columns.role': 'Role',
-        'columns.status': 'Status',
-        'columns.subject': 'Subject',
-        'columns.tag': 'Tag',
-        'columns.tags': 'Tags',
-        'columns.time': 'Time',
-        'columns.user': 'User',
-        'pages.auditLogs.title': 'Audit Logs',
-        'pages.auditLogs.description': ':total total events',
-        'pages.auditLogs.empty': 'No logs found.',
-        'pages.auditLogs.search': 'Search description or user...',
-        'pages.backup.title': 'Backup',
-        'pages.backup.heading': 'Database Backups',
-        'pages.backup.description': 'Manage system backup files',
-        'pages.backup.empty': 'No backups available.',
-        'pages.files.title': 'File Manager',
-        'pages.files.folderStructure': 'Folder Structure',
-        'pages.files.rootFolder': 'Root Folder',
-        'pages.files.item': 'item',
-        'pages.files.items': 'items',
-        'pages.files.emptyFolder': 'No files in this folder',
-        'pages.files.deleteFolderTitle': 'Delete Folder?',
-        'pages.files.deleteFolderDescriptionStart': 'Folder',
-        'pages.files.deleteFolderDescriptionEnd': 'and all its contents will be permanently deleted.',
-        'pages.files.deleteFileTitle': 'Delete File?',
-        'pages.files.deleteFileDescriptionStart': 'File',
-        'pages.files.deleteFileDescriptionEnd': 'will be permanently deleted.',
-        'pages.files.createFolderTitle': 'Create New Folder',
-        'pages.files.folderNamePlaceholder': 'Folder name',
-        'pages.files.previewNotAvailable': 'Preview not available',
-        'pages.files.downloadFile': 'Download file',
-        'pages.menus.title': 'Menu Management',
-        'pages.menus.description': 'Drag & drop to arrange menu and submenu order',
-        'pages.menus.empty': 'No menu available',
-        'pages.permissions.title': 'Permission Management',
-        'pages.permissions.description': 'Manage permissions with server-side filtering and pagination.',
-        'pages.permissions.empty': 'No permission data available.',
-        'pages.permissions.search': 'Search permission...',
-        'permissions.form.singleTitle': 'Create Single Permission',
-        'permissions.form.singleDesc': 'Manually add one permission.',
-        'permissions.form.editDesc': 'Edit permission details.',
-        'permissions.form.nameLabel': 'Permission Name',
-        'permissions.form.nameRequired': 'Permission name is required.',
-        'permissions.form.groupLabel': 'Select Group',
-        'permissions.form.groupPlaceholder': 'Select group...',
-        'permissions.form.newGroupLabel': 'Or type a new group',
-        'permissions.bulk.title': 'Bulk Create from Catalog',
-        'permissions.bulk.desc': 'Pick permissions from the catalog and save at once. Already-existing ones are shown struck-through.',
-        'permissions.bulk.search': 'Search module...',
-        'permissions.bulk.allGroups': 'All groups',
-        'permissions.bulk.checkAll': 'Check all',
-        'permissions.bulk.uncheckAll': 'Uncheck all',
-        'permissions.bulk.saveBtn': 'Save :count Permissions',
-        'permissions.bulk.selected': ':count selected',
-        'permissions.bulk.alreadyExists': 'Already exists in database',
-        'permissions.bulk.empty': 'No modules found.',
-        'pages.roles.title': 'Role Management',
-        'pages.roles.description': 'Manage roles and permissions in the system.',
-        'pages.roles.empty': 'No role data available.',
-        'pages.roles.search': 'Search role...',
-        'users.title': 'User Management',
-        'users.description': 'Manage user data and roles in the system.',
-        'users.add': 'Add User',
-        'users.edit': 'Edit User',
-        'users.create': 'Create User',
-        'users.updateDescription': 'Update user data and roles.',
-        'users.createDescription': 'Fill in user data and select roles.',
-        'users.user': 'User',
-        'users.role': 'Roles',
-        'users.noRole': 'No role',
-        'users.createdAt': 'Created At',
-        'users.actions': 'Actions',
-        'users.registered': 'Registered',
-        'users.editAction': 'Edit',
-        'users.reset': 'Reset',
-        'users.delete': 'Delete',
-        'users.resetTitle': 'Reset password?',
-        'users.resetDescription': 'Password for :name will be reset to:',
-        'users.deleteTitle': 'Delete user?',
-        'users.deleteDescription': 'User :name will be permanently deleted.',
-        'users.cancel': 'Cancel',
-        'users.confirmReset': 'Yes, reset',
-        'users.confirmDelete': 'Yes, delete',
-        'users.name': 'Name',
-        'users.fullName': 'Full name',
-        'users.email': 'Email',
-        'users.emailAddress': 'Email address',
-        'users.password': 'Password',
-        'users.optional': 'optional',
-        'users.save': 'Save',
-        'users.saving': 'Saving...',
-        'users.empty': 'No user data available.',
-        'users.search': 'Search by name or email...',
-        'notifications.common.created': 'Saved successfully.',
-        'notifications.common.updated': 'Saved successfully.',
-        'notifications.common.deleted': 'Data deleted successfully.',
-        'notifications.common.file_not_found': 'File not found.',
-        'notifications.common.failed': 'Failed to process.',
-        'notifications.common.saved': 'Saved successfully.',
-        'notifications.common.save_failed': 'Failed to save.',
-        'notifications.backup.created': 'Saved successfully.',
-        'notifications.backup.deleted': 'Data deleted successfully.',
-        'notifications.backup.failed': 'Failed to process.',
-        'notifications.backup.failed_with_reason': 'Failed to process: :message',
-        'notifications.menu.created': 'Saved successfully.',
-        'notifications.menu.updated': 'Saved successfully.',
-        'notifications.menu.deleted': 'Data deleted successfully.',
-        'notifications.menu.order_saved': 'Saved successfully.',
-        'notifications.role.created': 'Saved successfully.',
-        'notifications.role.updated': 'Saved successfully.',
-        'notifications.role.deleted': 'Data deleted successfully.',
-        'notifications.permission.created': 'Saved successfully.',
-        'notifications.permission.updated': 'Saved successfully.',
-        'notifications.permission.deleted': 'Data deleted successfully.',
-        'notifications.user.created': 'Saved successfully.',
-        'notifications.user.updated': 'Saved successfully.',
-        'notifications.user.deleted': 'Data deleted successfully.',
-        'notifications.user.password_reset': 'Saved successfully.',
-        'notifications.folder.created': 'Saved successfully.',
-        'notifications.folder.deleted': 'Data deleted successfully.',
-        'notifications.file.uploaded': 'Saved successfully.',
-        'notifications.file.deleted': 'Data deleted successfully.',
-        'notifications.settings.saved': 'Saved successfully.',
-        'notifications.permission.delete_success': 'Data deleted successfully.',
-        'notifications.permission.delete_failed': 'Failed to process.',
-        'notifications.file.upload_failed': 'Failed to save.',
-        'notifications.file.delete_failed': 'Failed to process.',
-        'notifications.folder.create_failed': 'Failed to save.',
-        'notifications.folder.delete_failed': 'Failed to process.',
-        'notifications.folder.empty_name': 'Folder name cannot be empty.',
-        'notifications.menu.delete_failed': 'Failed to process.',
-        'notifications.menu.order_save_failed': 'Failed to save.',
-        'notifications.menu.order_save_success': 'Saved successfully.',
-        'notifications.backup.create_success': 'Saved successfully.',
-        'notifications.backup.create_failed': 'Failed to save.',
-        'notifications.backup.delete_success': 'Data deleted successfully.',
-        'notifications.backup.delete_failed': 'Failed to process.',
-        'settings.translations.title': 'Translation Settings',
-        'settings.translations.description': 'Update translation values for Indonesian and English.',
-        'settings.translations.save': 'Save Translations',
-        'settings.translations.saved': 'Translations saved successfully.',
-        'settings.translations.search': 'Search translation key...',
-        'settings.translations.key': 'Key',
-        'settings.translations.indonesian': 'Indonesian',
-        'settings.translations.english': 'English',
-        'menus.dashboard': 'Dashboard',
-        'menus.access': 'Access',
-        'menus.permissions': 'Permissions',
-        'menus.users': 'Users',
-        'menus.roles': 'Roles',
-        'menus.settings': 'Settings',
-        'menus.menu_manager': 'Menu Manager',
-        'menus.app_settings': 'App Settings',
-        'menus.translations': 'Translations',
-        'menus.backup': 'Backup',
-        'menus.utilities': 'Utilities',
-        'menus.audit_logs': 'Audit Logs',
-        'menus.file_manager': 'File Manager',
-    },
-};
-
-interface LanguageContextValue {
+type LanguageContextValue = {
     language: Language;
     setLanguage: (language: Language) => void;
-    updateOverrides: (overrides?: Partial<Record<Language, Record<string, string>>>) => void;
-    t: (key: string, replacements?: Record<string, string | number>) => string;
+    updateOverrides: (messages?: Partial<Dictionaries>) => void;
     dictionaries: Dictionaries;
+    locales: LocaleOption[];
     keys: string[];
-}
+    t: (key: string, replacements?: Record<string, string | number>) => string;
+};
+
+type LanguageProviderProps = {
+    children: React.ReactNode;
+    messages?: Partial<Dictionaries>;
+    overrides?: Partial<Dictionaries>;
+    locales?: LocaleOption[];
+};
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({
-    children,
-    overrides,
-}: {
-    children: React.ReactNode;
-    overrides?: Partial<Record<Language, Record<string, string>>>;
-}) {
-    const [language, setLanguageState] = useState<Language>('id');
-    const [activeOverrides, setActiveOverrides] = useState(overrides);
+function normalizeMessages(messages?: Partial<Dictionaries>): Dictionaries {
+    return Object.fromEntries(
+        Object.entries(messages ?? {})
+            .map(([locale, dictionary]) => [normalizeLocaleCode(locale), dictionary ?? {}])
+            .filter(([locale]) => locale),
+    );
+}
+
+function normalizeLocaleCode(locale: string): string {
+    return locale.trim().toLowerCase().replaceAll('_', '-');
+}
+
+function normalizeLocales(messages: Dictionaries, locales?: LocaleOption[]): LocaleOption[] {
+    const existingCodes = Object.keys(messages);
+    const nextLocales = (locales ?? []).map((locale) => ({
+        code: normalizeLocaleCode(locale.code),
+        label: locale.label || locale.code.toUpperCase(),
+    }));
+
+    for (const code of existingCodes) {
+        if (!nextLocales.some((locale) => locale.code === code)) {
+            nextLocales.push({ code, label: code.toUpperCase() });
+        }
+    }
+
+    for (const fallback of ['en', 'id']) {
+        if (!nextLocales.some((locale) => locale.code === fallback)) {
+            nextLocales.unshift({ code: fallback, label: fallback === 'id' ? 'Bahasa Indonesia' : 'English' });
+        }
+    }
+
+    return nextLocales.filter((locale, index, all) => locale.code && all.findIndex((item) => item.code === locale.code) === index);
+}
+
+export function LanguageProvider({ children, messages, overrides, locales }: LanguageProviderProps) {
+    const initialMessages = useMemo(() => normalizeMessages(messages ?? overrides), [messages, overrides]);
+    const localeOptions = useMemo(() => normalizeLocales(initialMessages, locales), [initialMessages, locales]);
+    const [language, setLanguageState] = useState<Language>(localeOptions[0]?.code ?? 'id');
+    const [activeMessages, setActiveMessages] = useState<Dictionaries>(initialMessages);
+
+    useEffect(() => {
+        setActiveMessages(initialMessages);
+    }, [initialMessages]);
 
     useEffect(() => {
         const saved = localStorage.getItem('language');
+        const availableCodes = localeOptions.map((locale) => locale.code);
 
-        if (saved === 'id' || saved === 'en') {
+        if (saved && availableCodes.includes(saved)) {
             setLanguageState(saved);
+            document.documentElement.lang = saved;
+            return;
         }
-    }, []);
+
+        const fallbackLanguage = availableCodes.includes('id') ? 'id' : (availableCodes[0] ?? 'id');
+        setLanguageState(fallbackLanguage);
+        document.documentElement.lang = fallbackLanguage;
+    }, [localeOptions]);
 
     const setLanguage = (nextLanguage: Language) => {
-        setLanguageState(nextLanguage);
-        localStorage.setItem('language', nextLanguage);
-        document.documentElement.lang = nextLanguage;
+        const normalizedLanguage = normalizeLocaleCode(nextLanguage);
+        const availableCodes = localeOptions.map((locale) => locale.code);
+        const selectedLanguage = availableCodes.includes(normalizedLanguage) ? normalizedLanguage : (availableCodes[0] ?? 'id');
+
+        setLanguageState(selectedLanguage);
+        localStorage.setItem('language', selectedLanguage);
+        document.documentElement.lang = selectedLanguage;
     };
 
-    const updateOverrides = (nextOverrides?: Partial<Record<Language, Record<string, string>>>) => {
-        setActiveOverrides(nextOverrides);
+    const updateOverrides = (nextMessages?: Partial<Dictionaries>) => {
+        setActiveMessages(normalizeMessages(nextMessages));
     };
 
-    const dictionaries = useMemo<Dictionaries>(
-        () => ({
-            id: {
-                ...defaultDictionaries.id,
-                ...(activeOverrides?.id ?? {}),
-            },
-            en: {
-                ...defaultDictionaries.en,
-                ...(activeOverrides?.en ?? {}),
-            },
-        }),
-        [activeOverrides],
+    const dictionaries = useMemo<Dictionaries>(() => normalizeMessages(activeMessages), [activeMessages]);
+
+    const activeLocaleOptions = useMemo(() => normalizeLocales(dictionaries, localeOptions), [dictionaries, localeOptions]);
+
+    const keys = useMemo(
+        () => Array.from(new Set(Object.values(dictionaries).flatMap((dictionary) => Object.keys(dictionary)))).sort(),
+        [dictionaries],
     );
-
-    const keys = useMemo(() => Array.from(new Set([...Object.keys(defaultDictionaries.id), ...Object.keys(defaultDictionaries.en)])).sort(), []);
 
     const value = useMemo<LanguageContextValue>(
         () => ({
@@ -505,18 +116,23 @@ export function LanguageProvider({
             setLanguage,
             updateOverrides,
             dictionaries,
+            locales: activeLocaleOptions,
             keys,
             t: (key, replacements = {}) => {
-                let text = dictionaries[language][key] ?? dictionaries.id[key] ?? key;
+                const translated = dictionaries[language]?.[key];
+                let text = translated !== undefined && translated !== '' ? translated : (dictionaries.id?.[key] ?? dictionaries.en?.[key] ?? key);
 
-                Object.entries(replacements).forEach(([placeholder, value]) => {
-                    text = text.replace(`:${placeholder}`, String(value));
-                });
+                Object.entries(replacements)
+                    .sort(([left], [right]) => right.length - left.length)
+                    .forEach(([placeholder, value]) => {
+                        const replacement = String(value);
+                        text = text.replaceAll(`:${placeholder}`, replacement).replaceAll(`{${placeholder}}`, replacement);
+                    });
 
                 return text;
             },
         }),
-        [language, dictionaries, keys],
+        [language, dictionaries, activeLocaleOptions, keys],
     );
 
     return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

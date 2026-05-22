@@ -8,9 +8,11 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/hooks/use-language';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function ForgotPassword({ status }: { status?: string }) {
+    const { t } = useLanguage();
     const { data, setData, post, processing, errors } = useForm({
         email: '',
     });
@@ -22,13 +24,13 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <AuthLayout title="Forgot password" description="Enter your email to receive a password reset link">
-            <Head title="Forgot password" />
+        <AuthLayout title={t('auth.forgotPassword.title')} description={t('auth.forgotPassword.description')}>
+            <Head title={t('auth.forgotPassword.title')} />
 
             <div className="space-y-6">
                 <form onSubmit={submit}>
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email">{t('labels.email')}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -37,7 +39,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             value={data.email}
                             autoFocus
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
+                            placeholder={t('placeholders.email')}
                         />
 
                         <InputError message={errors.email} />
@@ -46,7 +48,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     <div className="my-6 flex items-center justify-start">
                         <Button className="w-full" disabled={processing}>
                             {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Email password reset link
+                            {t('auth.forgotPassword.submit')}
                         </Button>
                     </div>
 
@@ -54,8 +56,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </form>
 
                 <div className="text-muted-foreground space-x-1 text-center text-sm">
-                    <span>Or, return to</span>
-                    <TextLink href={route('login')}>log in</TextLink>
+                    <span>{t('auth.forgotPassword.returnTo')}</span>
+                    <TextLink href={route('login')}>{t('buttons.login')}</TextLink>
                 </div>
             </div>
         </AuthLayout>

@@ -1,18 +1,21 @@
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 
-const sidebarNavItems: NavItem[] = [
+const sidebarNavItems: Array<NavItem & { translationKey: string }> = [
     {
         title: 'Profile',
+        translationKey: 'settings.profile.title',
         url: '/backend/settings/profile',
         icon: null,
     },
     {
         title: 'Password',
+        translationKey: 'settings.password.title',
         url: '/backend/settings/password',
         icon: null,
     },
@@ -20,10 +23,11 @@ const sidebarNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
     const { url } = usePage();
+    const { t } = useLanguage();
 
     return (
         <div className="px-4 py-6">
-            <Heading title="Profile Settings" description="Manage your profile and account settings" />
+            <Heading title={t('settings.profile.breadcrumb')} description={t('settings.profile.description')} />
 
             <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
                 <aside className="w-full max-w-xl lg:w-48">
@@ -39,7 +43,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                                 })}
                             >
                                 <Link href={item.url} prefetch>
-                                    {item.title}
+                                    {t(item.translationKey)}
                                 </Link>
                             </Button>
                         ))}

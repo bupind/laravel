@@ -1,10 +1,13 @@
 import { Button } from '@/components/ui/button';
+import { FrontendHeader } from '@/components/frontend-header';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, CheckCircle2, LayoutDashboard, LogIn, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
+import { useLanguage } from '@/hooks/use-language';
 
 export default function Welcome() {
+    const { t } = useLanguage();
     const { auth, setting } = usePage<SharedData>().props;
 
     const primaryColor = setting?.warna || '#2563eb';
@@ -15,7 +18,7 @@ export default function Welcome() {
     const dashboardHref = route('dashboard');
     const loginHref = route('login');
     const actionHref = isAuthenticated ? dashboardHref : loginHref;
-    const actionLabel = isAuthenticated ? 'Buka Dashboard' : 'Login';
+    const actionLabel = isAuthenticated ? t('frontend.welcome.openDashboard') : t('buttons.login');
     const ActionIcon = isAuthenticated ? LayoutDashboard : LogIn;
 
     useEffect(() => {
@@ -31,46 +34,13 @@ export default function Welcome() {
             </Head>
 
             <main className="bg-background text-foreground min-h-screen">
-                <header className="border-border border-b">
-                    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
-                        <Link href="/" className="flex items-center gap-3 font-semibold">
-                            {setting?.logo ? (
-                                <img src={`/storage/${setting.logo}`} alt={appName} className="h-8 max-w-40 object-contain" />
-                            ) : (
-                                <span
-                                    className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold text-white"
-                                    style={{ backgroundColor: primaryColor }}
-                                >
-                                    {appName.slice(0, 1).toUpperCase()}
-                                </span>
-                            )}
-                            <span>{appName}</span>
-                        </Link>
-
-                        <nav className="flex items-center gap-2">
-                            {!isAuthenticated && (
-                                <Button asChild size="sm" variant="outline">
-                                    <Link href={loginHref}>
-                                        <LogIn className="h-4 w-4" />
-                                        Login
-                                    </Link>
-                                </Button>
-                            )}
-                            <Button asChild size="sm" variant="default" style={{ backgroundColor: primaryColor }}>
-                                <Link href={dashboardHref}>
-                                    <LayoutDashboard className="h-4 w-4" />
-                                    Dashboard
-                                </Link>
-                            </Button>
-                        </nav>
-                    </div>
-                </header>
+                <FrontendHeader setting={setting} auth={auth} />
 
                 <section className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-[1fr_0.86fr] md:px-6">
                     <div className="max-w-2xl">
                         <div className="border-border text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm">
                             <ShieldCheck className="h-4 w-4" style={{ color: primaryColor }} />
-                            Admin workspace
+                            {t('frontend.welcome.badge')}
                         </div>
 
                         <h1 className="text-4xl leading-tight font-bold tracking-tight md:text-5xl">{appName}</h1>
@@ -90,24 +60,24 @@ export default function Welcome() {
                     <div className="border-border bg-card text-card-foreground rounded-lg border p-5 shadow-sm">
                         <div className="mb-5 flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium">Status Aplikasi</p>
-                                <p className="text-muted-foreground text-xs">Ringkasan akses saat ini</p>
+                                <p className="text-sm font-medium">{t('frontend.welcome.statusTitle')}</p>
+                                <p className="text-muted-foreground text-xs">{t('frontend.welcome.statusDescription')}</p>
                             </div>
                             <CheckCircle2 className="h-5 w-5" style={{ color: primaryColor }} />
                         </div>
 
                         <dl className="space-y-4 text-sm">
                             <div className="flex items-center justify-between gap-4 border-b pb-4">
-                                <dt className="text-muted-foreground">Nama</dt>
+                                <dt className="text-muted-foreground">{t('labels.name')}</dt>
                                 <dd className="font-medium">{appName}</dd>
                             </div>
                             <div className="flex items-center justify-between gap-4 border-b pb-4">
-                                <dt className="text-muted-foreground">Status</dt>
-                                <dd className="font-medium">Aktif</dd>
+                                <dt className="text-muted-foreground">{t('columns.status')}</dt>
+                                <dd className="font-medium">{t('labels.active')}</dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <dt className="text-muted-foreground">Sesi</dt>
-                                <dd className="font-medium">{auth?.user ? auth.user.name : 'Tamu'}</dd>
+                                <dt className="text-muted-foreground">{t('frontend.welcome.session')}</dt>
+                                <dd className="font-medium">{auth?.user ? auth.user.name : t('frontend.welcome.guest')}</dd>
                             </div>
                         </dl>
                     </div>

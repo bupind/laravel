@@ -15,7 +15,7 @@ createServer((page) =>
             return pages[`./pages/${name}.tsx`];
         },
         setup: ({ App, props }) => (
-            <LanguageProvider>
+            <LanguageProvider messages={page.props?.translations ?? {}} locales={page.props?.translation_locales ?? []}>
                 <App {...props} />
             </LanguageProvider>
         ),

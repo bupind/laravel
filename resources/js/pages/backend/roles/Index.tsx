@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/use-language';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type Role } from '@/types';
+import { type Role } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -50,8 +50,6 @@ function buildQueryString(query: Record<string, string | number | undefined>): s
     const serialized = params.toString();
     return serialized ? `?${serialized}` : '';
 }
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Role Management', href: '/backend/roles' }];
 
 export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
     const { t } = useLanguage();
@@ -109,12 +107,11 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
                               <div className="border-border bg-background inline-flex overflow-hidden rounded-md border">
                                   {canUpdate && (
                                       <Button
-
                                           size="icon"
                                           variant="ghost"
                                           className="border-border h-7 w-7 rounded-none border-r"
-                                          aria-label="Edit role"
-                                          title="Edit role"
+                                          aria-label={t('buttons.edit')}
+                                          title={t('buttons.edit')}
                                       >
                                           <Link href={`/backend/roles/${role.id}/edit${activeQueryString}`}>
                                               <Pencil className="h-4 w-4" />
@@ -129,26 +126,26 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
                                                   size="icon"
                                                   variant="ghost"
                                                   className="text-destructive hover:text-destructive h-7 w-7 rounded-none"
-                                                  aria-label="Delete role"
-                                                  title="Delete role"
+                                                  aria-label={t('buttons.delete')}
+                                                  title={t('buttons.delete')}
                                               >
                                                   <Trash2 className="h-4 w-4" />
                                               </Button>
                                           </AlertDialogTrigger>
                                           <AlertDialogContent>
                                               <AlertDialogHeader>
-                                                  <AlertDialogTitle>Hapus role?</AlertDialogTitle>
+                                                  <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
                                                   <AlertDialogDescription>
-                                                      Role <strong>{role.name}</strong> akan dihapus secara permanen.
+                                                      {t('dialog.delete.description', { item: role.name })}
                                                   </AlertDialogDescription>
                                               </AlertDialogHeader>
                                               <AlertDialogFooter>
-                                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                  <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                                   <AlertDialogAction
                                                       onClick={() => destroy(`/backend/roles/${role.id}`, { preserveScroll: true })}
                                                       disabled={processing}
                                                   >
-                                                      Hapus
+                                                      {t('buttons.delete')}
                                                   </AlertDialogAction>
                                               </AlertDialogFooter>
                                           </AlertDialogContent>
@@ -163,7 +160,7 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={[{ title: t('pages.roles.title'), href: '/backend/roles' }]}>
             <Head title={t('pages.roles.title')} />
 
             <div className="space-y-6 p-4 md:p-6">
@@ -183,10 +180,9 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
                     reloadOnly={['roles', 'filters', 'datatable']}
                     toolbarLeft={
                         canCreate ? (
-                            <Button  size="sm">
+                            <Button size="sm">
                                 <Link href={`/backend/roles/create${activeQueryString}`}>
                                     <Plus className="h-4 w-4" />
-
                                 </Link>
                             </Button>
                         ) : undefined

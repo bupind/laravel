@@ -10,7 +10,7 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
-    'name' => env('APP_NAME', 'Laravel'),
+    'name'            => env('APP_NAME', 'Laravel'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
@@ -21,7 +21,7 @@ return [
     | services the application utilizes. Set this in your ".env" file.
     |
     */
-    'env' => env('APP_ENV', 'production'),
+    'env'             => env('APP_ENV', 'production'),
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
@@ -32,7 +32,7 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
-    'debug' => (bool)env('APP_DEBUG', false),
+    'debug'           => (bool)env('APP_DEBUG', false),
     /*
     |--------------------------------------------------------------------------
     | Application URL
@@ -43,7 +43,7 @@ return [
     | the application so that it's available within Artisan commands.
     |
     */
-    'url' => env('APP_URL', 'http://localhost'),
+    'url'             => env('APP_URL', 'http://localhost'),
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -54,7 +54,7 @@ return [
     | is set to "UTC" by default as it is suitable for most use cases.
     |
     */
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone'        => env('APP_TIMEZONE', 'UTC'),
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
@@ -65,9 +65,9 @@ return [
     | set to any locale for which you plan to have translation strings.
     |
     */
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale'          => env('APP_LOCALE', 'en'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale'    => env('APP_FAKER_LOCALE', 'en_US'),
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
@@ -78,9 +78,9 @@ return [
     | are secure. You should do this prior to deploying the application.
     |
     */
-    'cipher' => 'AES-256-CBC',
-    'key' => env('APP_KEY'),
-    'previous_keys' => [
+    'cipher'          => 'AES-256-CBC',
+    'key'             => env('APP_KEY'),
+    'previous_keys'   => [
         ...array_filter(
             explode(',', env('APP_PREVIOUS_KEYS', ''))
         ),
@@ -97,7 +97,7 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
-    'maintenance' => [
+    'maintenance'     => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store'  => env('APP_MAINTENANCE_STORE', 'database'),
     ],

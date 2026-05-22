@@ -1,3 +1,4 @@
+import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,16 +11,12 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/hooks/use-language';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Download, RefreshCw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Audit Logs', href: '/backend/audit-logs' }];
+import { useMemo } from 'react';
 
 interface LogItem {
     id: string;
@@ -32,23 +29,10 @@ interface LogItem {
     created_at: string;
 }
 
-interface PaginationLink {
-    url: string | null;
-    label: string;
-    active: boolean;
-}
-
 interface Props {
-    logs: {
-        data: LogItem[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        per_page: number;
-        links: PaginationLink[];
-    };
-    filters?: { search?: string; event?: string; per_page?: number };
-    datatable?: { per_page_options?: number[] };
+    logs: PaginatedResponse<LogItem>;
+    filters?: { search?: string; event?: string; sort_by?: string; sort_dir?: 'asc' | 'desc'; per_page?: number };
+    datatable?: { per_page_options?: number[]; sortable_columns?: string[] };
     crud?: {
         permissions?: {
             view: boolean;
@@ -80,206 +64,187 @@ function buildQueryString(query: Record<string, string | number | undefined>) {
         if (value === undefined || value === null || value === '') return;
         params.set(key, String(value));
     });
-    const serialized = params.toString();
-    return serialized ? `?${serialized}` : '';
+    const s = params.toString();
+    return s ? `?${s}` : '';
 }
 
 export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: Props) {
     const { t } = useLanguage();
-    const [search, setSearch] = useState(filters.search ?? '');
-    const canExport = crud?.permissions?.export ?? false;
+
+    const canExport    = crud?.permissions?.export ?? false;
     const canDeleteAll = crud?.permissions?.delete_all ?? crud?.permissions?.delete ?? false;
-    const routes = crud?.resource?.routes ?? {};
-    const indexRoute = routes.index ?? '/backend/audit-logs';
-    const exportRoute = routes.export ?? '/backend/audit-logs/export';
+    const routes       = crud?.resource?.routes ?? {};
+    const indexRoute   = routes.index ?? '/backend/audit-logs';
+    const exportRoute  = routes.export ?? '/backend/audit-logs/export';
     const deleteAllRoute = routes.delete_all ?? '/backend/audit-logs/delete-all';
-    const activeQuery = {
-        search: filters.search ?? '',
-        event: filters.event ?? '',
-        per_page: filters.per_page ?? 20,
-    };
-    const activeQueryString = buildQueryString(activeQuery);
-    const perPageOptions = datatable?.per_page_options ?? [10, 20, 50, 100];
+
+    const activeQuery = useMemo(
+        () => ({
+            search:   filters.search ?? '',
+            event:    filters.event ?? '',
+            sort_by:  filters.sort_by ?? 'created_at',
+            sort_dir: filters.sort_dir ?? 'desc',
+            per_page: filters.per_page ?? logs.per_page,
+        }),
+        [filters, logs.per_page],
+    );
+
+    const activeQueryString = useMemo(() => buildQueryString(activeQuery), [activeQuery]);
+    const canSort = (col: string) => datatable?.sortable_columns?.includes(col) ?? false;
 
     const applyFilter = (params: Record<string, string | number>) => {
         router.get(
             indexRoute,
-            {
-                ...activeQuery,
-                ...params,
-            },
+            { ...activeQuery, ...params },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     };
 
+    const columns: DataTableColumn<LogItem>[] = [
+        {
+            key: 'event',
+            label: t('columns.event'),
+            sortable: canSort('event'),
+            render: (log) => (
+                <span
+                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
+                        EVENT_COLORS[log.event ?? ''] ?? 'bg-gray-100 text-gray-600'
+                    }`}
+                >
+                    {log.event ?? 'unknown'}
+                </span>
+            ),
+        },
+        {
+            key: 'description',
+            label: t('columns.description'),
+            sortable: false,
+            render: (log) => <span className="max-w-[240px] truncate block">{log.description}</span>,
+        },
+        {
+            key: 'subject_type',
+            label: t('columns.subject'),
+            sortable: false,
+            render: (log) => (
+                <span className="text-muted-foreground">
+                    {log.subject_type ? `${log.subject_type.split('\\').pop()} #${log.subject_id}` : '-'}
+                </span>
+            ),
+        },
+        {
+            key: 'causer',
+            label: t('columns.user'),
+            sortable: false,
+            render: (log) =>
+                log.causer ? (
+                    <div>
+                        <div className="font-medium">{log.causer.name}</div>
+                        <div className="text-muted-foreground text-xs">{log.causer.email}</div>
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">{t('labels.system')}</span>
+                ),
+        },
+        {
+            key: 'created_at',
+            label: t('columns.time'),
+            sortable: canSort('created_at'),
+            render: (log) => (
+                <span className="text-muted-foreground whitespace-nowrap">
+                    {new Date(log.created_at).toLocaleString('id-ID')}
+                </span>
+            ),
+        },
+    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={[{ title: t('pages.auditLogs.title'), href: '/backend/audit-logs' }]}>
             <Head title={t('pages.auditLogs.title')} />
+
             <div className="space-y-4 p-4 md:p-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">{t('pages.auditLogs.title')}</h1>
-                        <p className="text-muted-foreground text-sm">{t('pages.auditLogs.description', { total: logs.total.toLocaleString() })}</p>
+                        <p className="text-muted-foreground text-sm">
+                            {t('pages.auditLogs.description', { total: logs.total.toLocaleString() })}
+                        </p>
                     </div>
+
                     <div className="flex gap-2">
                         {canExport && (
                             <Button variant="outline" size="sm" asChild>
                                 <a href={`${exportRoute}${activeQueryString}`}>
                                     <Download className="mr-1.5 h-4 w-4" />
-                                    Export
+                                    {t('buttons.export')}
                                 </a>
                             </Button>
                         )}
+
                         {canDeleteAll && logs.total > 0 && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="destructive" size="sm">
                                         <Trash2 className="mr-1.5 h-4 w-4" />
-                                        Delete All
+                                        {t('buttons.deleteAll')}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete all audit logs?</AlertDialogTitle>
+                                        <AlertDialogTitle>{t('pages.auditLogs.deleteAllTitle')}</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This will permanently delete {logs.total.toLocaleString()} audit log records.
+                                            {t('pages.auditLogs.deleteAllDescription', { total: logs.total.toLocaleString() })}
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                         <AlertDialogAction
                                             className="bg-destructive hover:bg-destructive/90"
-                                            onClick={() => router.delete(`${deleteAllRoute}${activeQueryString}`, { preserveScroll: true })}
+                                            onClick={() =>
+                                                router.delete(`${deleteAllRoute}${activeQueryString}`, {
+                                                    preserveScroll: true,
+                                                })
+                                            }
                                         >
-                                            Delete All
+                                            {t('buttons.deleteAll')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
                         )}
+
                         <Button variant="ghost" size="icon" onClick={() => router.reload()}>
                             <RefreshCw className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <form
-                        className="flex gap-2"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            applyFilter({ search, page: 1 });
-                        }}
-                    >
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder={t('pages.auditLogs.search')}
-                            className="h-9 w-[260px]"
-                        />
-                        <Button type="submit" size="sm">
-                            Search
-                        </Button>
-                    </form>
-                    <Select value={filters.event || '__all__'} onValueChange={(v) => applyFilter({ event: v === '__all__' ? '' : v, page: 1 })}>
-                        <SelectTrigger className="h-9 w-[150px]">
-                            <SelectValue placeholder="Event" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="__all__">All events</SelectItem>
-                            <SelectItem value="created">Created</SelectItem>
-                            <SelectItem value="updated">Updated</SelectItem>
-                            <SelectItem value="deleted">Deleted</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={String(filters.per_page ?? 20)} onValueChange={(v) => applyFilter({ per_page: Number(v), page: 1 })}>
-                        <SelectTrigger className="h-9 w-[110px]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {perPageOptions.map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                    {n} / page
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Table */}
-                <div className="border-border overflow-hidden rounded-lg border">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="border-border bg-muted/50 border-b">
-                                <tr>
-                                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">{t('columns.event')}</th>
-                                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">{t('columns.description')}</th>
-                                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">{t('columns.subject')}</th>
-                                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">{t('columns.user')}</th>
-                                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">{t('columns.time')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-border divide-y">
-                                {logs.data.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="text-muted-foreground px-4 py-8 text-center">
-                                            {t('pages.auditLogs.empty')}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    logs.data.map((log) => (
-                                        <tr key={log.id} className="hover:bg-muted/30 transition">
-                                            <td className="px-4 py-3">
-                                                <span
-                                                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${EVENT_COLORS[log.event ?? ''] ?? 'bg-gray-100 text-gray-600'}`}
-                                                >
-                                                    {log.event ?? 'unknown'}
-                                                </span>
-                                            </td>
-                                            <td className="max-w-[240px] truncate px-4 py-3">{log.description}</td>
-                                            <td className="text-muted-foreground px-4 py-3">
-                                                {log.subject_type ? `${log.subject_type.split('\\').pop()} #${log.subject_id}` : '-'}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {log.causer ? (
-                                                    <div>
-                                                        <div className="font-medium">{log.causer.name}</div>
-                                                        <div className="text-muted-foreground text-xs">{log.causer.email}</div>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted-foreground">System</span>
-                                                )}
-                                            </td>
-                                            <td className="text-muted-foreground px-4 py-3 whitespace-nowrap">
-                                                {new Date(log.created_at).toLocaleString('id-ID')}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Pagination */}
-                {logs.last_page > 1 && (
-                    <div className="flex flex-wrap justify-center gap-1.5">
-                        {logs.links.map((link, i) => (
-                            <Button
-                                key={i}
-                                variant={link.active ? 'default' : 'outline'}
-                                size="sm"
-                                disabled={!link.url}
-                                onClick={() => {
-                                    if (link.url) router.visit(link.url, { preserveScroll: true });
-                                }}
-                            >
-                                <span dangerouslySetInnerHTML={{ __html: link.label }} />
-                            </Button>
-                        ))}
-                    </div>
-                )}
+                <ServerDataTable<LogItem>
+                    endpoint={indexRoute}
+                    data={logs}
+                    columns={columns}
+                    keyField="id"
+                    filters={activeQuery}
+                    perPageOptions={datatable?.per_page_options ?? [10, 20, 50, 100]}
+                    searchPlaceholder={t('pages.auditLogs.search')}
+                    emptyMessage={t('pages.auditLogs.empty')}
+                    reloadOnly={['logs', 'filters', 'datatable', 'crud']}
+                    toolbarRight={
+                        <Select
+                            value={activeQuery.event || '__all__'}
+                            onValueChange={(v) => applyFilter({ event: v === '__all__' ? '' : v, page: 1 })}
+                        >
+                            <SelectTrigger className="h-9 w-[150px]">
+                                <SelectValue placeholder={t('labels.event')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="__all__">{t('labels.allEvents')}</SelectItem>
+                                <SelectItem value="created">{t('labels.created')}</SelectItem>
+                                <SelectItem value="updated">{t('labels.updated')}</SelectItem>
+                                <SelectItem value="deleted">{t('labels.deleted')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    }
+                />
             </div>
         </AppLayout>
     );

@@ -12,12 +12,8 @@ return new class extends Migration {
     {
         Schema::create('settingapp', function(Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('nama_app');
-            $table->text('deskripsi')->nullable();
-            $table->string('logo')->nullable();
-            $table->string('favicon')->nullable();
-            $table->string('warna')->nullable();
-            $table->json('seo')->nullable();
+            $table->string('key')->unique();
+            $table->longText('value')->nullable();
             $table->timestamps();
         });
     }

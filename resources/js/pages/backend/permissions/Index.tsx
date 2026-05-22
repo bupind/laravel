@@ -16,13 +16,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/hooks/use-language';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { PermissionFormFields, type PermissionModuleForm } from './Form';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Permission Management', href: '/backend/permissions' }];
 
 interface PermissionChild {
     id: string;
@@ -194,8 +191,8 @@ export default function PermissionIndex({ permissions, groups, standardActions =
                                           size="icon"
                                           variant="ghost"
                                           className="border-border h-7 w-7 rounded-none border-r"
-                                          aria-label="Edit permission"
-                                          title="Edit permission"
+                                          aria-label={t('buttons.edit')}
+                                          title={t('buttons.edit')}
                                       >
                                           <Link href={`${indexRoute}/${encodeURIComponent(permissionModule.module)}/edit${activeQueryString}`}>
                                               <Pencil className="h-4 w-4" />
@@ -209,21 +206,21 @@ export default function PermissionIndex({ permissions, groups, standardActions =
                                                   size="icon"
                                                   variant="ghost"
                                                   className="text-destructive hover:text-destructive h-7 w-7 rounded-none"
-                                                  aria-label="Delete permission"
-                                                  title="Delete permission"
+                                                  aria-label={t('buttons.delete')}
+                                                  title={t('buttons.delete')}
                                               >
                                                   <Trash2 className="h-4 w-4" />
                                               </Button>
                                           </AlertDialogTrigger>
                                           <AlertDialogContent>
                                               <AlertDialogHeader>
-                                                  <AlertDialogTitle>Delete this permission?</AlertDialogTitle>
+                                                  <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
                                                   <AlertDialogDescription>
-                                                      Permission <strong>{permissionModule.module_label}</strong> will be permanently deleted.
+                                                      {t('dialog.delete.description', { item: permissionModule.module_label })}
                                                   </AlertDialogDescription>
                                               </AlertDialogHeader>
                                               <AlertDialogFooter>
-                                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                  <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                                   <AlertDialogAction
                                                       className="bg-destructive hover:bg-destructive/90"
                                                       onClick={() => {
@@ -233,7 +230,7 @@ export default function PermissionIndex({ permissions, groups, standardActions =
                                                           );
                                                       }}
                                                   >
-                                                      Delete
+                                                      {t('buttons.delete')}
                                                   </AlertDialogAction>
                                               </AlertDialogFooter>
                                           </AlertDialogContent>
@@ -248,7 +245,7 @@ export default function PermissionIndex({ permissions, groups, standardActions =
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={[{ title: t('pages.permissions.title'), href: '/backend/permissions' }]}>
             <Head title={t('pages.permissions.title')} />
             <div className="space-y-6 p-4 md:p-6">
                 <div>
@@ -294,10 +291,10 @@ export default function PermissionIndex({ permissions, groups, standardActions =
                             }}
                         >
                             <SelectTrigger className="h-9 w-[200px]">
-                                <SelectValue placeholder="All groups" />
+                                <SelectValue placeholder={t('pages.permissions.allGroups')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="__ALL__">All groups</SelectItem>
+                                <SelectItem value="__ALL__">{t('pages.permissions.allGroups')}</SelectItem>
                                 {groups.map((group) => (
                                     <SelectItem key={group} value={group}>
                                         {group}
@@ -312,8 +309,8 @@ export default function PermissionIndex({ permissions, groups, standardActions =
             <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{crud?.mode === 'edit' ? 'Update Permission' : 'Create Permission'}</DialogTitle>
-                        <DialogDescription>Define module path, group, and privileges.</DialogDescription>
+                        <DialogTitle>{crud?.mode === 'edit' ? t('buttons.update') : t('buttons.create')}</DialogTitle>
+                        <DialogDescription>{t('pages.permissions.formDescription')}</DialogDescription>
                     </DialogHeader>
                     <PermissionFormFields
                         permission={form?.permission ?? null}

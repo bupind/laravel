@@ -13,7 +13,7 @@ class UserFileController extends Controller
     {
         $user     = $request->user();
         $folderId = $request->input('folder_id');
-        $folders = $user->mediaFolders()->orderBy('name')->get();
+        $folders  = $user->mediaFolders()->orderBy('name')->get();
         // âœ… Cek folder aktif
         $currentFolder = $folderId ? $user->mediaFolders()->find($folderId) : null;
         if($folderId && !$currentFolder) {

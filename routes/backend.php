@@ -1,12 +1,28 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| Backend Routes
+|--------------------------------------------------------------------------
+| Semua rute admin/backend berada di prefix /backend.
+|
+| Middleware yang digunakan:
+|  - auth            → user harus login
+|  - menu.permission → user harus punya izin sesuai menu yang dikonfigurasi
+|
+| File upload tidak memerlukan menu.permission karena dipanggil dari widget
+| internal (misal: FileLibraryPicker) yang sudah dilindungi oleh form/page
+| yang membutuhkan permission tersendiri.
+*/
+
+use App\Http\Controllers\Backend\ApiClientController;
 use App\Http\Controllers\Backend\AuditLogController;
-use App\Http\Controllers\Backend\BackupController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FileLibraryController;
 use App\Http\Controllers\Backend\MediaFolderController;
 use App\Http\Controllers\Backend\MenuController;
 use App\Http\Controllers\Backend\PermissionController;
+use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingAppController;
 use App\Http\Controllers\Backend\TranslationController;
@@ -14,109 +30,105 @@ use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\UserFileController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('backend')->group(function () {
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/files/library', [
-            FileLibraryController::class,
-            'index',
-        ])->name('files.library');
-        Route::get('/files/library/folders', [
-            FileLibraryController::class,
-            'folders',
-        ])->name('files.library.folders');
-        Route::post('/files', [
-            UserFileController::class,
-            'store',
-        ])->name('files.store');
+Route::prefix('backend')->name('backend.')->group(function () {
+
+    // ─── File Upload (auth only, no menu.permission) ───────────────────────
+    Route::middleware('auth')->group(function () {
+        // File library browser (dipakai oleh widget FileLibraryPicker)
+        Route::controller(FileLibraryController::class)
+            ->prefix('files/library')
+            ->name('files.library.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/folders', 'folders')->name('folders');
+            });
+
+        // Upload file baru
+        Route::post('files', [UserFileController::class, 'store'])->name('files.store');
     });
-    Route::middleware([
-        'auth',
-        'menu.permission',
-    ])->group(function () {
+
+    // ─── Protected Admin Routes ────────────────────────────────────────────
+    Route::middleware(['auth', 'menu.permission'])->group(function () {
+
+        // Dashboard
         Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+        // Roles
         Route::resource('roles', RoleController::class)->except('show');
+
+        // Menus
+        Route::post('menus/reorder', [MenuController::class, 'reorder'])->name('menus.reorder');
         Route::resource('menus', MenuController::class);
-        Route::post('menus/reorder', [
-            MenuController::class,
-            'reorder',
-        ])->name('menus.reorder');
-        Route::get('permissions/export', [
-            PermissionController::class,
-            'export',
-        ])->name('permissions.export');
-        Route::delete('permissions/modules/{module}', [
-            PermissionController::class,
-            'destroyModule',
-        ])->name('permissions.destroy-module');
-        Route::post('permissions/bulk', [PermissionController::class, 'storeBulk'])->name('permissions.bulk');
+
+        // API Clients
+        Route::resource('api-clients', ApiClientController::class)->except('show');
+
+        // Products
+        Route::resource('products', ProductController::class)->except('show');
+
+        // Permissions
+        Route::controller(PermissionController::class)
+            ->prefix('permissions')
+            ->name('permissions.')
+            ->group(function () {
+                Route::get('export', 'export')->name('export');
+                Route::delete('modules/{module}', 'destroyModule')->name('destroy-module');
+                Route::post('bulk', 'storeBulk')->name('bulk');
+            });
         Route::resource('permissions', PermissionController::class)->except('show');
-        Route::get('users/export', [
-            UserController::class,
-            'export',
-        ])->name('users.export');
-        Route::put('/users/{user}/reset-password', [
-            UserController::class,
-            'resetPassword',
-        ])->name('users.reset-password');
+
+        // Users
+        Route::controller(UserController::class)
+            ->prefix('users')
+            ->name('users.')
+            ->group(function () {
+                Route::get('export', 'export')->name('export');
+                Route::put('{user}/reset-password', 'resetPassword')->name('reset-password');
+            });
         Route::resource('users', UserController::class)->except('show');
-        Route::get('/settingsapp', [
-            SettingAppController::class,
-            'edit',
-        ])->name('setting.edit');
-        Route::post('/settingsapp', [
-            SettingAppController::class,
-            'update',
-        ])->name('setting.update');
-        Route::get('/translations', [
-            TranslationController::class,
-            'edit',
-        ])->name('translations.edit');
-        Route::put('/translations', [
-            TranslationController::class,
-            'update',
-        ])->name('translations.update');
+
+        // App Settings
+        Route::controller(SettingAppController::class)
+            ->prefix('settingsapp')
+            ->name('setting.')
+            ->group(function () {
+                Route::get('/', 'edit')->name('edit');
+                Route::post('/', 'update')->name('update');
+            });
+
+        // Translations
+        Route::controller(TranslationController::class)
+            ->prefix('translations')
+            ->name('translations.')
+            ->group(function () {
+                Route::get('/', 'edit')->name('edit');
+                Route::put('/', 'update')->name('update');
+                Route::post('sync', 'sync')->name('sync');
+            });
+
         // Audit Logs
-        Route::get('/audit-logs', [
-            AuditLogController::class,
-            'index',
-        ])->name('audit-logs.index');
-        Route::get('/audit-logs/export', [
-            AuditLogController::class,
-            'export',
-        ])->name('audit-logs.export');
-        Route::delete('/audit-logs/delete-all', [
-            AuditLogController::class,
-            'destroyAll',
-        ])->name('audit-logs.destroy-all');
-        // Backup
-        Route::get('/backup', [
-            BackupController::class,
-            'index',
-        ])->name('backup.index');
-        Route::post('/backup/run', [
-            BackupController::class,
-            'run',
-        ])->name('backup.run');
-        Route::get('/backup/download/{file}', [
-            BackupController::class,
-            'download',
-        ])->name('backup.download');
-        Route::delete('/backup/delete/{file}', [
-            BackupController::class,
-            'delete',
-        ])->name('backup.delete');
-        // File Library
-        Route::get('/files', [
-            UserFileController::class,
-            'index',
-        ])->name('files.index');
-        Route::delete('/files/{id}', [
-            UserFileController::class,
-            'destroy',
-        ])->name('files.destroy');
+        Route::controller(AuditLogController::class)
+            ->prefix('audit-logs')
+            ->name('audit-logs.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('export', 'export')->name('export');
+                Route::delete('delete-all', 'destroyAll')->name('destroy-all');
+            });
+
+        // File Manager (index & delete — upload sudah di grup auth-only di atas)
+        Route::controller(UserFileController::class)
+            ->prefix('files')
+            ->name('files.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::delete('{id}', 'destroy')->name('destroy');
+            });
+
         // Media Folders
         Route::resource('media', MediaFolderController::class);
     });
-    require __DIR__.'/backend/settings.php';
-    require __DIR__.'/backend/auth.php';
+
+    // Settings sub-routes (profile, password, appearance)
+    require __DIR__ . '/backend/settings.php';
 });

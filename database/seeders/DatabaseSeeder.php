@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolePermissionSeeder::class,
+            SettingAppSeeder::class,
+            TranslationSeeder::class,
         ]);
         $user = User::factory()->create([
             'name'     => 'Superuser',

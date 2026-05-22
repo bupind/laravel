@@ -1,11 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/hooks/use-language';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Activity, Users } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/backend/dashboard' }];
 
 interface Stats {
     totalUsers: number;
@@ -25,16 +23,17 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function Dashboard({ stats }: Props) {
+    const { t } = useLanguage();
     const metricCards = [
-        { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: Users, color: 'text-blue-500' },
-        { label: 'Activity Logs', value: stats?.totalLogs ?? 0, icon: Activity, color: 'text-cyan-500' },
+        { label: t('pages.dashboard.totalUsers'), value: stats?.totalUsers ?? 0, icon: Users, color: 'text-blue-500' },
+        { label: t('pages.dashboard.activityLogs'), value: stats?.totalLogs ?? 0, icon: Activity, color: 'text-cyan-500' },
     ];
 
     // @ts-ignore
     // @ts-ignore
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+        <AppLayout breadcrumbs={[{ title: t('pages.dashboard.title'), href: '/backend/dashboard' }]}>
+            <Head title={t('pages.dashboard.title')} />
             <div className="flex flex-col gap-6 p-4 md:p-6">
                 {/* Metric Cards */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
@@ -59,7 +58,7 @@ export default function Dashboard({ stats }: Props) {
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <Card>
                         <CardHeader className="px-4 py-3">
-                            <CardTitle className="text-base">User Registrations (6 Months)</CardTitle>
+                            <CardTitle className="text-base">{t('pages.dashboard.userRegistrations')}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[220px] pb-4">
                             <ResponsiveContainer width="100%" height="100%">
@@ -74,11 +73,11 @@ export default function Dashboard({ stats }: Props) {
                     </Card>
                     <Card>
                         <CardHeader className="px-4 py-3">
-                            <CardTitle className="text-base">Recent Activity</CardTitle>
+                            <CardTitle className="text-base">{t('pages.dashboard.recentActivity')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2 pb-4">
                             {(stats?.recentActivity ?? []).length === 0 ? (
-                                <p className="text-muted-foreground text-sm">No recent activity.</p>
+                                <p className="text-muted-foreground text-sm">{t('pages.dashboard.noRecentActivity')}</p>
                             ) : (
                                 (stats?.recentActivity ?? []).map((log) => (
                                     <div key={log.id} className="flex items-start justify-between gap-3 text-sm">
@@ -91,7 +90,9 @@ export default function Dashboard({ stats }: Props) {
                                                 </span>
                                                 <span className="text-muted-foreground truncate">{log.description}</span>
                                             </div>
-                                            <div className="text-muted-foreground mt-0.5 text-xs">by {log.causer}</div>
+                                            <div className="text-muted-foreground mt-0.5 text-xs">
+                                                {t('pages.dashboard.byUser', { user: log.causer })}
+                                            </div>
                                         </div>
                                         <span className="text-muted-foreground shrink-0 text-xs">{log.created_at}</span>
                                     </div>

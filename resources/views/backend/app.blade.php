@@ -7,18 +7,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $setting = $page['props']['setting'] ?? null;
-        $appName = $setting['nama_app'] ?? config('app.name', 'Laravel');
-        $favicon = $setting['favicon'] ?? null;
+        $appName = data_get($setting, 'nama_app', config('app.name', 'Laravel'));
+        $favicon = data_get($setting, 'favicon');
     @endphp
 
     <title inertia>{{ $appName }}</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-
-    @php
-        $favicon = $page['props']->setting->favicon ?? null;
-    @endphp
 
     @if (!empty($favicon))
         <link rel="icon" href="{{ asset('storage/' . $favicon) }}" type="image/png">

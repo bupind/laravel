@@ -3,19 +3,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, RefreshCw, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type TranslationOverrides = {
-    id?: Record<string, string>;
-    en?: Record<string, string>;
-    [language: string]: Record<string, string> | undefined;
+type TranslationValues = {
+    [locale: string]: string | undefined;
+};
+
+type TranslationRow = {
+    scope: string;
+    namespace: string;
+    key: string;
+    full_key?: string;
+    is_active: boolean;
+    values: TranslationValues;
 };
 
 interface Props {
-    translations?: TranslationOverrides;
+    rows?: TranslationRow[];
+    scopes?: string[];
+    locales?: string[];
+    localeOptions?: { code: string; label: string }[];
     crud?: {
         permissions?: {
             view: boolean;
@@ -29,97 +38,129 @@ interface Props {
             routes?: {
                 index?: string;
                 update?: string;
+                sync?: string;
             };
         };
     };
 }
 
-const PAGE_SIZE = 10;
-const SUPPORTED_LANGUAGES = ['id', 'en'] as const;
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Translations', href: '/backend/translations' }];
+const PAGE_SIZE = 12;
+function normalizeLocaleCode(locale: string): string {
+    return locale.trim().toLowerCase().replaceAll('_', '-');
+}
 
-export default function TranslationIndex({ translations = {}, crud }: Props) {
-    const { t, keys, dictionaries, updateOverrides } = useLanguage();
+function localeLabel(locale: string, localeOptions: { code: string; label: string }[] = []): string {
+    return localeOptions.find((option) => option.code === locale)?.label ?? locale.toUpperCase();
+}
+
+function normalizeLocaleList(locales: string[] = [], rows: TranslationRow[] = [], localeOptions: { code: string; label: string }[] = []) {
+    const rowLocales = rows.flatMap((row) => Object.keys(row.values ?? {}));
+    const optionLocales = localeOptions.map((option) => option.code);
+    const normalized = [...locales, ...optionLocales, ...rowLocales]
+        .map(normalizeLocaleCode)
+        .filter((locale) => /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(locale));
+
+    for (const fallback of ['en', 'id']) {
+        if (!normalized.includes(fallback)) {
+            normalized.unshift(fallback);
+        }
+    }
+
+    return Array.from(new Set(normalized)).map((code) => ({
+        code,
+        label: localeLabel(code, localeOptions),
+    }));
+}
+
+function emptyValues(locales: { code: string }[]): TranslationValues {
+    return Object.fromEntries(locales.map((locale) => [locale.code, '']));
+}
+
+function normalizeRows(rows: TranslationRow[] = [], locales: { code: string }[] = []): TranslationRow[] {
+    return rows.map((row) => ({
+        scope: row.scope || 'common',
+        namespace: row.namespace || 'common',
+        key: row.key || '',
+        full_key: row.full_key || `${row.namespace}.${row.key}`,
+        is_active: row.is_active ?? true,
+        values: {
+            ...emptyValues(locales),
+            ...(row.values ?? {}),
+        },
+    }));
+}
+
+function buildDictionary(rows: TranslationRow[], locales: { code: string }[]) {
+    const messages = Object.fromEntries(locales.map((locale) => [locale.code, {} as Record<string, string>]));
+
+    rows.forEach((row) => {
+        if (!row.is_active || !row.namespace || !row.key) {
+            return;
+        }
+
+        const fullKey = `${row.namespace}.${row.key}`;
+        locales.forEach((locale) => {
+            const value = row.values[locale.code] ?? '';
+            if (value !== '') {
+                messages[locale.code][fullKey] = value;
+            }
+        });
+    });
+
+    return messages;
+}
+
+export default function TranslationIndex({
+    rows = [],
+    scopes = ['common', 'backend', 'frontend', 'api'],
+    locales = ['id', 'en'],
+    localeOptions = [],
+    crud,
+}: Props) {
+    const { t, updateOverrides } = useLanguage();
+    const initialLocales = useMemo(() => normalizeLocaleList(locales, rows, localeOptions), [locales, rows, localeOptions]);
     const canUpdate = crud?.permissions?.update ?? false;
     const canSync = crud?.permissions?.sync ?? canUpdate;
     const updateRoute = crud?.resource?.routes?.update ?? route('translations.update');
+    const syncRoute = crud?.resource?.routes?.sync ?? route('translations.sync');
     const [keyword, setKeyword] = useState('');
+    const [scopeFilter, setScopeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const [syncedTranslations, setSyncedTranslations] = useState<TranslationOverrides>(translations);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [newLocale, setNewLocale] = useState('');
+    const [editableLocales, setEditableLocales] = useState(initialLocales);
 
-    const initialTranslations = useMemo(() => {
-        const idValues: Record<string, string> = {};
-        const enValues: Record<string, string> = {};
+    const { data, setData, put, post, processing } = useForm<{ rows: TranslationRow[] }>({
+        rows: normalizeRows(rows, initialLocales),
+    });
 
-        keys.forEach((key) => {
-            idValues[key] = translations.id?.[key] ?? dictionaries.id[key] ?? '';
-            enValues[key] = translations.en?.[key] ?? dictionaries.en[key] ?? '';
-        });
-
-        return { id: idValues, en: enValues };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const { data, setData, put, processing } = useForm<{
-        translations: { id: Record<string, string>; en: Record<string, string> };
-    }>({ translations: initialTranslations });
-
-    const untranslatedKeys = useMemo(
-        () =>
-            keys.filter((key) => {
-                const idValue = syncedTranslations.id?.[key]?.trim();
-                const enValue = syncedTranslations.en?.[key]?.trim();
-
-                return !idValue || !enValue;
-            }),
-        [keys, syncedTranslations.en, syncedTranslations.id],
-    );
-
-    const staleTranslationCount = useMemo(() => {
-        const supportedLanguages = new Set<string>(SUPPORTED_LANGUAGES);
-        const supportedKeys = new Set(keys);
-
-        return Object.entries(syncedTranslations).reduce((count, [language, values]) => {
-            if (!values) {
-                return count;
-            }
-
-            if (!supportedLanguages.has(language)) {
-                return count + Object.keys(values).length;
-            }
-
-            return count + Object.keys(values).filter((key) => !supportedKeys.has(key)).length;
-        }, 0);
-    }, [keys, syncedTranslations]);
-
-    const filteredKeys = useMemo(() => {
+    const filteredRows = useMemo(() => {
         const query = keyword.trim().toLowerCase();
 
-        if (!query) {
-            return keys;
-        }
+        return data.rows.filter((row) => {
+            const fullKey = `${row.namespace}.${row.key}`;
+            const matchScope = scopeFilter === 'all' || row.scope === scopeFilter;
+            const matchKeyword =
+                !query ||
+                [row.scope, row.namespace, row.key, fullKey, ...Object.values(row.values ?? {})].some((value = '') =>
+                    value.toLowerCase().includes(query),
+                );
 
-        return keys.filter((key) => {
-            const idValue = data.translations.id[key] ?? '';
-            const enValue = data.translations.en[key] ?? '';
-
-            return [key, idValue, enValue].some((value) => value.toLowerCase().includes(query));
+            return matchScope && matchKeyword;
         });
-    }, [data.translations.en, data.translations.id, keys, keyword]);
+    }, [data.rows, keyword, scopeFilter]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredKeys.length / PAGE_SIZE));
-    const pageKeys = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+    const pageRows = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
 
-        return filteredKeys.slice(start, start + PAGE_SIZE);
-    }, [currentPage, filteredKeys]);
-    const fromRow = filteredKeys.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-    const toRow = Math.min(currentPage * PAGE_SIZE, filteredKeys.length);
+        return filteredRows.slice(start, start + PAGE_SIZE);
+    }, [currentPage, filteredRows]);
+    const fromRow = filteredRows.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const toRow = Math.min(currentPage * PAGE_SIZE, filteredRows.length);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [keyword]);
+    }, [keyword, scopeFilter]);
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -127,60 +168,87 @@ export default function TranslationIndex({ translations = {}, crud }: Props) {
         }
     }, [currentPage, totalPages]);
 
-    const setTranslation = (language: 'id' | 'en', key: string, value: string) => {
-        setData('translations', {
-            ...data.translations,
-            [language]: {
-                ...data.translations[language],
-                [key]: value,
-            },
-        });
+    const updateRow = (index: number, patch: Partial<TranslationRow>) => {
+        const nextRows = [...data.rows];
+        nextRows[index] = {
+            ...nextRows[index],
+            ...patch,
+        };
+        setData('rows', nextRows);
     };
 
-    const syncMissingTranslations = () => {
-        if (!canSync) {
+    const updateValue = (index: number, locale: string, value: string) => {
+        const nextRows = [...data.rows];
+        nextRows[index] = {
+            ...nextRows[index],
+            values: {
+                ...nextRows[index].values,
+                [locale]: value,
+            },
+        };
+        setData('rows', nextRows);
+    };
+
+    const addLocale = () => {
+        const code = normalizeLocaleCode(newLocale);
+        if (!/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(code) || editableLocales.some((locale) => locale.code === code)) {
             return;
         }
 
-        const nextTranslations: { id: Record<string, string>; en: Record<string, string> } = {
-            id: {},
-            en: {},
-        };
+        setEditableLocales([...editableLocales, { code, label: localeLabel(code, localeOptions) }]);
+        setData(
+            'rows',
+            data.rows.map((row) => ({
+                ...row,
+                values: {
+                    ...row.values,
+                    [code]: '',
+                },
+            })),
+        );
+        setNewLocale('');
+    };
 
-        keys.forEach((key) => {
-            SUPPORTED_LANGUAGES.forEach((language) => {
-                const currentValue = data.translations[language][key]?.trim();
-                const syncedValue = syncedTranslations[language]?.[key]?.trim();
-                const fallback = dictionaries[language][key] ?? '';
-
-                nextTranslations[language][key] = currentValue || syncedValue || fallback;
-            });
-        });
-
-        setData('translations', nextTranslations);
-        setSyncedTranslations(nextTranslations);
+    const addRow = () => {
+        setData('rows', [
+            {
+                scope: scopeFilter !== 'all' ? scopeFilter : 'backend',
+                namespace: 'custom',
+                key: 'new_key',
+                full_key: 'custom.new_key',
+                is_active: true,
+                values: emptyValues(editableLocales),
+            },
+            ...data.rows,
+        ]);
+        setCurrentPage(1);
     };
 
     const submit = () => {
-        if (!canUpdate || processing || isSubmitting) {
+        if (!canUpdate || processing) {
             return;
         }
 
-        setIsSubmitting(true);
         put(updateRoute, {
             preserveScroll: true,
             onSuccess: () => {
-                setSyncedTranslations(data.translations);
-                updateOverrides(data.translations);
+                updateOverrides(buildDictionary(data.rows, editableLocales));
             },
-            onFinish: () => {
-                setIsSubmitting(false);
-            },
+        });
+    };
+
+    const syncTranslations = () => {
+        if (!canSync || processing) {
+            return;
+        }
+
+        post(syncRoute, {
+            preserveScroll: true,
         });
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={[{ title: t('settings.translations.title'), href: '/backend/translations' }]}>
             <Head title={t('settings.translations.title')} />
 
             <div className="space-y-6 p-4 md:p-6">
@@ -191,91 +259,149 @@ export default function TranslationIndex({ translations = {}, crud }: Props) {
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <select
+                            value={scopeFilter}
+                            onChange={(event) => setScopeFilter(event.target.value)}
+                            className="border-input bg-background ring-offset-background h-9 rounded-md border px-3 text-sm"
+                        >
+                            <option value="all">{t('settings.translations.allScopes')}</option>
+                            {scopes.map((scope) => (
+                                <option key={scope} value={scope}>
+                                    {scope}
+                                </option>
+                            ))}
+                        </select>
                         <Input
                             value={keyword}
                             onChange={(event) => setKeyword(event.target.value)}
                             placeholder={t('settings.translations.search')}
                             className="h-9 w-full sm:w-[280px]"
                         />
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={syncMissingTranslations}
-                            disabled={!canSync || processing || isSubmitting}
-                            className="h-9"
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                            {t('buttons.sync')}
-                            {untranslatedKeys.length + staleTranslationCount > 0 ? (
-                                <span className="bg-background text-foreground rounded-full border px-2 py-0.5 text-xs font-semibold">
-                                    {untranslatedKeys.length + staleTranslationCount}
-                                </span>
-                            ) : null}
+                        <div className="flex gap-2">
+                            <Input
+                                value={newLocale}
+                                onChange={(event) => setNewLocale(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        addLocale();
+                                    }
+                                }}
+                                placeholder="ar"
+                                disabled={!canUpdate || processing}
+                                className="h-9 w-20"
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={addLocale}
+                                disabled={!canUpdate || processing || !newLocale.trim()}
+                                className="h-9"
+                            >
+                                {t('buttons.add')}
+                            </Button>
+                        </div>
+                        <Button type="button" variant="secondary" onClick={addRow} disabled={!canUpdate || processing} className="h-9">
+                            <Plus className="h-4 w-4" />
+                            {t('buttons.add')}
                         </Button>
-                        <Button type="button" onClick={submit} disabled={!canUpdate || processing || isSubmitting} className="h-9">
+                        <Button type="button" variant="secondary" onClick={syncTranslations} disabled={!canSync || processing} className="h-9">
+                            <RefreshCw className={processing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+                            {t('buttons.sync')}
+                        </Button>
+                        <Button type="button" onClick={submit} disabled={!canUpdate || processing} className="h-9">
                             <Save className="h-4 w-4" />
-                            {processing || isSubmitting ? t('buttons.saving') : t('buttons.save')}
+                            {processing ? t('buttons.saving') : t('buttons.save')}
                         </Button>
                     </div>
                 </div>
 
                 <div className="text-muted-foreground flex flex-col gap-2 text-sm md:flex-row md:items-center md:justify-between">
-                    <div>
-                        Menampilkan {fromRow}-{toRow} dari {filteredKeys.length} key. Load per halaman: {PAGE_SIZE}.
-                    </div>
-                    <div>
-                        {untranslatedKeys.length === 0 && staleTranslationCount === 0
-                            ? 'Semua key sudah tersinkron.'
-                            : `${untranslatedKeys.length} key belum tersinkron, ${staleTranslationCount} data lama akan dihapus saat sync.`}
+                    <div>{t('settings.translations.resultSummary', { from: fromRow, to: toRow, total: filteredRows.length })}</div>
+                    <div className="flex flex-wrap gap-2">
+                        {scopes.map((scope) => (
+                            <Badge key={scope} variant={scopeFilter === scope ? 'default' : 'secondary'}>
+                                {scope}
+                            </Badge>
+                        ))}
                     </div>
                 </div>
 
                 <div className="bg-card overflow-hidden rounded-lg border">
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[840px] text-sm">
+                        <table className="w-full text-sm" style={{ minWidth: `${620 + editableLocales.length * 260}px` }}>
                             <thead className="bg-muted text-muted-foreground">
                                 <tr className="border-b">
-                                    <th className="w-[28%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
-                                    <th className="w-[36%] px-4 py-3 text-left font-semibold">{t('settings.translations.indonesian')}</th>
-                                    <th className="w-[36%] px-4 py-3 text-left font-semibold">{t('settings.translations.english')}</th>
+                                    <th className="w-[12%] px-4 py-3 text-left font-semibold">{t('settings.translations.scope')}</th>
+                                    <th className="w-[14%] px-4 py-3 text-left font-semibold">{t('settings.translations.namespace')}</th>
+                                    <th className="w-[18%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
+                                    {editableLocales.map((locale) => (
+                                        <th key={locale.code} className="min-w-[240px] px-4 py-3 text-left font-semibold">
+                                            {locale.label}
+                                            <span className="text-muted-foreground ml-2 font-mono text-xs">{locale.code}</span>
+                                        </th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredKeys.length === 0 ? (
+                                {filteredRows.length === 0 ? (
                                     <tr>
-                                        <td colSpan={3} className="text-muted-foreground px-4 py-8 text-center">
-                                            Tidak ada key ditemukan.
+                                        <td colSpan={3 + editableLocales.length} className="text-muted-foreground px-4 py-8 text-center">
+                                            {t('settings.translations.noKeys')}
                                         </td>
                                     </tr>
                                 ) : (
-                                    pageKeys.map((key) => (
-                                        <tr key={key} className="border-b last:border-b-0">
-                                            <td className="px-4 py-3 align-top">
-                                                <div className="flex flex-col gap-2">
-                                                    <code className="text-muted-foreground text-xs break-all">{key}</code>
-                                                    {untranslatedKeys.includes(key) ? (
-                                                        <Badge variant="secondary" className="w-fit">
-                                                            Belum tersinkron
-                                                        </Badge>
-                                                    ) : null}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 align-top">
-                                                <Input
-                                                    value={data.translations.id[key] ?? ''}
-                                                    onChange={(event) => setTranslation('id', key, event.target.value)}
-                                                    className="h-9"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3 align-top">
-                                                <Input
-                                                    value={data.translations.en[key] ?? ''}
-                                                    onChange={(event) => setTranslation('en', key, event.target.value)}
-                                                    className="h-9"
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))
+                                    pageRows.map((row) => {
+                                        const realIndex = data.rows.indexOf(row);
+
+                                        return (
+                                            <tr key={`${row.scope}.${row.namespace}.${row.key}.${realIndex}`} className="border-b last:border-b-0">
+                                                <td className="px-4 py-3 align-top">
+                                                    <select
+                                                        value={row.scope}
+                                                        onChange={(event) => updateRow(realIndex, { scope: event.target.value })}
+                                                        disabled={!canUpdate}
+                                                        className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                                                    >
+                                                        {scopes.map((scope) => (
+                                                            <option key={scope} value={scope}>
+                                                                {scope}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                                <td className="px-4 py-3 align-top">
+                                                    <Input
+                                                        value={row.namespace}
+                                                        onChange={(event) => updateRow(realIndex, { namespace: event.target.value })}
+                                                        disabled={!canUpdate}
+                                                        className="h-9"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3 align-top">
+                                                    <Input
+                                                        value={row.key}
+                                                        onChange={(event) => updateRow(realIndex, { key: event.target.value })}
+                                                        disabled={!canUpdate}
+                                                        className="h-9"
+                                                    />
+                                                    <code className="text-muted-foreground mt-1 block text-xs break-all">
+                                                        {row.namespace}.{row.key}
+                                                    </code>
+                                                </td>
+                                                {editableLocales.map((locale) => (
+                                                    <td key={locale.code} className="px-4 py-3 align-top">
+                                                        <Input
+                                                            value={row.values[locale.code] ?? ''}
+                                                            onChange={(event) => updateValue(realIndex, locale.code, event.target.value)}
+                                                            disabled={!canUpdate}
+                                                            className="h-9"
+                                                        />
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -290,18 +416,16 @@ export default function TranslationIndex({ translations = {}, crud }: Props) {
                         disabled={currentPage <= 1}
                     >
                         <ChevronLeft className="h-4 w-4" />
-                        Sebelumnya
+                        {t('buttons.previous')}
                     </Button>
-                    <div className="text-muted-foreground text-sm">
-                        Halaman {currentPage} dari {totalPages}
-                    </div>
+                    <div className="text-muted-foreground text-sm">{t('pagination.summary', { current: currentPage, total: totalPages })}</div>
                     <Button
                         type="button"
                         variant="outline"
                         onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                         disabled={currentPage >= totalPages}
                     >
-                        Berikutnya
+                        {t('buttons.next')}
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                 </div>

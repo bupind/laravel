@@ -14,7 +14,7 @@ class MenuController extends Controller
     public function index(Request $request)
     {
         /** @var User $user */
-        $user = $request->user();
+        $user  = $request->user();
         $menus = Menu::with([
             'children' => fn($q) => $q->orderBy('order')->with([
                 'children' => fn($q2) => $q2->orderBy('order'),
@@ -33,6 +33,7 @@ class MenuController extends Controller
         $data = $request->validate([
             'title'           => 'required|string',
             'translation_key' => 'nullable|string|max:255',
+            'scope'           => 'required|in:backend,frontend',
             'icon'            => 'nullable|string',
             'route'           => 'nullable|string',
             'parent_id'       => 'nullable|exists:menus,id',
@@ -40,19 +41,25 @@ class MenuController extends Controller
             'permission_name' => 'nullable|string|exists:permissions,name',
         ]);
         if(!isset($data['order'])) {
-            $data['order'] = Menu::where('parent_id', $data['parent_id'] ?? null)->max('order') + 1;
+            $data['order'] = Menu::where('scope', $data['scope'])->where('parent_id', $data['parent_id'] ?? null)
+                                 ->max('order') + 1;
         }
         Menu::create($data);
         return redirect()->route('menus.index')->with('success', $this->flashMessage('notifications.common.saved'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $menus       = Menu::orderBy('title')->get();
-        $permissions = Permission::orderBy('name')->pluck('name');
+        $menus        = Menu::orderBy('title')->get();
+        $permissions  = Permission::orderBy('name')->pluck('name');
+        $initialScope = $request->string('scope', 'backend')->toString();
         return Inertia::render('backend/menus/Form', [
-            'parentMenus' => $menus,
-            'permissions' => $permissions,
+            'parentMenus'  => $menus,
+            'permissions'  => $permissions,
+            'initialScope' => in_array($initialScope, [
+                'backend',
+                'frontend',
+            ], true) ? $initialScope : 'backend',
         ]);
     }
 
@@ -76,7 +83,7 @@ class MenuController extends Controller
 
     public function reorder(Request $request)
     {
-        $menus = $request->input('menus');
+        $menus       = $request->input('menus');
         $updateOrder = function($items, $parentId = null) use (&$updateOrder) {
             foreach($items as $index => $item) {
                 Menu::where('id', $item['id'])->update([
@@ -97,6 +104,7 @@ class MenuController extends Controller
         $data = $request->validate([
             'title'           => 'required|string',
             'translation_key' => 'nullable|string|max:255',
+            'scope'           => 'required|in:backend,frontend',
             'icon'            => 'nullable|string',
             'route'           => 'nullable|string',
             'parent_id'       => 'nullable|exists:menus,id|not_in:' . $menu->id,
@@ -104,12 +112,10 @@ class MenuController extends Controller
             'permission_name' => 'nullable|string|exists:permissions,name',
         ]);
         if(!isset($data['order'])) {
-            $data['order'] = Menu::where('parent_id', $data['parent_id'] ?? null)->max('order') + 1;
+            $data['order'] = Menu::where('scope', $data['scope'])->where('parent_id', $data['parent_id'] ?? null)
+                                 ->max('order') + 1;
         }
         $menu->update($data);
         return redirect()->route('menus.index')->with('success', $this->flashMessage('notifications.common.saved'));
     }
 }
-
-
-

@@ -1,4 +1,4 @@
-﻿import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -67,7 +67,7 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Role Management', href: '/backend/roles' },
+        { title: t('pages.roles.title'), href: '/backend/roles' },
         { title: isEdit ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
 
@@ -131,21 +131,21 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
                 <Card className="mx-auto max-w-4xl">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-2xl font-bold tracking-tight">{isEdit ? t('buttons.update') : t('buttons.create')}</CardTitle>
-                        <p className="text-muted-foreground text-sm">Kelola detail role dan permission.</p>
+                        <p className="text-muted-foreground text-sm">{t('pages.roles.formDescription')}</p>
                     </CardHeader>
 
                     <Separator />
 
                     <CardContent className="pt-5">
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* Nama Role */}
+                            {/* {t('pages.roles.nameLabel')} */}
                             <div>
                                 <Label htmlFor="name" className="mb-2 block">
-                                    Nama Role
+                                    {t('pages.roles.nameLabel')}
                                 </Label>
                                 <Input
                                     id="name"
-                                    placeholder="Masukkan nama role"
+                                    placeholder={t('pages.roles.namePlaceholder')}
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
                                     className={errors.name ? 'border-red-500' : ''}
@@ -158,8 +158,8 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
                             {/* Permissions */}
                             <div className="space-y-6">
                                 <div>
-                                    <h2 className="text-lg font-semibold">Permissions</h2>
-                                    <p className="text-muted-foreground text-sm">Pilih permission yang diberikan ke role ini</p>
+                                    <h2 className="text-lg font-semibold">{t('pages.roles.permissions')}</h2>
+                                    <p className="text-muted-foreground text-sm">{t('pages.roles.permissionsDescription')}</p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -252,7 +252,7 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
                             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                                 <Link href="/backend/roles" className="w-full sm:w-auto">
                                     <Button type="button" variant="secondary" className="w-full">
-                                        Batal
+                                        {t('buttons.cancel')}
                                     </Button>
                                 </Link>
                                 <Button type="submit" disabled={processing} className="w-full sm:w-auto">

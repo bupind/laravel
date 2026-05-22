@@ -28,15 +28,12 @@ export interface Setting {
     logo?: string;
     favicon?: string;
     warna?: string;
-    translations?: {
-        id?: Record<string, string>;
-        en?: Record<string, string>;
-    };
     seo?: {
         title?: string;
         description?: string;
         keywords?: string;
     };
+    [key: string]: unknown;
 }
 
 export interface SharedData {
@@ -44,6 +41,11 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     setting?: Setting;
+    translation_scope?: 'common' | 'backend' | 'frontend' | 'api' | 'mobile';
+    translations?: {
+        [locale: string]: Record<string, string> | undefined;
+    };
+    translation_locales?: { code: string; label: string }[];
     flash?: {
         success?: string | { key?: string; replacements?: Record<string, string | number> };
         error?: string | { key?: string; replacements?: Record<string, string | number> };
@@ -80,12 +82,13 @@ export interface Permission {
 }
 
 export interface MenuItem {
-    id: number;
+    id: string;
     title: string;
     translation_key?: string | null;
+    scope?: 'backend' | 'frontend';
     route: string | null;
     icon: string;
-    parent_id?: number | null;
+    parent_id?: string | null;
     order?: number;
     permission_name?: string | null;
     children?: MenuItem[];

@@ -14,6 +14,7 @@ class Menu extends Model
     protected $fillable = [
         'title',
         'translation_key',
+        'scope',
         'icon',
         'route',
         'parent_id',

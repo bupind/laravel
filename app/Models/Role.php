@@ -11,6 +11,6 @@ class Role extends SpatieRole
 
     // SpatieRole inherits from Model which already defines $incrementing.
     // We set these directly to avoid trait property conflicts.
-    public $incrementing = false;
-    protected $keyType = 'string';
+    public    $incrementing = false;
+    protected $keyType      = 'string';
 }

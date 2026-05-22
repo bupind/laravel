@@ -2,7 +2,6 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
@@ -35,63 +34,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     asChild?: boolean;
 }
 
-const buttonTranslationKeys: Record<string, string> = {
-    Add: 'buttons.add',
-    'Adding...': 'buttons.creating',
-    Back: 'buttons.back',
-    Batal: 'buttons.cancel',
-    Berikutnya: 'buttons.next',
-    Cancel: 'buttons.cancel',
-    Choose: 'buttons.choose',
-    Clear: 'buttons.clear',
-    'Clear filters': 'buttons.clearFilters',
-    Create: 'buttons.create',
-    'Delete account': 'buttons.deleteAccount',
-    Delete: 'buttons.delete',
-    Download: 'buttons.download',
-    Export: 'buttons.export',
-    Hapus: 'buttons.delete',
-    Kembali: 'buttons.back',
-    'Log in': 'buttons.login',
-    'Membuat...': 'buttons.creating',
-    'Menyimpan...': 'buttons.saving',
-    Next: 'buttons.next',
-    Prev: 'buttons.previous',
-    Save: 'buttons.save',
-    'Save Changes': 'buttons.save',
-    'Save password': 'buttons.save',
-    Search: 'buttons.search',
-    Sebelumnya: 'buttons.previous',
-    Sinkron: 'buttons.sync',
-    'Sinkronisasi Semua': 'buttons.sync',
-    Update: 'buttons.update',
-    Upload: 'buttons.upload',
-    'Upload the first file': 'buttons.uploadFirstFile',
-    'Uploading...': 'buttons.uploading',
-};
-
-function translateButtonChildren(children: React.ReactNode, t: (key: string) => string): React.ReactNode {
-    return React.Children.map(children, (child) => {
-        if (typeof child === 'string') {
-            const translationKey = buttonTranslationKeys[child.trim()];
-
-            return translationKey ? t(translationKey) : child;
-        }
-
-        if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.props.children) {
-            return React.cloneElement(child, undefined, translateButtonChildren(child.props.children, t));
-        }
-
-        return child;
-    });
-}
-
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant, size, asChild = false, ...props }, ref) => {
-    const { t } = useLanguage();
     const Comp = asChild ? Slot : 'button';
-    const children = translateButtonChildren(props.children, t);
 
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props}>{children}</Comp>;
+    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
 });
 Button.displayName = 'Button';
 

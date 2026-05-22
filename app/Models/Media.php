@@ -12,6 +12,6 @@ class Media extends SpatieMedia
     // SpatieMedia sets $incrementing = true by default in Eloquent Model.
     // We override here explicitly without using UsesUuid trait
     // to avoid "same property defined with incompatible definition" PHP error.
-    public $incrementing = false;
-    protected $keyType = 'string';
+    public    $incrementing = false;
+    protected $keyType      = 'string';
 }

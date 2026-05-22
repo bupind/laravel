@@ -26,9 +26,10 @@ class FileLibraryController extends Controller
             ],
             'folder_id' => [
                 'nullable',
-                'integer',
+                'string',
+                'uuid',
                 Rule::exists('media_folders', 'id')
-                    ->where(fn($query) => $query->where('user_id', $request->user()->id)),
+                    ->where(fn ($query) => $query->where('user_id', $request->user()->id)),
             ],
             'per_page'  => [
                 'nullable',
@@ -37,9 +38,9 @@ class FileLibraryController extends Controller
                 'max:100'
             ],
         ]);
-        $perPage  = (int)($validated['per_page'] ?? 20);
-        $search   = isset($validated['search']) ? trim((string)$validated['search']) : null;
-        $folderId = $validated['folder_id'] ?? null;
+        $perPage   = (int)($validated['per_page'] ?? 20);
+        $search    = isset($validated['search']) ? trim((string)$validated['search']) : null;
+        $folderId  = $validated['folder_id'] ?? null;
         $paginator = $this->fileLibraryService->paginateForUser(
             user    : $request->user(),
             perPage : $perPage,

@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 /**
  * BaseCrudController
@@ -171,7 +172,7 @@ abstract class BaseCrudController extends Controller
      * @example ['posts', 'comments']
      */
     protected array $withCount = [];
-    protected int $perPage = 10;
+    protected int   $perPage   = 10;
     /**
      * Pilihan baris yang bisa dipilih user.
      * Nilai di luar daftar ini akan di-ignore.
@@ -319,30 +320,31 @@ abstract class BaseCrudController extends Controller
     // Abstract
     // =========================================================================
     /**
-     * Kembalikan FQCN model Eloquent yang dikelola.
+     * GET /resources
      *
-     * @return class-string<Model>
+     * Halaman daftar dengan pagination, search, dan sorting.
      *
-     * @example return Product::class;
+     * @permission view
      */
-    abstract protected function modelClass(): string;
+    public function index(Request $request): Response
+    {
+        $this->authorize('view');
+        return Inertia::render($this->indexComponent(), $this->indexPayload($request));
+    }
 
     // =========================================================================
     // Permission
     // =========================================================================
-    /** Prefix permission aktif. Fallback ke routeName(). */
-    protected function resolvedPermissionPrefix(): string
-    {
-        return $this->permissionPrefix ?? $this->routeName();
-    }
-
     /**
-     * Nama permission penuh untuk suatu action.
-     * Override via $permissionMap untuk nama kustom.
+     * Authorize action — abort(403) jika user tidak punya permission.
+     *
+     * @throws AuthorizationException
      */
-    protected function permission(string $action): string
+    protected function authorize(string $action, mixed $record = null): void
     {
-        return $this->permissionMap[$action] ?? ($this->resolvedPermissionPrefix() . '-' . $action);
+        if(!$this->userCan($action)) {
+            abort(403, "Unauthorized: {$this->permission($action)}");
+        }
     }
 
     /**
@@ -368,7 +370,7 @@ abstract class BaseCrudController extends Controller
                 return $user->hasPermissionTo($name);
             }
             return method_exists($user, 'can') && $user->can($name);
-        } catch(\Throwable) {
+        } catch(Throwable) {
             // Permission tidak ada di DB (misal Spatie PermissionDoesNotExist)
             // → anggap tidak punya permission, jangan crash
             return false;
@@ -376,15 +378,18 @@ abstract class BaseCrudController extends Controller
     }
 
     /**
-     * Authorize action — abort(403) jika user tidak punya permission.
-     *
-     * @throws AuthorizationException
+     * Nama permission penuh untuk suatu action.
+     * Override via $permissionMap untuk nama kustom.
      */
-    protected function authorize(string $action, mixed $record = null): void
+    protected function permission(string $action): string
     {
-        if(!$this->userCan($action)) {
-            abort(403, "Unauthorized: {$this->permission($action)}");
-        }
+        return $this->permissionMap[$action] ?? ($this->resolvedPermissionPrefix() . '-' . $action);
+    }
+
+    /** Prefix permission aktif. Fallback ke routeName(). */
+    protected function resolvedPermissionPrefix(): string
+    {
+        return $this->permissionPrefix ?? $this->routeName();
     }
 
     // =========================================================================
@@ -400,14 +405,18 @@ abstract class BaseCrudController extends Controller
                ?? Str::plural(Str::kebab(class_basename($this->modelClass())));
     }
 
+    /**
+     * Kembalikan FQCN model Eloquent yang dikelola.
+     *
+     * @return class-string<Model>
+     *
+     * @example return Product::class;
+     */
+    abstract protected function modelClass(): string;
+
     protected function indexComponent(): string
     {
         return $this->indexComponentName ?? $this->componentName();
-    }
-
-    protected function formComponent(): string
-    {
-        return $this->formComponentName ?? $this->componentName();
     }
 
     protected function componentName(): string
@@ -415,238 +424,6 @@ abstract class BaseCrudController extends Controller
         return $this->componentName ?? 'backend/crud/Index';
     }
 
-    /** True jika index dan form menggunakan komponen generik yang sama. */
-    protected function usesGenericComponent(): bool
-    {
-        return $this->indexComponent() === $this->componentName()
-               && $this->formComponent() === $this->componentName();
-    }
-
-    protected function usesModal(): bool
-    {
-        return $this->modal;
-    }
-
-    // =========================================================================
-    // CRUD Actions
-    // =========================================================================
-    /**
-     * GET /resources
-     *
-     * Halaman daftar dengan pagination, search, dan sorting.
-     *
-     * @permission view
-     */
-    public function index(Request $request): Response
-    {
-        $this->authorize('view');
-        return Inertia::render($this->indexComponent(), $this->indexPayload($request));
-    }
-
-    /**
-     * GET /resources/create
-     *
-     * Tampilkan form untuk membuat record baru.
-     * Modal = true  → overlay di atas halaman index.
-     * Modal = false → halaman form terpisah.
-     *
-     * @permission create
-     */
-    public function create(Request $request): Response
-    {
-        $this->authorize('create');
-        if(!$this->usesModal()) {
-            return Inertia::render($this->formComponent(), $this->formPagePayload($request, null));
-        }
-        return Inertia::render(
-            $this->indexComponent(),
-            array_merge($this->indexPayload($request), $this->crudPayload('create', null, $request))
-        );
-    }
-
-    /**
-     * POST /resources
-     *
-     * Simpan record baru.
-     * Alur: authorize → validate → beforeStore → performStore → afterStore → redirect
-     *
-     * @permission create
-     */
-    public function store(Request $request): RedirectResponse
-    {
-        $this->authorize('create');
-        $validated = $this->validateStore($request);
-        $validated = $this->beforeStore($validated, $request);
-        $this->performStore($validated, $request);
-        return $this->redirectToIndex($this->storeSuccessMessage(), $request);
-    }
-
-    /**
-     * GET /resources/{id}/edit
-     *
-     * Tampilkan form edit record.
-     * Modal = true  → overlay di atas halaman index.
-     * Modal = false → halaman form terpisah.
-     *
-     * @permission update
-     */
-    public function edit(Request $request, mixed $id): Response
-    {
-        $this->authorize('update');
-        $record = $this->resolveFormRecord($id);
-        if(!$this->usesModal()) {
-            return Inertia::render($this->formComponent(), $this->formPagePayload($request, $record));
-        }
-        return Inertia::render(
-            $this->indexComponent(),
-            array_merge($this->indexPayload($request), $this->crudPayload('edit', $record, $request))
-        );
-    }
-
-    /**
-     * PUT/PATCH /resources/{id}
-     *
-     * Update record yang ada.
-     * Alur: authorize → resolve → validate → beforeUpdate → performUpdate → afterUpdate → redirect
-     *
-     * @permission update
-     */
-    public function update(Request $request, mixed $id): RedirectResponse
-    {
-        $this->authorize('update');
-        $record    = $this->resolveRecord($id);
-        $validated = $this->validateUpdate($request, $record);
-        $validated = $this->beforeUpdate($validated, $request, $record);
-        $this->performUpdate($record, $validated, $request);
-        return $this->redirectToIndex($this->updateSuccessMessage(), $request);
-    }
-
-    /**
-     * DELETE /resources/{id}
-     *
-     * Hapus record.
-     * Alur: authorize → resolve → beforeDestroy → performDestroy → afterDestroy → redirect
-     * BeforeDestroy() bisa mengembalikan RedirectResponse untuk memblokir penghapusan.
-     *
-     * @permission delete
-     */
-    public function destroy(mixed $id): RedirectResponse
-    {
-        $this->authorize('delete');
-        $record  = $this->resolveRecord($id);
-        $blocked = $this->beforeDestroy($record);
-        if($blocked instanceof RedirectResponse) {
-            return $blocked;
-        }
-        $this->performDestroy($record);
-        return $this->redirectToIndex($this->deleteSuccessMessage());
-    }
-
-    // =========================================================================
-    // Custom Action Helper
-    // =========================================================================
-    /**
-     * Helper untuk custom action di luar CRUD standar.
-     * Menyediakan lifecycle hook, permission check, dan DB transaction yang konsisten.
-     *
-     * @param callable(Model, Request): mixed $callback
-     * @example
-     *           public function publish(Request $request, mixed $id): RedirectResponse
-     *           {
-     *           return $this->recordAction(
-     *           $request, $id, 'publish',
-     *           fn (Model $r) => $r->update(['published_at' => now()]),
-     *           'notifications.post.published',
-     *           );
-     *           }
-     *
-     */
-    protected function recordAction(
-        Request  $request,
-        mixed    $id,
-        string   $action,
-        callable $callback,
-        ?string  $successMessage = null,
-        bool     $checkPermission = true,
-    ): RedirectResponse
-    {
-        if($checkPermission) {
-            $this->authorize($action);
-        }
-        $record  = $this->resolveRecord($id);
-        $blocked = $this->beforeRecordAction($action, $record, $request);
-        if($blocked instanceof RedirectResponse) {
-            return $blocked;
-        }
-        $run = function() use ($callback, $record, $request, $action): void {
-            $result = $callback($record, $request);
-            $this->afterRecordAction($action, $record, $request, $result);
-        };
-        $this->useTransactions ? DB::transaction($run) : $run();
-        return $this->redirectToIndex(
-            $successMessage ?? $this->actionSuccessMessage($action),
-            $request
-        );
-    }
-
-    // =========================================================================
-    // Export CSV
-    // =========================================================================
-    /**
-     * GET /resources/export
-     *
-     * Download data sebagai CSV (UTF-8 BOM untuk kompatibilitas Excel).
-     *
-     * Query params:
-     *   ?scope=all     → semua record sesuai filter (default)
-     *   ?scope=current → hanya halaman aktif
-     *
-     * Route harus didaftarkan manual:
-     *   Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
-     *
-     * @permission export
-     */
-    public function export(Request $request): StreamedResponse
-    {
-        $this->authorize('export');
-        $columns = $this->resolvedExportColumns();
-        $scope   = $this->resolvedExportScope($request);
-        return response()->streamDownload(
-            function() use ($request, $columns, $scope): void {
-                $output = fopen('php://output', 'w');
-                if($output === false) {
-                    return;
-                }
-                // BOM agar Excel membaca UTF-8 dengan benar
-                fwrite($output, "\xEF\xBB\xBF");
-                // Header row
-                fputcsv($output, array_map(
-                    fn(string $col) => $this->exportColumnLabel($col),
-                    $columns
-                ));
-                $query = $this->makeExportQuery($request);
-                if($scope === 'current') {
-                    $page = max(1, $request->integer('page', 1));
-                    $rows = $query->forPage($page, $this->resolvedPerPage($request))->get();
-                    foreach($rows as $row) {
-                        fputcsv($output, $this->transformExportRow($row, $columns));
-                    }
-                } else {
-                    // cursor() efisien untuk dataset besar
-                    foreach($query->cursor() as $row) {
-                        fputcsv($output, $this->transformExportRow($row, $columns));
-                    }
-                }
-                fclose($output);
-            },
-            $this->exportFileName(),
-            ['Content-Type' => 'text/csv; charset=UTF-8']
-        );
-    }
-
-    // =========================================================================
-    // Payload Builders
-    // =========================================================================
     /**
      * Payload utama untuk halaman index:
      *   {resourceName} → paginated collection
@@ -665,6 +442,16 @@ abstract class BaseCrudController extends Controller
         ], $this->additionalIndexProps($request));
     }
 
+    /** Key prop koleksi di Inertia (= routeName). */
+    protected function collectionProp(): string
+    {
+        return $this->routeName();
+    }
+
+    // =========================================================================
+    // CRUD Actions
+    // =========================================================================
+
     /** Jalankan query dan kembalikan paginated collection. */
     protected function indexCollection(Request $request): mixed
     {
@@ -673,127 +460,6 @@ abstract class BaseCrudController extends Controller
             ->withQueryString();
     }
 
-    protected function datatablePayload(Request $request): array
-    {
-        return [
-            'per_page_options' => $this->perPageOptions,
-            'sortable_columns' => $this->resolvedSortableColumns(),
-        ];
-    }
-
-    /**
-     * Payload `crud` untuk index (modal tertutup, mode = null).
-     */
-    protected function crudIndexPayload(Request $request): array
-    {
-        return array_merge([
-            'modal'       => $this->usesModal(),
-            'mode'        => null,
-            'open'        => false,
-            'permissions' => $this->resolvedPermissions(),
-        ], $this->crudMetadata($request));
-    }
-
-    /**
-     * Permission flags yang dikirim ke frontend.
-     * Dievaluasi di server PHP — aman dari manipulasi client.
-     */
-    protected function resolvedPermissions(): array
-    {
-        return [
-            'view'   => $this->userCan('view'),
-            'create' => $this->userCan('create'),
-            'update' => $this->userCan('update'),
-            'delete' => $this->userCan('delete'),
-            'export' => $this->userCan('export'),
-        ];
-    }
-
-    /** Metadata resource yang dikirim ke semua view. */
-    protected function crudMetadata(Request $request): array
-    {
-        return [
-            'resource'    => $this->resourceMetadata($request),
-            'table'       => ['columns' => $this->resolvedTableColumns()],
-            'form_schema' => ['fields' => $this->resolvedFormFields()],
-        ];
-    }
-
-    protected function resourceMetadata(Request $request): array
-    {
-        $routeName = $this->routeName();
-        return [
-            'name'              => $routeName,
-            'singular'          => $this->resourceSingular(),
-            'label'             => $this->resourceLabel(),
-            'title'             => $this->resourceTitle(),
-            'key'               => $this->recordKeyName(),
-            'permission_prefix' => $this->resolvedPermissionPrefix(),
-            'routes'            => [
-                'index'  => $this->routePath($routeName . '.index', $this->indexRouteParameters($request)),
-                'create' => $this->routePath($routeName . '.create', $this->indexRouteParameters($request)),
-                'store'  => $this->routePath($routeName . '.store', $this->indexRouteParameters($request)),
-                'export' => $this->routePathIfExists($routeName . '.export', $this->indexRouteParameters($request)),
-            ],
-        ];
-    }
-
-    /**
-     * Payload form (create atau edit).
-     *   {singular}  → record yang di-edit (null saat create)
-     *   ...additionalFormProps()
-     */
-    protected function formPayload(Request $request, mixed $record = null): array
-    {
-        return array_merge(
-            [$this->recordProp() => $record],
-            ($record instanceof Model || $record === null)
-                ? $this->additionalFormProps($request, $record)
-                : []
-        );
-    }
-
-    /**
-     * Payload untuk halaman form terpisah (modal = false).
-     * Komponen generik: dibungkus dalam 'crud' + 'form'.
-     * Komponen kustom: langsung formPayload().
-     */
-    protected function formPagePayload(Request $request, mixed $record = null): array
-    {
-        if($this->usesGenericComponent()) {
-            return [
-                'crud' => array_merge([
-                    'modal'       => false,
-                    'mode'        => $record === null ? 'create' : 'edit',
-                    'open'        => true,
-                    'permissions' => $this->resolvedPermissions(),
-                ], $this->crudMetadata($request)),
-                'form' => $this->formPayload($request, $record),
-            ];
-        }
-        return $this->formPayload($request, $record);
-    }
-
-    /**
-     * Payload `crud` saat modal dibuka.
-     * Di-merge ke atas indexPayload() — tabel tetap terload.
-     */
-    protected function crudPayload(string $mode, mixed $record, Request $request): array
-    {
-        return [
-            'crud' => array_merge([
-                'modal'       => true,
-                'mode'        => $mode,
-                'open'        => true,
-                'permissions' => $this->resolvedPermissions(),
-            ], $this->crudMetadata($request)),
-            'form' => $this->formPayload($request, $record),
-        ];
-    }
-
-    // =========================================================================
-    // Query Builder
-    // =========================================================================
     /**
      * Bangun Eloquent Builder dengan semua konfigurasi.
      * Override untuk query sangat kustom,
@@ -872,329 +538,6 @@ abstract class BaseCrudController extends Controller
         $query->orderBy($this->sortColumnMap[$sortBy] ?? $sortBy, $sortDir);
     }
 
-    /** Nilai filter aktif — dikirim ke frontend dan dipakai untuk redirect. */
-    protected function filters(Request $request): array
-    {
-        return [
-            'search'   => (string)$request->string('search'),
-            'sort_by'  => (string)$request->string('sort_by', $this->orderBy),
-            'sort_dir' => strtolower((string)$request->string('sort_dir', $this->orderDirection)),
-            'per_page' => $this->resolvedPerPage($request),
-        ];
-    }
-
-    // =========================================================================
-    // Extension Points
-    // =========================================================================
-    /**
-     * Props tambahan untuk halaman index.
-     *
-     * @example
-     *   protected function additionalIndexProps(Request $request): array
-     *   {
-     *       return ['categories' => Category::orderBy('name')->get(['id', 'name'])];
-     *   }
-     */
-    protected function additionalIndexProps(Request $request): array
-    {
-        return [];
-    }
-
-    /**
-     * Props tambahan untuk form create/edit.
-     *
-     * @example
-     *   protected function additionalFormProps(Request $request, ?Model $record = null): array
-     *   {
-     *       return ['statuses' => ['active', 'inactive', 'pending']];
-     *   }
-     */
-    protected function additionalFormProps(Request $request, ?Model $record = null): array
-    {
-        return [];
-    }
-
-    // =========================================================================
-    // Validasi
-    // =========================================================================
-    /**
-     * Aturan validasi untuk store DAN update.
-     *
-     * $record = null  → dipanggil saat store
-     * $record = Model → dipanggil saat update (gunakan untuk Rule::unique->ignore)
-     *
-     * @example
-     *   protected function rules(?Model $record = null): array
-     *   {
-     *       return [
-     *           'name'  => 'required|string|max:255',
-     *           'email' => ['required', 'email', Rule::unique('users')->ignore($record?->getKey())],
-     *       ];
-     *   }
-     */
-    protected function rules(?Model $record = null): array
-    {
-        return [];
-    }
-
-    /**
-     * Aturan validasi khusus untuk CREATE.
-     * Default: memanggil rules() tanpa record.
-     *
-     * @example
-     *   protected function storeRules(Request $request): array
-     *   {
-     *       return array_merge($this->rules(), ['password' => 'required|min:8|confirmed']);
-     *   }
-     */
-    protected function storeRules(Request $request): array
-    {
-        return $this->rules();
-    }
-
-    /**
-     * Aturan validasi khusus untuk UPDATE.
-     * Default: memanggil rules($record) agar unique bisa exclude ID.
-     *
-     * @example
-     *   protected function updateRules(Request $request, Model $record): array
-     *   {
-     *       return array_merge($this->rules($record), ['password' => 'nullable|min:8']);
-     *   }
-     */
-    protected function updateRules(Request $request, Model $record): array
-    {
-        return $this->rules($record);
-    }
-
-    protected function validateStore(Request $request): array
-    {
-        return $request->validate($this->storeRules($request));
-    }
-
-    protected function validateUpdate(Request $request, Model $record): array
-    {
-        return $request->validate($this->updateRules($request, $record));
-    }
-
-    // =========================================================================
-    // Lifecycle Hooks — Store
-    // =========================================================================
-    /**
-     * SETELAH validasi, SEBELUM simpan (store).
-     * Kembalikan array $validated yang dimodifikasi.
-     *
-     * Gunakan untuk: hash password, sisipkan created_by, generate slug, dsb.
-     *
-     * @example
-     *   protected function beforeStore(array $validated, Request $request): array
-     *   {
-     *       $validated['password']   = Hash::make($validated['password']);
-     *       $validated['created_by'] = $request->user()->id;
-     *       return $validated;
-     *   }
-     */
-    protected function beforeStore(array $validated, Request $request): array
-    {
-        return $this->applyGeneratedSlug($validated);
-    }
-
-    /**
-     * SETELAH record berhasil disimpan (store).
-     *
-     * Gunakan untuk: sync relasi, upload file, kirim notifikasi, log.
-     *
-     * @example
-     *   protected function afterStore(Model $record, array $validated, Request $request): void
-     *   {
-     *       $record->roles()->sync($this->rolesToSync);
-     *       event(new UserCreated($record));
-     *   }
-     */
-    protected function afterStore(Model $record, array $validated, Request $request): void
-    {
-        // Override di controller turunan
-    }
-
-    // =========================================================================
-    // Lifecycle Hooks — Update
-    // =========================================================================
-    /**
-     * SETELAH validasi, SEBELUM update ke DB.
-     * Kembalikan array $validated yang dimodifikasi.
-     *
-     * @example
-     *   protected function beforeUpdate(array $validated, Request $request, Model $record): array
-     *   {
-     *       if (empty($validated['password'])) {
-     *           unset($validated['password']);
-     *       } else {
-     *           $validated['password'] = Hash::make($validated['password']);
-     *       }
-     *       return $validated;
-     *   }
-     */
-    protected function beforeUpdate(array $validated, Request $request, Model $record): array
-    {
-        return $this->applyGeneratedSlug($validated, $record);
-    }
-
-    /**
-     * SETELAH record berhasil diupdate.
-     *
-     * @example
-     *   protected function afterUpdate(Model $record, array $validated, Request $request): void
-     *   {
-     *       $record->roles()->sync($this->rolesToSync);
-     *   }
-     */
-    protected function afterUpdate(Model $record, array $validated, Request $request): void
-    {
-        // Override di controller turunan
-    }
-
-    // =========================================================================
-    // Lifecycle Hooks — Destroy
-    // =========================================================================
-    /**
-     * SEBELUM record dihapus.
-     * Return RedirectResponse → BLOKIR penghapusan.
-     * Return null            → LANJUTKAN penghapusan.
-     *
-     * @example
-     *   protected function beforeDestroy(Model $record): ?RedirectResponse
-     *   {
-     *       if ($record->orders()->active()->exists()) {
-     *           return $this->redirectToIndexWithError('errors.has_active_orders');
-     *       }
-     *       return null;
-     *   }
-     */
-    protected function beforeDestroy(Model $record): ?RedirectResponse
-    {
-        return null;
-    }
-
-    /**
-     * SETELAH record berhasil dihapus.
-     *
-     * @example
-     *   protected function afterDestroy(Model $record): void
-     *   {
-     *       Storage::delete($record->avatar_path);
-     *   }
-     */
-    protected function afterDestroy(Model $record): void
-    {
-        // Override di controller turunan
-    }
-
-    // =========================================================================
-    // Lifecycle Hooks — Custom Action
-    // =========================================================================
-    /**
-     * SEBELUM custom action (via recordAction()).
-     * Return RedirectResponse untuk memblokir.
-     */
-    protected function beforeRecordAction(string $action, Model $record, Request $request): ?RedirectResponse
-    {
-        return null;
-    }
-
-    /**
-     * SETELAH custom action selesai.
-     *
-     * @param mixed $result nilai return dari callback
-     */
-    protected function afterRecordAction(string $action, Model $record, Request $request, mixed $result = null): void
-    {
-        // Override di controller turunan
-    }
-
-    // =========================================================================
-    // Perform Operations
-    // =========================================================================
-    protected function performStore(array $validated, Request $request): Model
-    {
-        $run = function() use ($validated, $request): Model {
-            /** @var Model $record */
-            $record = new ($this->modelClass())();
-            $record->fill($validated);
-            $record->save();
-            $this->afterStore($record, $validated, $request);
-            return $record;
-        };
-        return $this->useTransactions ? DB::transaction($run) : $run();
-    }
-
-    protected function performUpdate(Model $record, array $validated, Request $request): Model
-    {
-        $run = function() use ($record, $validated, $request): Model {
-            $record->fill($validated);
-            $record->save();
-            $this->afterUpdate($record, $validated, $request);
-            return $record;
-        };
-        return $this->useTransactions ? DB::transaction($run) : $run();
-    }
-
-    protected function performDestroy(Model $record): void
-    {
-        $run = function() use ($record): void {
-            $record->delete();
-            $this->afterDestroy($record);
-        };
-        if($this->useTransactions) {
-            DB::transaction($run);
-            return;
-        }
-        $run();
-    }
-
-    // =========================================================================
-    // Record Resolution
-    // =========================================================================
-    /**
-     * Resolve model dari route parameter (ID, UUID, slug, custom binding).
-     * Abort 404 jika tidak ditemukan.
-     */
-    protected function resolveRecord(mixed $value): Model
-    {
-        if($value instanceof Model) {
-            return $value;
-        }
-        /** @var Model $model */
-        $model  = new ($this->modelClass())();
-        $record = $model->resolveRouteBinding($value);
-        abort_unless($record !== null, 404);
-        return $record;
-    }
-
-    /**
-     * Override jika form edit memerlukan eager load tambahan yang tidak
-     * diperlukan di operasi update/destroy.
-     *
-     * @example
-     *   protected function resolveFormRecord(mixed $value): mixed
-     *   {
-     *       return Product::with(['images', 'variants'])->findOrFail($value);
-     *   }
-     */
-    protected function resolveFormRecord(mixed $value): mixed
-    {
-        return $this->resolveRecord($value);
-    }
-
-    // =========================================================================
-    // Resolvers
-    // =========================================================================
-    /** Validasi per_page dari request — hanya izinkan nilai dari $perPageOptions. */
-    protected function resolvedPerPage(Request $request): int
-    {
-        $perPage = $request->integer('per_page', $this->perPage);
-        return in_array($perPage, $this->perPageOptions, true) ? $perPage : $this->perPage;
-    }
-
     /**
      * Daftar kolom sortable.
      * Auto-detect dari schema jika $sortableColumns kosong.
@@ -1211,17 +554,189 @@ abstract class BaseCrudController extends Controller
         return array_values(array_diff($columns, $this->excludeSortableColumns));
     }
 
-    /** Daftar kolom untuk export CSV. */
-    protected function resolvedExportColumns(): array
+    // =========================================================================
+    // Custom Action Helper
+    // =========================================================================
+
+    /**
+     * Daftar kolom dari schema database.
+     * Di-cache per tabel (satu request).
+     *
+     * @return string[]
+     */
+    private function schemaColumns(): array
     {
-        $columns = $this->exportColumns !== []
-            ? $this->exportColumns
-            : $this->schemaColumns();
-        $columns = array_values(array_unique(
-            array_merge($columns, array_keys($this->exportColumnLabels))
-        ));
-        return array_values(array_diff($columns, $this->excludeExportColumns));
+        /** @var Model $model */
+        $model = new ($this->modelClass())();
+        $table = $model->getTable();
+        return self::$schemaColumnsCache[$table] ??= Schema::getColumnListing($table);
     }
+
+    // =========================================================================
+    // Export CSV
+    // =========================================================================
+
+    /** Validasi per_page dari request — hanya izinkan nilai dari $perPageOptions. */
+    protected function resolvedPerPage(Request $request): int
+    {
+        $perPage = $request->integer('per_page', $this->perPage);
+        return in_array($perPage, $this->perPageOptions, true) ? $perPage : $this->perPage;
+    }
+
+    // =========================================================================
+    // Payload Builders
+    // =========================================================================
+
+    /** Nilai filter aktif — dikirim ke frontend dan dipakai untuk redirect. */
+    protected function filters(Request $request): array
+    {
+        return [
+            'search'   => (string)$request->string('search'),
+            'sort_by'  => (string)$request->string('sort_by', $this->orderBy),
+            'sort_dir' => strtolower((string)$request->string('sort_dir', $this->orderDirection)),
+            'per_page' => $this->resolvedPerPage($request),
+        ];
+    }
+
+    protected function datatablePayload(Request $request): array
+    {
+        return [
+            'per_page_options' => $this->perPageOptions,
+            'sortable_columns' => $this->resolvedSortableColumns(),
+        ];
+    }
+
+    /**
+     * Payload `crud` untuk index (modal tertutup, mode = null).
+     */
+    protected function crudIndexPayload(Request $request): array
+    {
+        return array_merge([
+            'modal'       => $this->usesModal(),
+            'mode'        => null,
+            'open'        => false,
+            'permissions' => $this->resolvedPermissions(),
+        ], $this->crudMetadata($request));
+    }
+
+    protected function usesModal(): bool
+    {
+        return $this->modal;
+    }
+
+    /**
+     * Permission flags yang dikirim ke frontend.
+     * Dievaluasi di server PHP — aman dari manipulasi client.
+     */
+    protected function resolvedPermissions(): array
+    {
+        return [
+            'view'   => $this->userCan('view'),
+            'create' => $this->userCan('create'),
+            'update' => $this->userCan('update'),
+            'delete' => $this->userCan('delete'),
+            'export' => $this->userCan('export'),
+        ];
+    }
+
+    /** Metadata resource yang dikirim ke semua view. */
+    protected function crudMetadata(Request $request): array
+    {
+        return [
+            'resource'    => $this->resourceMetadata($request),
+            'table'       => ['columns' => $this->resolvedTableColumns()],
+            'form_schema' => ['fields' => $this->resolvedFormFields()],
+        ];
+    }
+
+    protected function resourceMetadata(Request $request): array
+    {
+        $routeName = $this->routeName();
+        return [
+            'name'              => $routeName,
+            'singular'          => $this->resourceSingular(),
+            'label'             => $this->resourceLabel(),
+            'title'             => $this->resourceTitle(),
+            'key'               => $this->recordKeyName(),
+            'permission_prefix' => $this->resolvedPermissionPrefix(),
+            'routes'            => [
+                'index'  => $this->routePath($routeName . '.index', $this->indexRouteParameters($request)),
+                'create' => $this->routePath($routeName . '.create', $this->indexRouteParameters($request)),
+                'store'  => $this->routePath($routeName . '.store', $this->indexRouteParameters($request)),
+                'export' => $this->routePathIfExists($routeName . '.export', $this->indexRouteParameters($request)),
+            ],
+        ];
+    }
+
+    protected function resourceSingular(): string
+    {
+        return Str::singular($this->routeName());
+    }
+
+    protected function resourceLabel(): string
+    {
+        return $this->resourceLabel ?? $this->humanize($this->routeName());
+    }
+
+    /** Konversi snake_case / kebab-case ke Title Case yang manusiawi. */
+    protected function humanize(string $value): string
+    {
+        return Str::of($value)->replace([
+            '_',
+            '-'
+        ], ' ')->headline()->toString();
+    }
+
+    // =========================================================================
+    // Query Builder
+    // =========================================================================
+
+    protected function resourceTitle(): string
+    {
+        return $this->resourceTitle ?? $this->resourceLabel();
+    }
+
+    protected function recordKeyName(): string
+    {
+        /** @var Model $model */
+        $model = new ($this->modelClass())();
+        return $model->getRouteKeyName();
+    }
+
+    /** Kembalikan path URL (tanpa domain) dari nama route. */
+    protected function routePath(string $name, array $parameters = []): string
+    {
+        $url = route($name, $parameters);
+        return parse_url($url, PHP_URL_PATH) ?: $url;
+    }
+
+    /**
+     * Parameter route untuk index dan redirect.
+     * Override untuk nested resource yang memerlukan parent ID.
+     *
+     * @example
+     *   protected function indexRouteParameters(?Request $request = null): array
+     *   {
+     *       return ['category' => $request?->route('category')];
+     *   }
+     */
+    protected function indexRouteParameters(?Request $request = null): array
+    {
+        return [];
+    }
+
+    /** Sama seperti routePath() tapi null jika route tidak terdaftar. */
+    protected function routePathIfExists(string $name, array $parameters = []): ?string
+    {
+        if(!Route::has($name)) {
+            return null;
+        }
+        return $this->routePath($name, $parameters);
+    }
+
+    // =========================================================================
+    // Extension Points
+    // =========================================================================
 
     /** Daftar kolom tabel yang dinormalisasi ke array definisi lengkap. */
     protected function resolvedTableColumns(): array
@@ -1244,6 +759,10 @@ abstract class BaseCrudController extends Controller
         return array_values(array_diff(array_unique($columns), $this->excludeTableColumns));
     }
 
+    // =========================================================================
+    // Validasi
+    // =========================================================================
+
     protected function normalizeTableColumn(string|array $column): array
     {
         if(is_string($column)) {
@@ -1256,39 +775,6 @@ abstract class BaseCrudController extends Controller
             'sortable' => in_array($key, $this->resolvedSortableColumns(), true),
             'type'     => $this->guessFieldType($key),
         ], $column);
-    }
-
-    /** Daftar field form yang dinormalisasi ke array definisi lengkap. */
-    protected function resolvedFormFields(): array
-    {
-        $fields = $this->formFields !== []
-            ? $this->formFields
-            : $this->defaultFormFields();
-        return array_values(array_map(
-            fn(string|array $field) => $this->normalizeFormField($field),
-            $fields
-        ));
-    }
-
-    protected function defaultFormFields(): array
-    {
-        return array_values(array_diff($this->schemaColumns(), $this->excludeFormFields));
-    }
-
-    protected function normalizeFormField(string|array $field): array
-    {
-        if(is_string($field)) {
-            $field = ['name' => $field];
-        }
-        $name = (string)($field['name'] ?? $field['key'] ?? '');
-        $type = (string)($field['type'] ?? $this->guessFieldType($name));
-        return array_merge([
-            'name'     => $name,
-            'label'    => $this->humanize($name),
-            'type'     => $type,
-            'default'  => $type === 'checkbox' ? false : '',
-            'required' => false,
-        ], $field);
     }
 
     /**
@@ -1324,224 +810,259 @@ abstract class BaseCrudController extends Controller
         };
     }
 
-    protected function resolvedExportScope(Request $request): string
+    /** Daftar field form yang dinormalisasi ke array definisi lengkap. */
+    protected function resolvedFormFields(): array
     {
-        $scope = strtolower((string)$request->string('scope', 'all'));
-        return in_array($scope, [
-            'all',
-            'current'
-        ], true) ? $scope : 'all';
+        $fields = $this->formFields !== []
+            ? $this->formFields
+            : $this->defaultFormFields();
+        return array_values(array_map(
+            fn(string|array $field) => $this->normalizeFormField($field),
+            $fields
+        ));
     }
+
+    protected function defaultFormFields(): array
+    {
+        return array_values(array_diff($this->schemaColumns(), $this->excludeFormFields));
+    }
+
+    protected function normalizeFormField(string|array $field): array
+    {
+        if(is_string($field)) {
+            $field = ['name' => $field];
+        }
+        $name = (string)($field['name'] ?? $field['key'] ?? '');
+        $type = (string)($field['type'] ?? $this->guessFieldType($name));
+        return array_merge([
+            'name'     => $name,
+            'label'    => $this->humanize($name),
+            'type'     => $type,
+            'default'  => $type === 'checkbox' ? false : '',
+            'required' => false,
+        ], $field);
+    }
+
+    // =========================================================================
+    // Lifecycle Hooks — Store
+    // =========================================================================
 
     /**
-     * Query untuk export.
-     * Override untuk menambahkan filter atau relasi khusus.
-     * Default: sama dengan makeQuery().
-     */
-    protected function makeExportQuery(Request $request): Builder
-    {
-        return $this->makeQuery($request);
-    }
-
-    protected function transformExportRow(Model $record, array $columns): array
-    {
-        return array_map(function(string $column) use ($record): mixed {
-            $value = $this->exportValue($record, $column);
-            if(is_scalar($value) || $value === null) {
-                return $value;
-            }
-            return json_encode($value, JSON_UNESCAPED_UNICODE);
-        }, $columns);
-    }
-
-    /**
-     * Nilai yang ditulis untuk kolom tertentu di CSV.
-     * Override untuk transformasi kustom per kolom.
+     * Props tambahan untuk halaman index.
      *
      * @example
-     *   protected function exportValue(Model $record, string $column): mixed
+     *   protected function additionalIndexProps(Request $request): array
      *   {
-     *       if ($column === 'roles') {
-     *           return $record->roles->pluck('name')->join(', ');
-     *       }
-     *       return parent::exportValue($record, $column);
+     *       return ['categories' => Category::orderBy('name')->get(['id', 'name'])];
      *   }
      */
-    protected function exportValue(Model $record, string $column): mixed
+    protected function additionalIndexProps(Request $request): array
     {
-        return data_get($record, $column);
+        return [];
     }
 
-    protected function exportColumnLabel(string $column): string
+    /**
+     * GET /resources/create
+     *
+     * Tampilkan form untuk membuat record baru.
+     * Modal = true  → overlay di atas halaman index.
+     * Modal = false → halaman form terpisah.
+     *
+     * @permission create
+     */
+    public function create(Request $request): Response
     {
-        return $this->exportColumnLabels[$column] ?? $column;
-    }
-
-    protected function exportFileName(): string
-    {
-        return $this->routeName() . '_' . now()->format('Ymd_His') . '.csv';
+        $this->authorize('create');
+        if(!$this->usesModal()) {
+            return Inertia::render($this->formComponent(), $this->formPagePayload($request, null));
+        }
+        return Inertia::render(
+            $this->indexComponent(),
+            array_merge($this->indexPayload($request), $this->crudPayload('create', null, $request))
+        );
     }
 
     // =========================================================================
-    // Resource Naming
+    // Lifecycle Hooks — Update
     // =========================================================================
-    /** Key prop koleksi di Inertia (= routeName). */
-    protected function collectionProp(): string
+
+    protected function formComponent(): string
     {
-        return $this->routeName();
+        return $this->formComponentName ?? $this->componentName();
     }
 
+    /**
+     * Payload untuk halaman form terpisah (modal = false).
+     * Komponen generik: dibungkus dalam 'crud' + 'form'.
+     * Komponen kustom: langsung formPayload().
+     */
+    protected function formPagePayload(Request $request, mixed $record = null): array
+    {
+        if($this->usesGenericComponent()) {
+            return [
+                'crud' => array_merge([
+                    'modal'       => false,
+                    'mode'        => $record === null ? 'create' : 'edit',
+                    'open'        => true,
+                    'permissions' => $this->resolvedPermissions(),
+                ], $this->crudMetadata($request)),
+                'form' => $this->formPayload($request, $record),
+            ];
+        }
+        return $this->formPayload($request, $record);
+    }
+
+    // =========================================================================
+    // Lifecycle Hooks — Destroy
+    // =========================================================================
+
+    /** True jika index dan form menggunakan komponen generik yang sama. */
+    protected function usesGenericComponent(): bool
+    {
+        return $this->indexComponent() === $this->componentName()
+               && $this->formComponent() === $this->componentName();
+    }
+
+    /**
+     * Payload form (create atau edit).
+     *   {singular}  → record yang di-edit (null saat create)
+     *   ...additionalFormProps()
+     */
+    protected function formPayload(Request $request, mixed $record = null): array
+    {
+        return array_merge(
+            [$this->recordProp() => $record],
+            ($record instanceof Model || $record === null)
+                ? $this->additionalFormProps($request, $record)
+                : []
+        );
+    }
+
+    // =========================================================================
+    // Lifecycle Hooks — Custom Action
+    // =========================================================================
     /** Key prop record tunggal di Inertia (= singular routeName). */
     protected function recordProp(): string
     {
         return $this->resourceSingular();
     }
 
-    protected function resourceSingular(): string
-    {
-        return Str::singular($this->routeName());
-    }
-
-    protected function resourceLabel(): string
-    {
-        return $this->resourceLabel ?? $this->humanize($this->routeName());
-    }
-
-    protected function resourceTitle(): string
-    {
-        return $this->resourceTitle ?? $this->resourceLabel();
-    }
-
-    protected function recordKeyName(): string
-    {
-        /** @var Model $model */
-        $model = new ($this->modelClass())();
-        return $model->getRouteKeyName();
-    }
-
-    // =========================================================================
-    // Route Helpers
-    // =========================================================================
-    /** Kembalikan path URL (tanpa domain) dari nama route. */
-    protected function routePath(string $name, array $parameters = []): string
-    {
-        $url = route($name, $parameters);
-        return parse_url($url, PHP_URL_PATH) ?: $url;
-    }
-
-    /** Sama seperti routePath() tapi null jika route tidak terdaftar. */
-    protected function routePathIfExists(string $name, array $parameters = []): ?string
-    {
-        if(!Route::has($name)) {
-            return null;
-        }
-        return $this->routePath($name, $parameters);
-    }
-
     /**
-     * Parameter route untuk index dan redirect.
-     * Override untuk nested resource yang memerlukan parent ID.
+     * Props tambahan untuk form create/edit.
      *
      * @example
-     *   protected function indexRouteParameters(?Request $request = null): array
+     *   protected function additionalFormProps(Request $request, ?Model $record = null): array
      *   {
-     *       return ['category' => $request?->route('category')];
+     *       return ['statuses' => ['active', 'inactive', 'pending']];
      *   }
      */
-    protected function indexRouteParameters(?Request $request = null): array
+    protected function additionalFormProps(Request $request, ?Model $record = null): array
     {
         return [];
     }
 
     // =========================================================================
-    // Redirect Helpers
+    // Perform Operations
     // =========================================================================
     /**
-     * Redirect ke index dengan flash success.
-     * Query string dipertahankan jika preserveQueryOnRedirect() = true.
+     * Payload `crud` saat modal dibuka.
+     * Di-merge ke atas indexPayload() — tabel tetap terload.
      */
-    protected function redirectToIndex(string $message, ?Request $request = null): RedirectResponse
+    protected function crudPayload(string $mode, mixed $record, Request $request): array
     {
-        $redirect = redirect()->route(
-            $this->routeName() . '.index',
-            $this->indexRouteParameters($request)
-        );
-        if($request !== null && $this->preserveQueryOnRedirect()) {
-            $query = $this->redirectQuery($request);
-            if($query !== []) {
-                $redirect->setTargetUrl(
-                    $redirect->getTargetUrl() . '?' . http_build_query($query)
-                );
-            }
-        }
-        return $redirect->with('success', $this->resolveFlashMessage($message));
+        return [
+            'crud' => array_merge([
+                'modal'       => true,
+                'mode'        => $mode,
+                'open'        => true,
+                'permissions' => $this->resolvedPermissions(),
+            ], $this->crudMetadata($request)),
+            'form' => $this->formPayload($request, $record),
+        ];
     }
 
     /**
-     * Redirect ke index dengan flash error.
-     * Biasanya dipakai di beforeDestroy() untuk memblokir penghapusan.
+     * POST /resources
+     *
+     * Simpan record baru.
+     * Alur: authorize → validate → beforeStore → performStore → afterStore → redirect
+     *
+     * @permission create
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorize('create');
+        $validated = $this->validateStore($request);
+        $validated = $this->beforeStore($validated, $request);
+        $this->performStore($validated, $request);
+        return $this->redirectToIndex($this->storeSuccessMessage(), $request);
+    }
+
+    protected function validateStore(Request $request): array
+    {
+        return $request->validate($this->storeRules($request));
+    }
+
+    // =========================================================================
+    // Record Resolution
+    // =========================================================================
+    /**
+     * Aturan validasi khusus untuk CREATE.
+     * Default: memanggil rules() tanpa record.
      *
      * @example
-     *   return $this->redirectToIndexWithError('errors.cannot_delete');
+     *   protected function storeRules(Request $request): array
+     *   {
+     *       return array_merge($this->rules(), ['password' => 'required|min:8|confirmed']);
+     *   }
      */
-    protected function redirectToIndexWithError(string $message, ?Request $request = null): RedirectResponse
+    protected function storeRules(Request $request): array
     {
-        return redirect()
-            ->route($this->routeName() . '.index', $this->indexRouteParameters($request))
-            ->with('error', $this->resolveFlashMessage($message));
+        return $this->rules();
     }
 
     /**
-     * Pertahankan query string saat redirect.
-     * Override ke false jika tidak diinginkan.
+     * Aturan validasi untuk store DAN update.
+     *
+     * $record = null  → dipanggil saat store
+     * $record = Model → dipanggil saat update (gunakan untuk Rule::unique->ignore)
+     *
+     * @example
+     *   protected function rules(?Model $record = null): array
+     *   {
+     *       return [
+     *           'name'  => 'required|string|max:255',
+     *           'email' => ['required', 'email', Rule::unique('users')->ignore($record?->getKey())],
+     *       ];
+     *   }
      */
-    protected function preserveQueryOnRedirect(): bool
+    protected function rules(?Model $record = null): array
     {
-        return true;
-    }
-
-    protected function redirectQuery(Request $request): array
-    {
-        return collect($request->only(array_keys($this->filters($request))))
-            ->reject(fn(mixed $v) => $v === null || $v === '')
-            ->all();
+        return [];
     }
 
     // =========================================================================
-    // Flash Messages
+    // Resolvers
     // =========================================================================
     /**
-     * Resolve flash message: coba terjemahkan via __(), fallback ke string asli.
+     * SETELAH validasi, SEBELUM simpan (store).
+     * Kembalikan array $validated yang dimodifikasi.
+     *
+     * Gunakan untuk: hash password, sisipkan created_by, generate slug, dsb.
+     *
+     * @example
+     *   protected function beforeStore(array $validated, Request $request): array
+     *   {
+     *       $validated['password']   = Hash::make($validated['password']);
+     *       $validated['created_by'] = $request->user()->id;
+     *       return $validated;
+     *   }
      */
-    protected function resolveFlashMessage(string $key): string
+    protected function beforeStore(array $validated, Request $request): array
     {
-        $translated = __($key);
-        return $translated !== $key ? $translated : $key;
+        return $this->applyGeneratedSlug($validated);
     }
 
-    protected function storeSuccessMessage(): string
-    {
-        return 'notifications.common.saved';
-    }
-
-    protected function updateSuccessMessage(): string
-    {
-        return 'notifications.common.saved';
-    }
-
-    protected function deleteSuccessMessage(): string
-    {
-        return 'notifications.common.deleted';
-    }
-
-    protected function actionSuccessMessage(string $action): string
-    {
-        return 'notifications.common.saved';
-    }
-
-    // =========================================================================
-    // Auto Slug
-    // =========================================================================
     /**
      * Generate slug unik dan sisipkan ke $validated.
      * Dipanggil otomatis di beforeStore() dan beforeUpdate().
@@ -1587,29 +1108,519 @@ abstract class BaseCrudController extends Controller
         return $this->modelClass();
     }
 
-    // =========================================================================
-    // Utilities
-    // =========================================================================
-    /** Konversi snake_case / kebab-case ke Title Case yang manusiawi. */
-    protected function humanize(string $value): string
+    protected function performStore(array $validated, Request $request): Model
     {
-        return Str::of($value)->replace([
-            '_',
-            '-'
-        ], ' ')->headline()->toString();
+        $run = function() use ($validated, $request): Model {
+            /** @var Model $record */
+            $record = new ($this->modelClass())();
+            $record->fill($validated);
+            $record->save();
+            $this->afterStore($record, $validated, $request);
+            return $record;
+        };
+        return $this->useTransactions ? DB::transaction($run) : $run();
     }
 
     /**
-     * Daftar kolom dari schema database.
-     * Di-cache per tabel (satu request).
+     * SETELAH record berhasil disimpan (store).
      *
-     * @return string[]
+     * Gunakan untuk: sync relasi, upload file, kirim notifikasi, log.
+     *
+     * @example
+     *   protected function afterStore(Model $record, array $validated, Request $request): void
+     *   {
+     *       $record->roles()->sync($this->rolesToSync);
+     *       event(new UserCreated($record));
+     *   }
      */
-    private function schemaColumns(): array
+    protected function afterStore(Model $record, array $validated, Request $request): void
     {
+        // Override di controller turunan
+    }
+
+    /**
+     * Redirect ke index dengan flash success.
+     * Query string dipertahankan jika preserveQueryOnRedirect() = true.
+     */
+    protected function redirectToIndex(string $message, ?Request $request = null): RedirectResponse
+    {
+        $redirect = redirect()->route(
+            $this->routeName() . '.index',
+            $this->indexRouteParameters($request)
+        );
+        if($request !== null && $this->preserveQueryOnRedirect()) {
+            $query = $this->redirectQuery($request);
+            if($query !== []) {
+                $redirect->setTargetUrl(
+                    $redirect->getTargetUrl() . '?' . http_build_query($query)
+                );
+            }
+        }
+        return $redirect->with('success', $this->resolveFlashMessage($message));
+    }
+
+    /**
+     * Pertahankan query string saat redirect.
+     * Override ke false jika tidak diinginkan.
+     */
+    protected function preserveQueryOnRedirect(): bool
+    {
+        return true;
+    }
+
+    protected function redirectQuery(Request $request): array
+    {
+        return collect($request->only(array_keys($this->filters($request))))
+            ->reject(fn(mixed $v) => $v === null || $v === '')
+            ->all();
+    }
+
+    /**
+     * Resolve flash message: coba terjemahkan via __(), fallback ke string asli.
+     */
+    protected function resolveFlashMessage(string $key): string
+    {
+        $translated = __($key);
+        return $translated !== $key ? $translated : $key;
+    }
+
+    protected function storeSuccessMessage(): string
+    {
+        return 'notifications.common.saved';
+    }
+
+    /**
+     * GET /resources/{id}/edit
+     *
+     * Tampilkan form edit record.
+     * Modal = true  → overlay di atas halaman index.
+     * Modal = false → halaman form terpisah.
+     *
+     * @permission update
+     */
+    public function edit(Request $request, mixed $id): Response
+    {
+        $this->authorize('update');
+        $record = $this->resolveFormRecord($id);
+        if(!$this->usesModal()) {
+            return Inertia::render($this->formComponent(), $this->formPagePayload($request, $record));
+        }
+        return Inertia::render(
+            $this->indexComponent(),
+            array_merge($this->indexPayload($request), $this->crudPayload('edit', $record, $request))
+        );
+    }
+
+    /**
+     * Override jika form edit memerlukan eager load tambahan yang tidak
+     * diperlukan di operasi update/destroy.
+     *
+     * @example
+     *   protected function resolveFormRecord(mixed $value): mixed
+     *   {
+     *       return Product::with(['images', 'variants'])->findOrFail($value);
+     *   }
+     */
+    protected function resolveFormRecord(mixed $value): mixed
+    {
+        return $this->resolveRecord($value);
+    }
+
+    /**
+     * Resolve model dari route parameter (ID, UUID, slug, custom binding).
+     * Abort 404 jika tidak ditemukan.
+     */
+    protected function resolveRecord(mixed $value): Model
+    {
+        if($value instanceof Model) {
+            return $value;
+        }
         /** @var Model $model */
-        $model = new ($this->modelClass())();
-        $table = $model->getTable();
-        return self::$schemaColumnsCache[$table] ??= Schema::getColumnListing($table);
+        $model  = new ($this->modelClass())();
+        $record = $model->resolveRouteBinding($value);
+        abort_unless($record !== null, 404);
+        return $record;
+    }
+
+    /**
+     * PUT/PATCH /resources/{id}
+     *
+     * Update record yang ada.
+     * Alur: authorize → resolve → validate → beforeUpdate → performUpdate → afterUpdate → redirect
+     *
+     * @permission update
+     */
+    public function update(Request $request, mixed $id): RedirectResponse
+    {
+        $this->authorize('update');
+        $record    = $this->resolveRecord($id);
+        $validated = $this->validateUpdate($request, $record);
+        $validated = $this->beforeUpdate($validated, $request, $record);
+        $this->performUpdate($record, $validated, $request);
+        return $this->redirectToIndex($this->updateSuccessMessage(), $request);
+    }
+
+    protected function validateUpdate(Request $request, Model $record): array
+    {
+        return $request->validate($this->updateRules($request, $record));
+    }
+
+    /**
+     * Aturan validasi khusus untuk UPDATE.
+     * Default: memanggil rules($record) agar unique bisa exclude ID.
+     *
+     * @example
+     *   protected function updateRules(Request $request, Model $record): array
+     *   {
+     *       return array_merge($this->rules($record), ['password' => 'nullable|min:8']);
+     *   }
+     */
+    protected function updateRules(Request $request, Model $record): array
+    {
+        return $this->rules($record);
+    }
+
+    // =========================================================================
+    // Resource Naming
+    // =========================================================================
+    /**
+     * SETELAH validasi, SEBELUM update ke DB.
+     * Kembalikan array $validated yang dimodifikasi.
+     *
+     * @example
+     *   protected function beforeUpdate(array $validated, Request $request, Model $record): array
+     *   {
+     *       if (empty($validated['password'])) {
+     *           unset($validated['password']);
+     *       } else {
+     *           $validated['password'] = Hash::make($validated['password']);
+     *       }
+     *       return $validated;
+     *   }
+     */
+    protected function beforeUpdate(array $validated, Request $request, Model $record): array
+    {
+        return $this->applyGeneratedSlug($validated, $record);
+    }
+
+    protected function performUpdate(Model $record, array $validated, Request $request): Model
+    {
+        $run = function() use ($record, $validated, $request): Model {
+            $record->fill($validated);
+            $record->save();
+            $this->afterUpdate($record, $validated, $request);
+            return $record;
+        };
+        return $this->useTransactions ? DB::transaction($run) : $run();
+    }
+
+    /**
+     * SETELAH record berhasil diupdate.
+     *
+     * @example
+     *   protected function afterUpdate(Model $record, array $validated, Request $request): void
+     *   {
+     *       $record->roles()->sync($this->rolesToSync);
+     *   }
+     */
+    protected function afterUpdate(Model $record, array $validated, Request $request): void
+    {
+        // Override di controller turunan
+    }
+
+    protected function updateSuccessMessage(): string
+    {
+        return 'notifications.common.saved';
+    }
+
+    /**
+     * DELETE /resources/{id}
+     *
+     * Hapus record.
+     * Alur: authorize → resolve → beforeDestroy → performDestroy → afterDestroy → redirect
+     * BeforeDestroy() bisa mengembalikan RedirectResponse untuk memblokir penghapusan.
+     *
+     * @permission delete
+     */
+    public function destroy(mixed $id): RedirectResponse
+    {
+        $this->authorize('delete');
+        $record  = $this->resolveRecord($id);
+        $blocked = $this->beforeDestroy($record);
+        if($blocked instanceof RedirectResponse) {
+            return $blocked;
+        }
+        $this->performDestroy($record);
+        return $this->redirectToIndex($this->deleteSuccessMessage());
+    }
+
+    /**
+     * SEBELUM record dihapus.
+     * Return RedirectResponse → BLOKIR penghapusan.
+     * Return null            → LANJUTKAN penghapusan.
+     *
+     * @example
+     *   protected function beforeDestroy(Model $record): ?RedirectResponse
+     *   {
+     *       if ($record->orders()->active()->exists()) {
+     *           return $this->redirectToIndexWithError('errors.has_active_orders');
+     *       }
+     *       return null;
+     *   }
+     */
+    protected function beforeDestroy(Model $record): ?RedirectResponse
+    {
+        return null;
+    }
+
+    // =========================================================================
+    // Route Helpers
+    // =========================================================================
+    protected function performDestroy(Model $record): void
+    {
+        $run = function() use ($record): void {
+            $record->delete();
+            $this->afterDestroy($record);
+        };
+        if($this->useTransactions) {
+            DB::transaction($run);
+            return;
+        }
+        $run();
+    }
+
+    /**
+     * SETELAH record berhasil dihapus.
+     *
+     * @example
+     *   protected function afterDestroy(Model $record): void
+     *   {
+     *       Storage::delete($record->avatar_path);
+     *   }
+     */
+    protected function afterDestroy(Model $record): void
+    {
+        // Override di controller turunan
+    }
+
+    protected function deleteSuccessMessage(): string
+    {
+        return 'notifications.common.deleted';
+    }
+
+    // =========================================================================
+    // Redirect Helpers
+    // =========================================================================
+    /**
+     * GET /resources/export
+     *
+     * Download data sebagai CSV (UTF-8 BOM untuk kompatibilitas Excel).
+     *
+     * Query params:
+     *   ?scope=all     → semua record sesuai filter (default)
+     *   ?scope=current → hanya halaman aktif
+     *
+     * Route harus didaftarkan manual:
+     *   Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
+     *
+     * @permission export
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('export');
+        $columns = $this->resolvedExportColumns();
+        $scope   = $this->resolvedExportScope($request);
+        return response()->streamDownload(
+            function() use ($request, $columns, $scope): void {
+                $output = fopen('php://output', 'w');
+                if($output === false) {
+                    return;
+                }
+                // BOM agar Excel membaca UTF-8 dengan benar
+                fwrite($output, "\xEF\xBB\xBF");
+                // Header row
+                fputcsv($output, array_map(
+                    fn(string $col) => $this->exportColumnLabel($col),
+                    $columns
+                ));
+                $query = $this->makeExportQuery($request);
+                if($scope === 'current') {
+                    $page = max(1, $request->integer('page', 1));
+                    $rows = $query->forPage($page, $this->resolvedPerPage($request))->get();
+                    foreach($rows as $row) {
+                        fputcsv($output, $this->transformExportRow($row, $columns));
+                    }
+                } else {
+                    // cursor() efisien untuk dataset besar
+                    foreach($query->cursor() as $row) {
+                        fputcsv($output, $this->transformExportRow($row, $columns));
+                    }
+                }
+                fclose($output);
+            },
+            $this->exportFileName(),
+            ['Content-Type' => 'text/csv; charset=UTF-8']
+        );
+    }
+
+    /** Daftar kolom untuk export CSV. */
+    protected function resolvedExportColumns(): array
+    {
+        $columns = $this->exportColumns !== []
+            ? $this->exportColumns
+            : $this->schemaColumns();
+        $columns = array_values(array_unique(
+            array_merge($columns, array_keys($this->exportColumnLabels))
+        ));
+        return array_values(array_diff($columns, $this->excludeExportColumns));
+    }
+
+    protected function resolvedExportScope(Request $request): string
+    {
+        $scope = strtolower((string)$request->string('scope', 'all'));
+        return in_array($scope, [
+            'all',
+            'current'
+        ], true) ? $scope : 'all';
+    }
+
+    protected function exportColumnLabel(string $column): string
+    {
+        return $this->exportColumnLabels[$column] ?? $column;
+    }
+
+    // =========================================================================
+    // Flash Messages
+    // =========================================================================
+    /**
+     * Query untuk export.
+     * Override untuk menambahkan filter atau relasi khusus.
+     * Default: sama dengan makeQuery().
+     */
+    protected function makeExportQuery(Request $request): Builder
+    {
+        return $this->makeQuery($request);
+    }
+
+    protected function transformExportRow(Model $record, array $columns): array
+    {
+        return array_map(function(string $column) use ($record): mixed {
+            $value = $this->exportValue($record, $column);
+            if(is_scalar($value) || $value === null) {
+                return $value;
+            }
+            return json_encode($value, JSON_UNESCAPED_UNICODE);
+        }, $columns);
+    }
+
+    /**
+     * Nilai yang ditulis untuk kolom tertentu di CSV.
+     * Override untuk transformasi kustom per kolom.
+     *
+     * @example
+     *   protected function exportValue(Model $record, string $column): mixed
+     *   {
+     *       if ($column === 'roles') {
+     *           return $record->roles->pluck('name')->join(', ');
+     *       }
+     *       return parent::exportValue($record, $column);
+     *   }
+     */
+    protected function exportValue(Model $record, string $column): mixed
+    {
+        return data_get($record, $column);
+    }
+
+    protected function exportFileName(): string
+    {
+        return $this->routeName() . '_' . now()->format('Ymd_His') . '.csv';
+    }
+
+    /**
+     * Helper untuk custom action di luar CRUD standar.
+     * Menyediakan lifecycle hook, permission check, dan DB transaction yang konsisten.
+     *
+     * @param callable(Model, Request): mixed $callback
+     * @example
+     *           public function publish(Request $request, mixed $id): RedirectResponse
+     *           {
+     *           return $this->recordAction(
+     *           $request, $id, 'publish',
+     *           fn (Model $r) => $r->update(['published_at' => now()]),
+     *           'notifications.post.published',
+     *           );
+     *           }
+     *
+     */
+    protected function recordAction(
+        Request  $request,
+        mixed    $id,
+        string   $action,
+        callable $callback,
+        ?string  $successMessage = null,
+        bool     $checkPermission = true,
+    ): RedirectResponse
+    {
+        if($checkPermission) {
+            $this->authorize($action);
+        }
+        $record  = $this->resolveRecord($id);
+        $blocked = $this->beforeRecordAction($action, $record, $request);
+        if($blocked instanceof RedirectResponse) {
+            return $blocked;
+        }
+        $run = function() use ($callback, $record, $request, $action): void {
+            $result = $callback($record, $request);
+            $this->afterRecordAction($action, $record, $request, $result);
+        };
+        $this->useTransactions ? DB::transaction($run) : $run();
+        return $this->redirectToIndex(
+            $successMessage ?? $this->actionSuccessMessage($action),
+            $request
+        );
+    }
+
+    // =========================================================================
+    // Auto Slug
+    // =========================================================================
+    /**
+     * SEBELUM custom action (via recordAction()).
+     * Return RedirectResponse untuk memblokir.
+     */
+    protected function beforeRecordAction(string $action, Model $record, Request $request): ?RedirectResponse
+    {
+        return null;
+    }
+
+    /**
+     * SETELAH custom action selesai.
+     *
+     * @param mixed $result nilai return dari callback
+     */
+    protected function afterRecordAction(string $action, Model $record, Request $request, mixed $result = null): void
+    {
+        // Override di controller turunan
+    }
+
+    // =========================================================================
+    // Utilities
+    // =========================================================================
+    protected function actionSuccessMessage(string $action): string
+    {
+        return 'notifications.common.saved';
+    }
+
+    /**
+     * Redirect ke index dengan flash error.
+     * Biasanya dipakai di beforeDestroy() untuk memblokir penghapusan.
+     *
+     * @example
+     *   return $this->redirectToIndexWithError('errors.cannot_delete');
+     */
+    protected function redirectToIndexWithError(string $message, ?Request $request = null): RedirectResponse
+    {
+        return redirect()
+            ->route($this->routeName() . '.index', $this->indexRouteParameters($request))
+            ->with('error', $this->resolveFlashMessage($message));
     }
 }

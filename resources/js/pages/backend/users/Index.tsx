@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, type Role } from '@/types';
+import { type Role } from '@/types';
 import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 
 dayjs.extend(relativeTime);
@@ -97,8 +97,6 @@ function buildQueryString(query: Record<string, string | number | undefined>): s
     const serialized = params.toString();
     return serialized ? `?${serialized}` : '';
 }
-
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manajemen User', href: '/backend/users' }];
 
 export default function UserIndex({ users, roles, filters = {}, datatable, crud, form }: Props) {
     const { t } = useLanguage();
@@ -192,7 +190,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
     const columns: DataTableColumn<User>[] = [
         {
             key: 'name',
-            label: t('users.user'),
+            label: t('columns.user'),
             sortable: canSort('name'),
             render: (user) => (
                 <div className="flex items-start gap-3">
@@ -211,7 +209,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
         },
         {
             key: 'roles',
-            label: t('users.role'),
+            label: t('columns.role'),
             render: (user) => (
                 <div className="flex flex-wrap gap-1">
                     {user.roles.length === 0 ? (
@@ -228,7 +226,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
         },
         {
             key: 'created_at',
-            label: t('users.createdAt'),
+            label: t('columns.createdAt'),
             sortable: canSort('created_at'),
             render: (user) => dayjs(user.created_at).format('DD MMM YYYY HH:mm'),
         },
@@ -236,7 +234,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
             ? [
                   {
                       key: 'actions',
-                      label: t('users.actions'),
+                      label: t('columns.actions'),
                       width: '96px',
                       minWidth: '96px',
                       maxWidth: '96px',
@@ -250,8 +248,8 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                                           size="icon"
                                           variant="ghost"
                                           className="border-border h-7 w-7 rounded-none border-r"
-                                          aria-label={t('users.editAction')}
-                                          title={t('users.editAction')}
+                                          aria-label={t('buttons.edit')}
+                                          title={t('buttons.edit')}
                                       >
                                           <Link href={`${indexRoute}/${user.id}/edit${activeQueryString}`}>
                                               <Pencil className="h-4 w-4" />
@@ -278,11 +276,13 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                                                   <AlertDialogDescription>
                                                       {t('users.resetDescription', { name: user.name })}
                                                       <br />
-                                                      <code className="bg-muted mt-1 inline-block rounded px-2 py-1 text-sm">ResetPasswordNya</code>
+                                                      <code className="bg-muted mt-1 inline-block rounded px-2 py-1 text-sm">
+                                                          {t('users.resetDefaultPassword')}
+                                                      </code>
                                                   </AlertDialogDescription>
                                               </AlertDialogHeader>
                                               <AlertDialogFooter>
-                                                  <AlertDialogCancel>{t('users.cancel')}</AlertDialogCancel>
+                                                  <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                                   <AlertDialogAction onClick={() => handleResetPassword(user.id)} disabled={processing}>
                                                       {t('users.confirmReset')}
                                                   </AlertDialogAction>
@@ -298,19 +298,21 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                                                   size="icon"
                                                   variant="ghost"
                                                   className="text-destructive hover:text-destructive h-7 w-7 rounded-none"
-                                                  aria-label={t('users.delete')}
-                                                  title={t('users.delete')}
+                                                  aria-label={t('buttons.delete')}
+                                                  title={t('buttons.delete')}
                                               >
                                                   <Trash2 className="h-4 w-4" />
                                               </Button>
                                           </AlertDialogTrigger>
                                           <AlertDialogContent>
                                               <AlertDialogHeader>
-                                                  <AlertDialogTitle>{t('users.deleteTitle')}</AlertDialogTitle>
-                                                  <AlertDialogDescription>{t('users.deleteDescription', { name: user.name })}</AlertDialogDescription>
+                                                  <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
+                                                  <AlertDialogDescription>
+                                                      {t('dialog.delete.description', { item: user.name })}
+                                                  </AlertDialogDescription>
                                               </AlertDialogHeader>
                                               <AlertDialogFooter>
-                                                  <AlertDialogCancel>{t('users.cancel')}</AlertDialogCancel>
+                                                  <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                                   <AlertDialogAction onClick={() => handleDelete(user.id)} disabled={processing}>
                                                       {t('users.confirmDelete')}
                                                   </AlertDialogAction>
@@ -327,13 +329,13 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('users.title')} />
+        <AppLayout breadcrumbs={[{ title: t('pages.users.title'), href: '/backend/users' }]}>
+            <Head title={t('pages.users.title')} />
 
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('users.title')}</h1>
-                    <p className="text-muted-foreground">{t('users.description')}</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.users.title')}</h1>
+                    <p className="text-muted-foreground">{t('pages.users.description')}</p>
                 </div>
 
                 <ServerDataTable<User>
@@ -362,18 +364,18 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
             <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{isEdit ? t('users.edit') : t('users.create')}</DialogTitle>
-                        <DialogDescription>{isEdit ? t('users.updateDescription') : t('users.createDescription')}</DialogDescription>
+                        <DialogTitle>{isEdit ? t('buttons.update') : t('buttons.create')}</DialogTitle>
+                        <DialogDescription>{isEdit ? t('form.updateDescription') : t('form.createDescription')}</DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <Label htmlFor="name" className="mb-2 block">
-                                {t('users.name')}
+                                {t('labels.name')}
                             </Label>
                             <Input
                                 id="name"
-                                placeholder={t('users.fullName')}
+                                placeholder={t('labels.name')}
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 className={errors.name ? 'border-red-500' : ''}
@@ -383,7 +385,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
 
                         <div>
                             <Label htmlFor="email" className="mb-2 block">
-                                {t('users.email')}
+                                {t('labels.email')}
                             </Label>
                             <Input
                                 id="email"
@@ -398,7 +400,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
 
                         <div>
                             <Label htmlFor="password" className="mb-2 block">
-                                {t('users.password')}
+                                {t('labels.password')}
                                 {isEdit ? ` (${t('users.optional')})` : ''}
                             </Label>
                             <Input
@@ -413,7 +415,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                         </div>
 
                         <div>
-                            <Label className="mb-3 block">{t('users.role')}</Label>
+                            <Label className="mb-3 block">{t('columns.role')}</Label>
                             <div className="space-y-3 rounded-lg border p-4">
                                 {roles.map((role) => (
                                     <div key={role.id} className="flex items-center space-x-2">
@@ -438,10 +440,10 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
 
                         <DialogFooter>
                             <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)}>
-                                {t('users.cancel')}
+                                {t('buttons.cancel')}
                             </Button>
                             <Button type="submit" disabled={processing}>
-                                {processing ? t('users.saving') : isEdit ? t('users.save') : t('users.add')}
+                                {processing ? t('buttons.saving') : isEdit ? t('buttons.save') : t('buttons.add')}
                             </Button>
                         </DialogFooter>
                     </form>

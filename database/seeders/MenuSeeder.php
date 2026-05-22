@@ -14,6 +14,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Dashboard',
             'translation_key' => 'menus.dashboard',
+            'scope'           => 'backend',
             'icon'            => 'Home',
             'route'           => '/dashboard',
             'order'           => 1,
@@ -22,6 +23,7 @@ class MenuSeeder extends Seeder
         $access = Menu::create([
             'title'           => 'Access',
             'translation_key' => 'menus.access',
+            'scope'           => 'backend',
             'icon'            => 'Contact',
             'route'           => '#',
             'order'           => 2,
@@ -30,6 +32,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Permissions',
             'translation_key' => 'menus.permissions',
+            'scope'           => 'backend',
             'icon'            => 'AlertOctagon',
             'route'           => '/permissions',
             'order'           => 2,
@@ -39,6 +42,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Users',
             'translation_key' => 'menus.users',
+            'scope'           => 'backend',
             'icon'            => 'Users',
             'route'           => '/users',
             'order'           => 3,
@@ -48,15 +52,42 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Roles',
             'translation_key' => 'menus.roles',
+            'scope'           => 'backend',
             'icon'            => 'AlertTriangle',
             'route'           => '/roles',
             'order'           => 4,
             'permission_name' => 'roles-view',
             'parent_id'       => $access->id,
         ]);
+        Menu::create([
+            'title'           => 'Products',
+            'translation_key' => 'menus.products',
+            'scope'           => 'backend',
+            'icon'            => 'Boxes',
+            'route'           => '/products',
+            'order'           => 3,
+            'permission_name' => 'products-view',
+        ]);
+        Menu::create([
+            'title'           => 'Home',
+            'translation_key' => 'menus.home',
+            'scope'           => 'frontend',
+            'icon'            => 'Home',
+            'route'           => '/',
+            'order'           => 1,
+        ]);
+        Menu::create([
+            'title'           => 'Products',
+            'translation_key' => 'menus.products',
+            'scope'           => 'frontend',
+            'icon'            => 'Boxes',
+            'route'           => '/products',
+            'order'           => 2,
+        ]);
         $settings = Menu::create([
             'title'           => 'Settings',
             'translation_key' => 'menus.settings',
+            'scope'           => 'backend',
             'icon'            => 'Settings',
             'route'           => '#',
             'order'           => 4,
@@ -65,6 +96,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Menu Manager',
             'translation_key' => 'menus.menu_manager',
+            'scope'           => 'backend',
             'icon'            => 'Menu',
             'route'           => '/menus',
             'order'           => 1,
@@ -74,6 +106,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'App Settings',
             'translation_key' => 'menus.app_settings',
+            'scope'           => 'backend',
             'icon'            => 'AtSign',
             'route'           => '/settingsapp',
             'order'           => 2,
@@ -83,6 +116,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Translations',
             'translation_key' => 'menus.translations',
+            'scope'           => 'backend',
             'icon'            => 'Globe',
             'route'           => '/translations',
             'order'           => 3,
@@ -90,17 +124,19 @@ class MenuSeeder extends Seeder
             'parent_id'       => $settings->id,
         ]);
         Menu::create([
-            'title'           => 'Backup',
-            'translation_key' => 'menus.backup',
-            'icon'            => 'Inbox',
-            'route'           => '/backup',
+            'title'           => 'API Clients',
+            'translation_key' => 'menus.api_clients',
+            'scope'           => 'backend',
+            'icon'            => 'KeyRound',
+            'route'           => '/api-clients',
             'order'           => 4,
-            'permission_name' => 'backup-view',
+            'permission_name' => 'api-clients-view',
             'parent_id'       => $settings->id,
         ]);
         $utilities = Menu::create([
             'title'           => 'Utilities',
             'translation_key' => 'menus.utilities',
+            'scope'           => 'backend',
             'icon'            => 'CreditCard',
             'route'           => '#',
             'order'           => 5,
@@ -109,6 +145,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'Audit Logs',
             'translation_key' => 'menus.audit_logs',
+            'scope'           => 'backend',
             'icon'            => 'Activity',
             'route'           => '/audit-logs',
             'order'           => 2,
@@ -118,6 +155,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title'           => 'File Manager',
             'translation_key' => 'menus.file_manager',
+            'scope'           => 'backend',
             'icon'            => 'Folder',
             'route'           => '/files',
             'order'           => 3,

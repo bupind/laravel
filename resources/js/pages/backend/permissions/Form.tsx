@@ -9,6 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
+import { useLanguage } from '@/hooks/use-language';
 
 const NONE_GROUP = '__NONE__';
 
@@ -53,6 +54,7 @@ export function PermissionFormFields({
     onSuccess,
     shortcutOpen = false,
 }: PermissionFormFieldsProps) {
+    const { t } = useLanguage();
     const isEdit = Boolean(permission?.module);
     const groupOptions = useMemo(
         () => (permission?.group && !groups.includes(permission.group) ? [permission.group, ...groups] : groups),
@@ -129,11 +131,11 @@ export function PermissionFormFields({
         >
             <div className="space-y-1.5">
                 <Label htmlFor="module">
-                    Path <span className="text-destructive">*</span>
+                    {t('pages.permissions.path')} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                     id="module"
-                    placeholder="users"
+                    placeholder={t('pages.permissions.form.modulePlaceholder')}
                     value={data.module}
                     disabled={isEdit}
                     onChange={(event) => setData('module', event.target.value)}
@@ -142,7 +144,7 @@ export function PermissionFormFields({
             </div>
 
             <div className="space-y-1.5">
-                <Label>Group</Label>
+                <Label>{t('pages.permissions.group')}</Label>
                 <div className="grid gap-2 sm:grid-cols-2">
                     <Select
                         value={data.group || NONE_GROUP}
@@ -155,10 +157,10 @@ export function PermissionFormFields({
                         }}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Pilih grup" />
+                            <SelectValue placeholder={t('pages.permissions.selectGroup')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value={NONE_GROUP}>Tanpa grup</SelectItem>
+                            <SelectItem value={NONE_GROUP}>{t('pages.permissions.noGroup')}</SelectItem>
                             {groupOptions.map((group) => (
                                 <SelectItem key={group} value={group}>
                                     {group}
@@ -167,7 +169,7 @@ export function PermissionFormFields({
                         </SelectContent>
                     </Select>
                     <Input
-                        placeholder="Grup baru"
+                        placeholder={t('pages.permissions.newGroup')}
                         value={data.new_group}
                         onChange={(event) => {
                             setData({
@@ -183,7 +185,7 @@ export function PermissionFormFields({
 
             <div className="space-y-2">
                 <Label>
-                    Privileges <span className="text-destructive">*</span>
+                    {t('pages.permissions.privileges')} <span className="text-destructive">*</span>
                 </Label>
 
                 {data.privileges.length > 0 && (
@@ -220,7 +222,7 @@ export function PermissionFormFields({
 
                 <div className="flex gap-2">
                     <Input
-                        placeholder="Privilege custom"
+                        placeholder={t('pages.permissions.customPrivilege')}
                         value={data.custom_privilege}
                         onChange={(event) => setData('custom_privilege', event.target.value)}
                         onKeyDown={(event) => {
@@ -251,16 +253,14 @@ export function PermissionFormFields({
 
             <div className="flex justify-end gap-2 pt-2">
                 {onCancel ? (
-                    <Button type="button" variant="secondary" onClick={onCancel}>
-                        Cancel
-                    </Button>
+                    <Button type="button" variant="secondary" onClick={onCancel}>{t('buttons.cancel')}</Button>
                 ) : (
                     <Button type="button" variant="secondary" asChild>
-                        <Link href="/backend/permissions">Back</Link>
+                        <Link href="/backend/permissions">{t('buttons.back')}</Link>
                     </Button>
                 )}
                 <Button type="submit" disabled={processing || !data.module.trim() || data.privileges.length === 0}>
-                    {processing ? 'Menyimpan...' : 'Save'}
+                    {processing ? t('buttons.saving') : t('buttons.save')}
                 </Button>
             </div>
         </form>
@@ -268,18 +268,19 @@ export function PermissionFormFields({
 }
 
 export default function PermissionForm({ permission = null, groups = [], standardActions = [] }: PermissionFormPageProps) {
+    const { t } = useLanguage();
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Permission Management', href: '/backend/permissions' },
-        { title: permission ? 'Update' : 'Create', href: '#' },
+        { title: t('pages.permissions.breadcrumb'), href: '/backend/permissions' },
+        { title: permission ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={permission ? 'Update Permission' : 'Create Permission'} />
+            <Head title={permission ? t('buttons.update') : t('buttons.create')} />
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{permission ? 'Update Permission' : 'Create Permission'}</h1>
-                    <p className="text-muted-foreground">Define module path, group, and privileges.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{permission ? t('buttons.update') : t('buttons.create')}</h1>
+                    <p className="text-muted-foreground">{t('pages.permissions.formDescription')}</p>
                 </div>
 
                 <div className="max-w-2xl">

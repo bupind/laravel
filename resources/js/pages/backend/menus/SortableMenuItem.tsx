@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { useLanguage } from '@/hooks/use-language';
 
 interface Props {
     id: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function SortableMenuItem({ id, title }: Props) {
+    const { t } = useLanguage();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = {
@@ -26,7 +28,7 @@ export default function SortableMenuItem({ id, title }: Props) {
                 type="button"
                 {...listeners}
                 className="text-muted-foreground hover:text-foreground cursor-grab touch-none"
-                aria-label="Drag to reorder"
+                aria-label={t('pages.menus.dragToReorder')}
             >
                 <GripVertical className="size-4" />
             </button>

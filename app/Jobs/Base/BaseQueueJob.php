@@ -17,8 +17,8 @@ abstract class BaseQueueJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $tries = 5;
-    public int $timeout = 180;
+    public int   $tries   = 5;
+    public int   $timeout = 180;
     public array $backoff = [
         10,
         30,

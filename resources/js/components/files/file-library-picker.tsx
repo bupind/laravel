@@ -2,40 +2,17 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, UploadCloud } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '@/hooks/use-language';
+import { AlertCircle, File, Loader2, Search, UploadCloud } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-// ── CSRF helper ───────────────────────────────────────────────────────────────
-// Baca dari meta tag (sudah ada di backend/app.blade.php).
-// Dipanggil setiap kali dibutuhkan agar selalu fresh (Laravel merotasi token
-// setelah tiap request di beberapa konfigurasi).
-function getCsrfToken(): string {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-}
-
-// ── Shared fetch defaults ─────────────────────────────────────────────────────
-// credentials: 'same-origin' wajib agar session cookie (laravel_session) ikut
-// dikirim — tanpanya server tidak mengenali session dan CSRF tidak bisa diverifikasi.
-function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    return fetch(url, {
-        credentials: 'same-origin',
-        ...options,
-        headers: {
-            Accept: 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            ...options.headers,
-        },
-    });
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface FolderItem {
     id: number;
     name: string;
-    parent_id: number | null;
+    parent_id: string | null;
 }
 
-interface FileLibraryItem {
+export interface FileLibraryItem {
     id: number;
     name: string;
     file_name: string;
@@ -55,18 +32,67 @@ interface FileLibraryResponse {
     };
 }
 
-interface FileLibraryPickerProps {
+export interface FileLibraryPickerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSelect: (item: FileLibraryItem) => void;
+    accept?: string;
+}
+function getCsrfToken(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export default function FileLibraryPicker({ open, onOpenChange, onSelect }: FileLibraryPickerProps) {
+function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    return fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(options.headers ?? {}),
+        },
+    });
+}
+
+interface FileCardProps {
+    item: FileLibraryItem;
+    onSelect: (item: FileLibraryItem) => void;
+}
+
+function FileCard({ item, onSelect }: FileCardProps) {
+    const isImage = item.mime_type.startsWith('image/');
+
+    return (
+        <button
+            type="button"
+            className="border-border bg-card hover:border-primary focus-visible:ring-ring overflow-hidden rounded-md border text-left transition focus-visible:ring-2 focus-visible:outline-none"
+            onClick={() => onSelect(item)}
+            title={item.name}
+        >
+            <div className="bg-muted aspect-video w-full overflow-hidden">
+                {isImage ? (
+                    <img src={item.url} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                    <div className="text-muted-foreground flex h-full items-center justify-center">
+                        <File className="h-8 w-8 opacity-40" />
+                    </div>
+                )}
+            </div>
+            <div className="space-y-0.5 p-2">
+                <p className="truncate text-xs font-medium">{item.name}</p>
+                <p className="text-muted-foreground truncate text-[11px]">{item.size}</p>
+            </div>
+        </button>
+    );
+}
+
+export default function FileLibraryPicker({ open, onOpenChange, onSelect, accept = 'image/*' }: FileLibraryPickerProps) {
+    const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [folderId, setFolderId] = useState<string>('__ROOT__');
     const [page, setPage] = useState(1);
@@ -76,116 +102,120 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
     const [reloadKey, setReloadKey] = useState(0);
 
     const query = useMemo(() => {
-        const params = new URLSearchParams();
-        params.set('per_page', '20');
-        params.set('page', String(page));
+        const params = new URLSearchParams({ per_page: '20', page: String(page) });
         if (folderId !== '__ROOT__') params.set('folder_id', folderId);
-        if (search.trim() !== '') params.set('search', search.trim());
+        if (search.trim()) params.set('search', search.trim());
         return params.toString();
     }, [page, search, folderId]);
 
-    // Load folders
     useEffect(() => {
         if (!open) return;
-        let isActive = true;
+        let active = true;
 
-        // credentials: 'same-origin' diurus oleh apiFetch
         apiFetch('/backend/files/library/folders')
-            .then((res) => res.json())
+            .then((r) => r.json())
             .then((payload: { data?: FolderItem[] }) => {
-                if (!isActive) return;
-                setFolders(payload.data ?? []);
+                if (active) setFolders(payload.data ?? []);
             })
             .catch(() => {
-                /* silent – folders tidak kritis */
+                /* silent */
             });
 
         return () => {
-            isActive = false;
+            active = false;
         };
     }, [open]);
 
-    // Load files
     useEffect(() => {
         if (!open) return;
-        let isActive = true;
+        let active = true;
 
         setLoading(true);
-        setErrorMessage('');
+        setError('');
 
         apiFetch(`/backend/files/library?${query}`)
             .then(async (res) => {
-                if (!res.ok) throw new Error('Gagal memuat file.');
-                return res.json();
+                if (!res.ok) throw new Error(t('notifications.load_failed'));
+                return res.json() as Promise<FileLibraryResponse>;
             })
-            .then((payload: FileLibraryResponse) => {
-                if (!isActive) return;
+            .then((payload) => {
+                if (!active) return;
                 setRows(payload.data ?? []);
                 setLastPage(payload.meta?.last_page ?? 1);
             })
-            .catch((error: unknown) => {
-                if (!isActive) return;
-                setErrorMessage(error instanceof Error ? error.message : 'Gagal memuat file.');
+            .catch((err: unknown) => {
+                if (!active) return;
+                setError(err instanceof Error ? err.message : t('notifications.load_failed'));
             })
             .finally(() => {
-                if (!isActive) return;
-                setLoading(false);
+                if (active) setLoading(false);
             });
 
         return () => {
-            isActive = false;
+            active = false;
         };
-    }, [open, query, reloadKey]);
+    }, [open, query, reloadKey, t]);
 
-    // Upload
-    const handleUpload = async (files: FileList | null) => {
-        if (!files || files.length === 0) return;
+    const handleUpload = useCallback(
+        async (files: FileList | null) => {
+            if (!files || files.length === 0) return;
 
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i += 1) {
-            formData.append('files[]', files[i]);
-        }
-        if (folderId !== '__ROOT__') {
-            formData.append('folder_id', folderId);
-        }
+            const token = getCsrfToken();
 
-        setUploading(true);
-        setErrorMessage('');
+            const formData = new FormData();
+            Array.from(files).forEach((file) => formData.append('files[]', file));
 
-        try {
-            const response = await apiFetch('/backend/files', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    // Jangan set Content-Type — browser yang set multipart/form-data + boundary
-                    'X-CSRF-TOKEN': getCsrfToken(),
-                },
-            });
-
-            if (!response.ok) {
-                const maybeJson = (await response.json().catch(() => null)) as { message?: string } | null;
-                throw new Error(maybeJson?.message ?? 'Upload gagal.');
+            if (folderId !== '__ROOT__') {
+                formData.append('folder_id', folderId);
             }
 
-            setPage(1);
-            setReloadKey((v) => v + 1);
-        } catch (error: unknown) {
-            setErrorMessage(error instanceof Error ? error.message : 'Upload gagal.');
-        } finally {
-            setUploading(false);
-        }
-    };
+            if (token) {
+                formData.append('_token', token);
+            }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+            setUploading(true);
+            setError('');
+
+            try {
+                const res = await apiFetch('/backend/files', {
+                    method: 'POST',
+                    body: formData,
+                    headers: token ? { 'X-CSRF-TOKEN': token } : undefined,
+                });
+
+                if (!res.ok) {
+                    const json = (await res.json().catch(() => null)) as { message?: string } | null;
+                    throw new Error(json?.message ?? t('notifications.upload_failed'));
+                }
+
+                setPage(1);
+                setReloadKey((v) => v + 1);
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : t('notifications.upload_failed'));
+            } finally {
+                setUploading(false);
+            }
+        },
+        [folderId, t],
+    );
+
+    const handleSelect = useCallback(
+        (item: FileLibraryItem) => {
+            onSelect(item);
+            onOpenChange(false);
+        },
+        [onSelect, onOpenChange],
+    );
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden">
                 <DialogHeader>
-                    <DialogTitle>Select Image From File Management</DialogTitle>
+                    <DialogTitle>{t('filePicker.title')}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Select
                             value={folderId}
                             onValueChange={(value) => {
@@ -193,11 +223,11 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                                 setPage(1);
                             }}
                         >
-                            <SelectTrigger className="h-9 w-[220px]">
-                                <SelectValue placeholder="Root folder" />
+                            <SelectTrigger className="h-9 w-[200px]">
+                                <SelectValue placeholder={t('pages.files.rootFolder')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="__ROOT__">Root folder</SelectItem>
+                                <SelectItem value="__ROOT__">{t('pages.files.rootFolder')}</SelectItem>
                                 {folders.map((folder) => (
                                     <SelectItem key={folder.id} value={String(folder.id)}>
                                         {folder.name}
@@ -206,83 +236,62 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                             </SelectContent>
                         </Select>
 
-                        <Input
-                            value={search}
-                            onChange={(event) => {
-                                setSearch(event.target.value);
-                                setPage(1);
-                            }}
-                            placeholder="Search file name..."
-                            className="h-9"
-                        />
-                        <Button type="button" size="icon" className="h-9 w-9">
-                            <Search className="h-4 w-4" />
-                        </Button>
-
+                        <div className="relative flex-1">
+                            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+                            <Input
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
+                                placeholder={t('filePicker.searchPlaceholder')}
+                                className="h-9 pl-8"
+                            />
+                        </div>
                         <input
                             ref={fileInputRef}
                             type="file"
                             className="hidden"
-                            accept="image/*"
+                            accept={accept}
                             multiple
-                            onChange={(event) => {
-                                void handleUpload(event.target.files);
-                                event.currentTarget.value = '';
+                            onChange={(e) => {
+                                void handleUpload(e.target.files);
+                                e.currentTarget.value = '';
                             }}
                         />
                         <Button type="button" size="sm" variant="outline" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-                            <UploadCloud className="mr-1 h-4 w-4" />
-                            {uploading ? 'Uploading...' : 'Upload'}
+                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                            {uploading ? t('buttons.uploading') : t('buttons.upload')}
                         </Button>
                     </div>
-
-                    {errorMessage !== '' && (
-                        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{errorMessage}</div>
+                    {error && (
+                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            {error}
+                        </div>
                     )}
 
-                    <div className="text-muted-foreground text-xs">
-                        Pilih gambar: klik tombol Upload untuk tambah file baru, atau klik salah satu kartu gambar untuk memilih.
-                    </div>
-
-                    <div className="grid max-h-[55vh] grid-cols-2 gap-3 overflow-y-auto md:grid-cols-4">
+                    <p className="text-muted-foreground text-xs">{t('filePicker.hint')}</p>
+                    <div className="grid max-h-[50vh] grid-cols-2 gap-3 overflow-y-auto md:grid-cols-4">
                         {loading ? (
-                            <div className="text-muted-foreground col-span-full text-sm">Loading files...</div>
+                            <div className="text-muted-foreground col-span-full flex items-center justify-center gap-2 py-10 text-sm">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {t('filePicker.loading')}
+                            </div>
                         ) : rows.length === 0 ? (
-                            <div className="text-muted-foreground col-span-full text-sm">No files found.</div>
+                            <div className="text-muted-foreground col-span-full py-10 text-center text-sm">{t('filePicker.empty')}</div>
                         ) : (
-                            rows.map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    className="border-border bg-card hover:border-primary overflow-hidden rounded-md border text-left transition"
-                                    onClick={() => {
-                                        onSelect(item);
-                                        onOpenChange(false);
-                                    }}
-                                >
-                                    <div className="bg-muted aspect-video w-full">
-                                        {item.mime_type.startsWith('image/') ? (
-                                            <img src={item.url} alt={item.name} className="h-full w-full object-cover" />
-                                        ) : (
-                                            <div className="text-muted-foreground flex h-full items-center justify-center text-xs">File</div>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1 p-2">
-                                        <p className="truncate text-xs font-medium">{item.name}</p>
-                                        <p className="text-muted-foreground truncate text-[11px]">{item.size}</p>
-                                    </div>
-                                </button>
-                            ))
+                            rows.map((item) => <FileCard key={item.id} item={item} onSelect={handleSelect} />)
                         )}
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border-t pt-3">
                         <Button type="button" variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
-                            Prev
+                            {t('buttons.previous')}
                         </Button>
-                        <div className="text-muted-foreground text-xs">
-                            Page {page} / {lastPage}
-                        </div>
+                        <span className="text-muted-foreground text-xs">
+                            {t('pagination.page')} {page} / {lastPage}
+                        </span>
                         <Button
                             type="button"
                             variant="outline"
@@ -290,7 +299,7 @@ export default function FileLibraryPicker({ open, onOpenChange, onSelect }: File
                             onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
                             disabled={page >= lastPage}
                         >
-                            Next
+                            {t('buttons.next')}
                         </Button>
                     </div>
                 </div>

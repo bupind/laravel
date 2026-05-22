@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     ChevronRight,
@@ -57,13 +56,6 @@ interface Props {
     currentFolder: FolderNode | null;
     files: FileNode[];
 }
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'File Management',
-        href: '/backend/files',
-    },
-];
 
 function buildFolderTree(flat: FolderNode[]): (FolderNode & { children: FolderNode[] })[] {
     const map = new Map<number, FolderNode & { children: FolderNode[] }>();
@@ -196,7 +188,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                     <span className="flex-1 truncate text-sm">{folder.name}</span>
 
                     <AlertDialog>
-                        <AlertDialogTrigger >
+                        <AlertDialogTrigger>
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -211,11 +203,8 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>{t('pages.files.deleteFolderTitle')}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    {t('pages.files.deleteFolderDescriptionStart')} <strong>{folder.name}</strong>{' '}
-                                    {t('pages.files.deleteFolderDescriptionEnd')}
-                                </AlertDialogDescription>
+                                <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
+                                <AlertDialogDescription>{t('dialog.delete.description', { item: folder.name })}</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
@@ -232,7 +221,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={[{ title: t('pages.files.title'), href: '/backend/files' }]}>
             <Head title={t('pages.files.title')} />
             <div className="grid flex-1 grid-cols-1 gap-6 p-4 md:grid-cols-4 md:p-6">
                 {/* Sidebar Folder Tree */}
@@ -241,7 +230,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                         <h2 className="text-sm font-semibold">{t('pages.files.folderStructure')}</h2>
                         <Button variant="outline" size="sm" onClick={() => setIsCreatingFolder(true)} className="gap-1">
                             <FolderPlus className="h-4 w-4" />
-                            <span>{t('buttons.newFolder')}</span>
+                            <span>{t('buttons.create')}</span>
                         </Button>
                     </div>
 
@@ -284,7 +273,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                             <Folder className="mb-2 h-12 w-12" />
                             <p>{t('pages.files.emptyFolder')}</p>
                             <Button variant="ghost" size="sm" className="mt-2" onClick={() => fileInputRef.current?.click()}>
-                                {t('buttons.uploadFirstFile')}
+                                {t('buttons.upload')}
                             </Button>
                         </div>
                     ) : (
@@ -314,17 +303,16 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                                                 <Download className="h-4 w-4" />
                                             </a>
                                             <AlertDialog>
-                                                <AlertDialogTrigger >
+                                                <AlertDialogTrigger>
                                                     <button className="p-1 text-gray-500 hover:text-red-500" onClick={(e) => e.stopPropagation()}>
                                                         <Trash2 className="h-4 w-4" />
                                                     </button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>{t('pages.files.deleteFileTitle')}</AlertDialogTitle>
+                                                        <AlertDialogTitle>{t('dialog.delete.title')}</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            {t('pages.files.deleteFileDescriptionStart')} <strong>{file.name}</strong>{' '}
-                                                            {t('pages.files.deleteFileDescriptionEnd')}
+                                                            {t('dialog.delete.description', { item: file.name })}
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
@@ -359,7 +347,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
             <Dialog open={isCreatingFolder} onOpenChange={setIsCreatingFolder}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t('pages.files.createFolderTitle')}</DialogTitle>
+                        <DialogTitle>{t('form.createTitle', { resource: t('labels.folder') })}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                         <Input
@@ -370,10 +358,10 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                         />
                         <div className="flex justify-end gap-2">
                             <Button variant="outline" onClick={() => setIsCreatingFolder(false)}>
-                                Cancel
+                                {t('buttons.cancel')}
                             </Button>
                             <Button onClick={handleCreateFolder} disabled={!newFolderName.trim()}>
-                                Create
+                                {t('buttons.create')}
                             </Button>
                         </div>
                     </div>

@@ -49,6 +49,15 @@ class UserController extends BaseCrudController
     protected string $orderBy                = 'created_at';
     private array    $rolesToSync            = [];
 
+    public function resetPassword(User $user): RedirectResponse
+    {
+        $this->authorize('reset');
+        $user->update([
+            'password' => Hash::make('ResetPasswordNya'),
+        ]);
+        return redirect()->back()->with('success', $this->flashMessage('notifications.common.saved'));
+    }
+
     protected function beforeStore(array $validated, Request $request): array
     {
         $this->rolesToSync = $validated['roles'];
@@ -101,15 +110,6 @@ class UserController extends BaseCrudController
         ];
     }
 
-    public function resetPassword(User $user): RedirectResponse
-    {
-        $this->authorize('reset');
-        $user->update([
-            'password' => Hash::make('ResetPasswordNya'),
-        ]);
-        return redirect()->back()->with('success', $this->flashMessage('notifications.common.saved'));
-    }
-
     protected function beforeUpdate(array $validated, Request $request, Model $record): array
     {
         $this->rolesToSync = $validated['roles'];
@@ -155,19 +155,19 @@ class UserController extends BaseCrudController
         ];
     }
 
-    protected function resolvedPermissions(): array
-    {
-        return array_merge(parent::resolvedPermissions(), [
-            'reset' => $this->userCan('reset'),
-        ]);
-    }
-
     protected function roleOptions()
     {
         return Role::query()->select([
             'id',
             'name',
         ])->orderBy('name')->get();
+    }
+
+    protected function resolvedPermissions(): array
+    {
+        return array_merge(parent::resolvedPermissions(), [
+            'reset' => $this->userCan('reset'),
+        ]);
     }
 
     protected function additionalFormProps(Request $request, ?Model $record = null): array

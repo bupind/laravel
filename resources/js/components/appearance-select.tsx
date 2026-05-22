@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type Appearance, useAppearance } from '@/hooks/use-appearance';
+import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { JSX, useState } from 'react';
 
 export function AppearanceDropdown() {
     const { appearance, updateAppearance } = useAppearance();
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
 
     const items: {
@@ -19,17 +21,17 @@ export function AppearanceDropdown() {
     }[] = [
         {
             value: 'light',
-            label: 'Light',
+            label: t('theme.light'),
             icon: <Sun className="h-4 w-4 text-yellow-400" />,
         },
         {
             value: 'dark',
-            label: 'Dark',
+            label: t('theme.dark'),
             icon: <Moon className="h-4 w-4 text-purple-400" />,
         },
         {
             value: 'system',
-            label: 'System',
+            label: t('theme.system'),
             icon: <Monitor className="h-4 w-4 text-blue-400" />,
         },
     ];
@@ -45,14 +47,14 @@ export function AppearanceDropdown() {
                             variant="ghost"
                             size="icon"
                             className={cn('border-border/50 rounded-full border shadow-sm transition-colors', open && 'bg-muted/50')}
-                            aria-label="Change Theme"
+                            aria-label={t('theme.toggle')}
                         >
                             {current?.icon || <Monitor className="h-4 w-4" />}
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
-                    Change Theme
+                    {t('theme.toggle')}
                 </TooltipContent>
             </Tooltip>
 

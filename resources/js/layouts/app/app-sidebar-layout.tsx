@@ -24,20 +24,6 @@ interface Props {
     title?: string;
 }
 
-const layoutTitleTranslationKeys: Record<string, string> = {
-    'Audit Logs': 'pages.auditLogs.title',
-    Backup: 'pages.backup.title',
-    Categories: 'pages.categories.title',
-    'File Management': 'pages.files.title',
-    'File Manager': 'pages.files.title',
-    'Menu Management': 'pages.menus.title',
-    'Permission Management': 'pages.permissions.title',
-    'Role Management': 'pages.roles.title',
-    Tags: 'pages.tags.title',
-    Translations: 'settings.translations.title',
-    'Manajemen User': 'users.title',
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function resolveFlashMessage(message: FlashMessage | undefined, t: (key: string, replacements?: Record<string, string | number>) => string): string {
@@ -110,8 +96,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
     );
 
     const breadcrumbTitle = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1]?.title : undefined;
-    const translatedBreadcrumbTitle = breadcrumbTitle ? t(layoutTitleTranslationKeys[breadcrumbTitle] ?? breadcrumbTitle) : undefined;
-    const pageTitle = title ?? translatedBreadcrumbTitle ?? setting?.seo?.title ?? setting?.nama_app ?? 'Dashboard';
+    const pageTitle = title ?? breadcrumbTitle ?? setting?.seo?.title ?? setting?.nama_app ?? t('pages.dashboard.title');
 
     return (
         <>

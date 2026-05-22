@@ -40,19 +40,19 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('users.title'), href: '/backend/users' },
-        { title: isEdit ? t('users.edit') : t('users.create'), href: '#' },
+        { title: t('pages.users.title'), href: '/backend/users' },
+        { title: isEdit ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={isEdit ? t('users.edit') : t('users.create')} />
+            <Head title={isEdit ? t('buttons.update') : t('buttons.create')} />
 
             <div className="flex-1 p-4 md:p-6">
                 <Card className="mx-auto max-w-3xl">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-2xl font-bold tracking-tight">{isEdit ? t('users.edit') : t('users.create')}</CardTitle>
-                        <p className="text-muted-foreground text-sm">{isEdit ? t('users.updateDescription') : t('users.createDescription')}</p>
+                        <CardTitle className="text-2xl font-bold tracking-tight">{isEdit ? t('buttons.update') : t('buttons.create')}</CardTitle>
+                        <p className="text-muted-foreground text-sm">{isEdit ? t('form.updateDescription') : t('form.createDescription')}</p>
                     </CardHeader>
 
                     <Separator />
@@ -63,11 +63,11 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                                 {/* Nama */}
                                 <div>
                                     <Label htmlFor="name" className="mb-2 block">
-                                        {t('users.name')}
+                                        {t('labels.name')}
                                     </Label>
                                     <Input
                                         id="name"
-                                        placeholder={t('users.fullName')}
+                                        placeholder={t('labels.name')}
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                         className={errors.name ? 'border-red-500' : ''}
@@ -78,7 +78,7 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                                 {/* Email */}
                                 <div>
                                     <Label htmlFor="email" className="mb-2 block">
-                                        {t('users.email')}
+                                        {t('labels.email')}
                                     </Label>
                                     <Input
                                         id="email"
@@ -94,7 +94,7 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                                 {/* Password */}
                                 <div>
                                     <Label htmlFor="password" className="mb-2 block">
-                                        {t('users.password')}
+                                        {t('labels.password')}
                                         {isEdit ? ` (${t('users.optional')})` : ''}
                                     </Label>
                                     <Input
@@ -110,7 +110,7 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
 
                                 {/* Roles */}
                                 <div>
-                                    <Label className="mb-3 block">{t('users.role')}</Label>
+                                    <Label className="mb-3 block">{t('columns.role')}</Label>
                                     <div className="space-y-3 rounded-lg border p-4">
                                         {roles.map((role) => (
                                             <div key={role.id} className="flex items-center space-x-2">
@@ -139,11 +139,11 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                                 <Link href="/backend/users" className="w-full sm:w-auto">
                                     <Button type="button" variant="secondary" className="w-full">
-                                        {t('users.cancel')}
+                                        {t('buttons.cancel')}
                                     </Button>
                                 </Link>
                                 <Button type="submit" disabled={processing} className="w-full sm:w-auto">
-                                    {processing ? t('users.saving') : isEdit ? t('users.save') : t('users.add')}
+                                    {processing ? t('buttons.saving') : isEdit ? t('buttons.save') : t('buttons.add')}
                                 </Button>
                             </div>
                         </form>

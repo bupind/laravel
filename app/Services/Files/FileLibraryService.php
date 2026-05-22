@@ -11,7 +11,7 @@ class FileLibraryService
         User    $user,
         int     $perPage = 20,
         ?string $search = null,
-        ?int    $folderId = null,
+        ?string $folderId = null,
     ): LengthAwarePaginator
     {
         return $user

@@ -14,7 +14,7 @@ return [
     | is explicitly specified when you execute a query / statement.
     |
     */
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default'     => env('DB_CONNECTION', 'sqlite'),
     /*
     |--------------------------------------------------------------------------
     | Database Connections
@@ -26,7 +26,7 @@ return [
     |
     */
     'connections' => [
-        'sqlite' => [
+        'sqlite'  => [
             'driver'                  => 'sqlite',
             'url'                     => env('DB_URL'),
             'database'                => env('DB_DATABASE', database_path('database.sqlite')),
@@ -36,7 +36,7 @@ return [
             'journal_mode'            => null,
             'synchronous'             => null,
         ],
-        'mysql' => [
+        'mysql'   => [
             'driver'         => 'mysql',
             'url'            => env('DB_URL'),
             'host'           => env('DB_HOST', '127.0.0.1'),
@@ -54,7 +54,7 @@ return [
             'options'        => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
-            'dump' => [
+            'dump'           => [
                 'dump_binary_path'       => '/Applications/XAMPP/xamppfiles/bin',
                 'use_single_transaction' => true,
                 'timeout'                => 60,
@@ -82,7 +82,7 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-        'pgsql' => [
+        'pgsql'   => [
             'driver'         => 'pgsql',
             'url'            => env('DB_URL'),
             'host'           => env('DB_HOST', '127.0.0.1'),
@@ -96,7 +96,7 @@ return [
             'search_path'    => 'public',
             'sslmode'        => 'prefer',
         ],
-        'sqlsrv' => [
+        'sqlsrv'  => [
             'driver'         => 'sqlsrv',
             'url'            => env('DB_URL'),
             'host'           => env('DB_HOST', 'localhost'),
@@ -121,7 +121,7 @@ return [
     | the migrations on disk haven't actually been run on the database.
     |
     */
-    'migrations' => [
+    'migrations'  => [
         'table'                  => 'migrations',
         'update_date_on_publish' => true,
     ],
@@ -135,8 +135,8 @@ return [
     | such as Memcached. You may define your connection settings here.
     |
     */
-    'redis' => [
-        'client' => env('REDIS_CLIENT', 'phpredis'),
+    'redis'       => [
+        'client'  => env('REDIS_CLIENT', 'phpredis'),
         'options' => [
             'cluster'    => env('REDIS_CLUSTER', 'redis'),
             'prefix'     => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
@@ -150,7 +150,7 @@ return [
             'port'     => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
         ],
-        'cache' => [
+        'cache'   => [
             'url'      => env('REDIS_URL'),
             'host'     => env('REDIS_HOST', '127.0.0.1'),
             'username' => env('REDIS_USERNAME'),

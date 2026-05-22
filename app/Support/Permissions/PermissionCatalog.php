@@ -41,6 +41,14 @@ class PermissionCatalog
                 'delete',
             ],
         ],
+        'Products'      => [
+            'products' => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+        ],
         'Settings'      => [
             'settings'     => [
                 'view',
@@ -59,6 +67,14 @@ class PermissionCatalog
                 'delete',
             ],
         ],
+        'API'           => [
+            'api-clients' => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+        ],
         'Activity Logs' => [
             'activity-logs' => [
                 'view',
@@ -66,19 +82,6 @@ class PermissionCatalog
             ],
         ],
     ];
-
-    public static function all(): array
-    {
-        $permissions = [];
-        foreach(self::MODULES as $group => $modules) {
-            foreach($modules as $module => $actions) {
-                foreach($actions as $action) {
-                    $permissions[] = "{$module}-{$action}";
-                }
-            }
-        }
-        return array_unique($permissions);
-    }
 
     public static function grouped(): array
     {
@@ -117,6 +120,19 @@ class PermissionCatalog
     public static function isValid(string $permission): bool
     {
         return in_array($permission, self::all(), true);
+    }
+
+    public static function all(): array
+    {
+        $permissions = [];
+        foreach(self::MODULES as $group => $modules) {
+            foreach($modules as $module => $actions) {
+                foreach($actions as $action) {
+                    $permissions[] = "{$module}-{$action}";
+                }
+            }
+        }
+        return array_unique($permissions);
     }
 
     public static function allActions(): array

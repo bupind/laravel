@@ -1,19 +1,54 @@
 <?php
 
-use App\Http\Controllers\Api\HealthCheckController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
+| Tips keamanan:
+|  - Ziggy TIDAK di-share ke rute api/* (lihat HandleInertiaRequests).
+|  - Semua rute api.client di-throttle secara terpisah.
+|  - Gunakan header X-Client-Key + X-Client-Secret (bukan query string).
+|  - Jangan pernah expose seluruh model user — filter field di controller.
 */
-// Health check
-Route::get('health', HealthCheckController::class)->name('api.health');
-// Authenticated
-Route::middleware('auth:sanctum')->group(function() {
-    Route::get('me', function(Request $request) {
-        return response()->json(['user' => $request->user()->load('roles')]);
+
+use App\Http\Controllers\Api\HealthCheckController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\TranslationController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+// ─── Public (throttle ketat) ──────────────────────────────────────────────────
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('health', HealthCheckController::class)->name('api.health');
+    Route::get('translations', TranslationController::class)->name('api.translations');
+});
+
+// ─── API Client (key + secret authentication) ─────────────────────────────────
+Route::middleware(['api.client', 'throttle:api'])
+    ->controller(ProductController::class)
+    ->prefix('products')
+    ->name('api.products.')
+    ->group(function () {
+        // Non-resourceful helpers — harus didaftarkan SEBELUM apiResource
+        // agar Laravel tidak mencegat {product} sebagai ID numerik.
+        Route::get('form/{product?}', 'form')->name('form');
+        Route::post('list-filter', 'listFilter')->name('list-filter');
+        Route::patch('{product}/change-status', 'changeStatus')->name('change-status');
+    });
+
+Route::middleware(['api.client', 'throttle:api'])
+    ->apiResource('products', ProductController::class)
+    ->names('api.products');
+
+// ─── Sanctum-authenticated user routes ────────────────────────────────────────
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('me', function (Request $request) {
+        // Hanya return field yang dibutuhkan frontend — jangan expose semua kolom user.
+        return response()->json([
+            'user' => array_merge(
+                $request->user()->only(['id', 'name', 'email', 'avatar']),
+                ['roles' => $request->user()->roles->pluck('name')],
+            ),
+        ]);
     })->name('api.me');
 });

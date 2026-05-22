@@ -20,10 +20,11 @@ class CheckMenuPermission
         $currentRoute = '/' . ltrim($request->route()->uri(), '/');
         $legacyRoute  = preg_replace('#^/backend#', '', $currentRoute, 1) ?: $currentRoute;
         // Cek route backend terbaru dan fallback ke route lama tanpa prefix
-        $menu = Menu::whereIn('route', [
-            $currentRoute,
-            $legacyRoute
-        ])->first();
+        $menu = Menu::where('scope', 'backend')
+            ->whereIn('route', [
+                $currentRoute,
+                $legacyRoute
+            ])->first();
         // Jika menu ditemukan dan punya permission
         if($menu && $menu->permission_name) {
             if(!$user->can($menu->permission_name)) {

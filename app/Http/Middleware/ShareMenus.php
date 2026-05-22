@@ -13,27 +13,28 @@ class ShareMenus
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
-        Inertia::share('menus', function() use ($user) {
-            if(!$user) {
+        $user      = $request->user();
+        $menuScope = $this->isFrontendRequest($request) ? 'frontend' : 'backend';
+        Inertia::share('menus', function() use ($user, $menuScope) {
+            if($menuScope === 'backend' && !$user) {
                 return [];
             }
-            // Cache menus per user role set
-            $roleKey  = $user->roles->pluck('name')->sort()->implode(',');
-            $cacheKey = "menus_v3_user_{$roleKey}";
-            return Cache::remember($cacheKey, 180, function() use ($user) {
-                $allMenus = Menu::orderBy('order')->get();
-                $indexed  = $allMenus->keyBy('id');
-                $buildTree = function($parentId = null) use (&$buildTree, $indexed, $user) {
+            $roleKey  = $user ? $user->roles->pluck('name')->sort()->implode(',') : 'guest';
+            $cacheKey = "menus_v4_{$menuScope}_user_{$roleKey}";
+            return Cache::remember($cacheKey, 180, function() use ($user, $menuScope) {
+                $allMenus  = Menu::where('scope', $menuScope)->orderBy('order')->get();
+                $indexed   = $allMenus->keyBy('id');
+                $buildTree = function($parentId = null) use (&$buildTree, $indexed, $user, $menuScope) {
                     return $indexed
                         ->filter(
                             fn($menu) => $menu->parent_id === $parentId
-                                         && (!$menu->permission_name || $user->can($menu->permission_name))
+                                         && (!$menu->permission_name || ($user && $user->can($menu->permission_name)))
                         )
-                        ->map(function($menu) use (&$buildTree) {
-                            // Ensure backend prefix
+                        ->map(function($menu) use (&$buildTree, $menuScope) {
                             if(
-                                $menu->route
+                                $menuScope === 'backend'
+                                && $menu->route !== '#'
+                                && $menu->route
                                 && str_starts_with($menu->route, '/')
                                 && !str_starts_with($menu->route, '/backend')
                                 && !str_starts_with($menu->route, '/api')
@@ -50,5 +51,11 @@ class ShareMenus
             });
         });
         return $next($request);
+    }
+
+    private function isFrontendRequest(Request $request): bool
+    {
+        return $request->routeIs('home', 'frontend.*')
+               || (!$request->is('backend/*') && !$request->is('api/*'));
     }
 }
