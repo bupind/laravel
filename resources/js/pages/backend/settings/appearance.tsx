@@ -4,13 +4,13 @@ import AppearanceTabs from '@/components/appearance-tabs';
 import HeadingSmall from '@/components/heading-small';
 
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 export default function Appearance() {
     const { t } = useLanguage();
     return (
-        <AppLayout breadcrumbs={[{ title: t('settings.appearance.breadcrumb'), href: '/backend/settings/appearance' }]}>
+        <BackendLayout breadcrumbs={[{ title: t('settings.appearance.breadcrumb'), href: '/backend/settings/appearance' }]}>
             <Head title={t('settings.appearance.title')} />
 
             <SettingsLayout>
@@ -19,6 +19,6 @@ export default function Appearance() {
                     <AppearanceTabs />
                 </div>
             </SettingsLayout>
-        </AppLayout>
+        </BackendLayout>
     );
 }

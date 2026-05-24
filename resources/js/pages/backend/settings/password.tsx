@@ -1,5 +1,5 @@
 import InputError from '@/components/input-error';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
@@ -43,7 +43,7 @@ export default function Password() {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('settings.password.breadcrumb'), href: '/backend/settings/password' }]}>
+        <BackendLayout breadcrumbs={[{ title: t('settings.password.breadcrumb'), href: '/backend/settings/password' }]}>
             <Head title={t('settings.profile.title')} />
 
             <SettingsLayout>
@@ -117,6 +117,6 @@ export default function Password() {
                     </form>
                 </div>
             </SettingsLayout>
-        </AppLayout>
+        </BackendLayout>
     );
 }

@@ -8,6 +8,8 @@ type ErrorStatus = 400 | 401 | 403 | 404 | 500;
 interface ErrorPageProps {
     status: ErrorStatus;
 
+    context?: 'frontend' | 'backend';
+
     title?: string;
 
     message?: string;
@@ -74,20 +76,31 @@ const ERROR_CONFIG: Record<ErrorStatus, ErrorConfig> = {
     },
 } as const;
 
-export default function ErrorPage({ status, title, message }: ErrorPageProps) {
+export default function ErrorPage({ status, context = 'frontend', title, message }: ErrorPageProps) {
     const { t } = useLanguage();
     const config = ERROR_CONFIG[status];
     const { Icon } = config;
 
     const pageTitle = title ?? config.title;
     const pageMessage = message ?? config.message;
-    const extraAction = config.action;
+    const extraAction = config.action
+        ? {
+              ...config.action,
+              href: context === 'backend' && config.action.href === '/' ? '/backend/dashboard' : config.action.href,
+              label:
+                  context === 'backend' && config.action.href === '/'
+                      ? t('pages.dashboard.title')
+                      : config.action.label === 'Login'
+                        ? t('buttons.login')
+                        : config.action.label,
+          }
+        : undefined;
 
     return (
         <>
             <Head title={`${status} – ${pageTitle}`} />
 
-            <main className="bg-background text-foreground flex min-h-screen items-center justify-center px-4 py-12">
+            <main className="bg-background text-foreground flex min-h-[calc(100svh-8rem)] items-center justify-center px-4 py-12">
                 <section className="w-full max-w-xl text-center">
                     <div className="bg-muted mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-lg border">
                         <Icon className="text-muted-foreground h-7 w-7" aria-hidden="true" />

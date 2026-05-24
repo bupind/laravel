@@ -2,9 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { Head, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type TranslationValues = {
@@ -25,6 +25,7 @@ interface Props {
     scopes?: string[];
     locales?: string[];
     localeOptions?: { code: string; label: string }[];
+    defaultLocale?: string;
     crud?: {
         permissions?: {
             view: boolean;
@@ -60,10 +61,8 @@ function normalizeLocaleList(locales: string[] = [], rows: TranslationRow[] = []
         .map(normalizeLocaleCode)
         .filter((locale) => /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(locale));
 
-    for (const fallback of ['en', 'id']) {
-        if (!normalized.includes(fallback)) {
-            normalized.unshift(fallback);
-        }
+    if (normalized.length === 0) {
+        normalized.push('id');
     }
 
     return Array.from(new Set(normalized)).map((code) => ({
@@ -112,9 +111,10 @@ function buildDictionary(rows: TranslationRow[], locales: { code: string }[]) {
 
 export default function TranslationIndex({
     rows = [],
-    scopes = ['common', 'backend', 'frontend', 'api'],
-    locales = ['id', 'en'],
+    scopes = ['global', 'common', 'backend', 'frontend', 'api', 'mobile', 'auth', 'validation'],
+    locales = [],
     localeOptions = [],
+    defaultLocale = 'id',
     crud,
 }: Props) {
     const { t, updateOverrides } = useLanguage();
@@ -129,8 +129,9 @@ export default function TranslationIndex({
     const [newLocale, setNewLocale] = useState('');
     const [editableLocales, setEditableLocales] = useState(initialLocales);
 
-    const { data, setData, put, post, processing } = useForm<{ rows: TranslationRow[] }>({
+    const { data, setData, put, post, processing } = useForm<{ rows: TranslationRow[]; locales: { code: string; label: string }[] }>({
         rows: normalizeRows(rows, initialLocales),
+        locales: initialLocales,
     });
 
     const filteredRows = useMemo(() => {
@@ -195,18 +196,46 @@ export default function TranslationIndex({
             return;
         }
 
-        setEditableLocales([...editableLocales, { code, label: localeLabel(code, localeOptions) }]);
-        setData(
-            'rows',
-            data.rows.map((row) => ({
+        const nextLocales = [...editableLocales, { code, label: localeLabel(code, localeOptions) }];
+        setEditableLocales(nextLocales);
+        setData({
+            ...data,
+            locales: nextLocales,
+            rows: data.rows.map((row) => ({
                 ...row,
                 values: {
                     ...row.values,
                     [code]: '',
                 },
             })),
-        );
+        });
         setNewLocale('');
+    };
+
+    const removeLocale = (code: string) => {
+        if (!canUpdate || editableLocales.length <= 1) {
+            return;
+        }
+
+        const locale = normalizeLocaleCode(code);
+        if (!window.confirm(`Hapus bahasa ${locale.toUpperCase()} dari daftar translate? Semua value bahasa ini akan dihapus saat disimpan.`)) {
+            return;
+        }
+
+        const nextLocales = editableLocales.filter((item) => item.code !== locale);
+        setEditableLocales(nextLocales);
+        setData({
+            ...data,
+            locales: nextLocales,
+            rows: data.rows.map((row) => {
+                const nextValues = { ...row.values };
+                delete nextValues[locale];
+                return {
+                    ...row,
+                    values: nextValues,
+                };
+            }),
+        });
     };
 
     const addRow = () => {
@@ -229,6 +258,7 @@ export default function TranslationIndex({
             return;
         }
 
+        setData('locales', editableLocales);
         put(updateRoute, {
             preserveScroll: true,
             onSuccess: () => {
@@ -248,7 +278,7 @@ export default function TranslationIndex({
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('settings.translations.title'), href: '/backend/translations' }]}>
+        <BackendLayout breadcrumbs={[{ title: t('settings.translations.title'), href: '/backend/translations' }]}>
             <Head title={t('settings.translations.title')} />
 
             <div className="space-y-6 p-4 md:p-6">
@@ -337,8 +367,25 @@ export default function TranslationIndex({
                                     <th className="w-[18%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
                                     {editableLocales.map((locale) => (
                                         <th key={locale.code} className="min-w-[240px] px-4 py-3 text-left font-semibold">
-                                            {locale.label}
-                                            <span className="text-muted-foreground ml-2 font-mono text-xs">{locale.code}</span>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span>
+                                                    {locale.label}
+                                                    <span className="text-muted-foreground ml-2 font-mono text-xs">{locale.code}</span>
+                                                    {locale.code === defaultLocale && <span className="text-muted-foreground ml-2 text-xs">default</span>}
+                                                </span>
+                                                {canUpdate && editableLocales.length > 1 && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => removeLocale(locale.code)}
+                                                        className="h-7 w-7"
+                                                        title={`Hapus bahasa ${locale.code}`}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </th>
                                     ))}
                                 </tr>
@@ -430,6 +477,6 @@ export default function TranslationIndex({
                     </Button>
                 </div>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

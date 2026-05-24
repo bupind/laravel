@@ -123,22 +123,14 @@ class ProductController extends BaseCrudController
         ],
     ];
 
-    protected function modelClass(): string
-    {
-        return Product::class;
-    }
-
     public function importTemplate(): StreamedResponse
     {
         $this->authorize('create');
-
         return response()->streamDownload(function(): void {
             $output = fopen('php://output', 'w');
-
             if($output === false) {
                 return;
             }
-
             fwrite($output, "\xEF\xBB\xBF");
             fputcsv($output, [
                 'name',
@@ -158,7 +150,6 @@ class ProductController extends BaseCrudController
     public function import(Request $request): RedirectResponse
     {
         $this->authorize('create');
-
         $validated = $request->validate([
             'csv_content' => [
                 'required_without:file',
@@ -177,34 +168,28 @@ class ProductController extends BaseCrudController
                 'max:5120',
             ],
         ]);
-
         try {
             if($request->filled('csv_content')) {
                 $path    = 'imports/products/' . Str::uuid() . '.csv';
                 $written = Storage::disk('local')->put($path, (string)$validated['csv_content']);
-
                 if(!$written) {
                     $this->notifyImportError(
                         $request,
                         'Upload import produk gagal',
                         'Content CSV gagal disimpan sebelum masuk queue.'
                     );
-
                     return $this->redirectToIndex('Upload import gagal. Detailnya sudah masuk ke inbox notifikasi.', $request);
                 }
             } else {
                 $file = $request->file('file');
-
                 if($file === null || !$file->isValid() || !$file->getRealPath()) {
                     $this->notifyImportError(
                         $request,
                         'Upload import produk gagal',
                         'File CSV tidak bisa dibaca dari temporary upload. Upload akan lebih stabil jika browser mengirim content CSV langsung.'
                     );
-
                     return $this->redirectToIndex('Upload import gagal. Detailnya sudah masuk ke inbox notifikasi.', $request);
                 }
-
                 $path = $file->store('imports/products');
             }
         } catch(Throwable $exception) {
@@ -213,14 +198,24 @@ class ProductController extends BaseCrudController
                 'Upload import produk error',
                 'File CSV gagal disimpan sebelum masuk queue. ' . $exception->getMessage()
             );
-
             return $this->redirectToIndex('Upload import gagal. Detailnya sudah masuk ke inbox notifikasi.', $request);
         }
-
         ImportProductsCsvJob::dispatch($path, (string)$request->user()->getKey())
             ->onQueue(QueueName::IMPORT);
-
         return $this->redirectToIndex('Import produk sedang diproses. Hasilnya akan masuk ke notifikasi.', $request);
+    }
+
+    private function notifyImportError(Request $request, string $title, string $message): void
+    {
+        $request->user()?->notify(DatabaseNotification::error($title, $message, [
+            'errors'      => [$message],
+            'error_count' => 1,
+        ]));
+    }
+
+    protected function modelClass(): string
+    {
+        return Product::class;
     }
 
     protected function rules(?Model $record = null): array
@@ -273,18 +268,8 @@ class ProductController extends BaseCrudController
     protected function resourceMetadata(Request $request): array
     {
         $metadata = parent::resourceMetadata($request);
-
         $metadata['routes']['import']          = $this->routePath('products.import');
         $metadata['routes']['import_template'] = $this->routePath('products.import-template');
-
         return $metadata;
-    }
-
-    private function notifyImportError(Request $request, string $title, string $message): void
-    {
-        $request->user()?->notify(DatabaseNotification::error($title, $message, [
-            'errors'      => [$message],
-            'error_count' => 1,
-        ]));
     }
 }

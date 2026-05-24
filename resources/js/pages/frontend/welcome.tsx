@@ -1,30 +1,33 @@
-import { FrontendHeader } from '@/components/frontend-header';
-import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/hooks/use-language';
+import { FrontendHeroSlider, type HeroSlide } from '@/components/frontend-hero-slider';
+import { iconMapper } from '@/lib/iconMapper';
+import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, LayoutDashboard, LogIn, ShieldCheck } from 'lucide-react';
-import { useEffect } from 'react';
 
-export default function Welcome() {
-    const { t } = useLanguage();
-    const { auth, setting } = usePage<SharedData>().props;
+interface ServiceCard {
+    id?: string;
+    title: string;
+    description?: string | null;
+    icon?: string | null;
+    link_url?: string | null;
+}
 
-    const primaryColor = setting?.warna || '#2563eb';
-    const appName = setting?.nama_app ?? 'Laravel Starter';
-    const appDesc = setting?.deskripsi ?? 'Kelola aplikasi dari satu dashboard yang ringkas dan terstruktur.';
+interface WelcomeProps {
+    sliders?: HeroSlide[];
+    services?: ServiceCard[];
+}
+
+function isExternalUrl(url: string): boolean {
+    return /^https?:\/\//i.test(url);
+}
+
+export default function Welcome({ sliders = [], services = [] }: WelcomeProps) {
+    const { setting } = usePage<SharedData>().props;
+
+    const primaryColor = setting?.warna || '#ef3b2d';
+    const appName = setting?.nama_app ?? '';
+    const appDesc = setting?.deskripsi ?? '';
     const title = setting?.seo?.title ?? appName;
-    const isAuthenticated = Boolean(auth?.user);
-    const dashboardHref = route('dashboard');
-    const loginHref = route('login');
-    const actionHref = isAuthenticated ? dashboardHref : loginHref;
-    const actionLabel = isAuthenticated ? t('frontend.welcome.openDashboard') : t('buttons.login');
-    const ActionIcon = isAuthenticated ? LayoutDashboard : LogIn;
-
-    useEffect(() => {
-        document.documentElement.style.setProperty('--primary', primaryColor);
-        document.documentElement.style.setProperty('--color-primary', primaryColor);
-    }, [primaryColor]);
 
     return (
         <>
@@ -33,61 +36,46 @@ export default function Welcome() {
                 {setting?.seo?.keywords && <meta name="keywords" content={setting.seo.keywords} />}
             </Head>
 
-            <main className="bg-background text-foreground min-h-screen">
-                <FrontendHeader setting={setting} auth={auth} />
+            <main>
+                <FrontendHeroSlider appDesc={appDesc} primaryColor={primaryColor} slides={sliders} />
+                {services.length > 0 && (
+                    <section className={cn('relative z-10 mx-auto max-w-6xl px-4 pb-14 md:px-6', sliders.length > 0 && '-mt-8 md:-mt-12')}>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            {services.map((card) => {
+                                const Icon = card.icon ? iconMapper(card.icon) : null;
+                                const key = card.id ?? card.title;
+                                const content = (
+                                    <article className="border-border bg-card text-card-foreground h-full rounded-lg border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                                        {Icon && (
+                                            <div
+                                                className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-red-50"
+                                                style={{ color: primaryColor }}
+                                            >
+                                                <Icon className="h-6 w-6" />
+                                            </div>
+                                        )}
+                                        <h2 className="text-base font-semibold">{card.title}</h2>
+                                        {card.description && <p className="text-muted-foreground mt-4 text-sm leading-6">{card.description}</p>}
+                                    </article>
+                                );
 
-                <section className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-6xl items-center gap-10 px-4 py-12 md:grid-cols-[1fr_0.86fr] md:px-6">
-                    <div className="max-w-2xl">
-                        <div className="border-border text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm">
-                            <ShieldCheck className="h-4 w-4" style={{ color: primaryColor }} />
-                            {t('frontend.welcome.badge')}
+                                if (!card.link_url) {
+                                    return <div key={key}>{content}</div>;
+                                }
+
+                                return isExternalUrl(card.link_url) ? (
+                                    <a key={key} href={card.link_url} target="_blank" rel="noreferrer" className="block">
+                                        {content}
+                                    </a>
+                                ) : (
+                                    <Link key={key} href={card.link_url} className="block">
+                                        {content}
+                                    </Link>
+                                );
+                            })}
                         </div>
-
-                        <h1 className="text-4xl leading-tight font-bold tracking-tight md:text-5xl">{appName}</h1>
-                        <p className="text-muted-foreground mt-5 max-w-xl text-base leading-7 md:text-lg">{appDesc}</p>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            <Button asChild size="lg" style={{ backgroundColor: primaryColor }}>
-                                <Link href={actionHref}>
-                                    <ActionIcon className="h-4 w-4" />
-                                    {actionLabel}
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="border-border bg-card text-card-foreground rounded-lg border p-5 shadow-sm">
-                        <div className="mb-5 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-medium">{t('frontend.welcome.statusTitle')}</p>
-                                <p className="text-muted-foreground text-xs">{t('frontend.welcome.statusDescription')}</p>
-                            </div>
-                            <CheckCircle2 className="h-5 w-5" style={{ color: primaryColor }} />
-                        </div>
-
-                        <dl className="space-y-4 text-sm">
-                            <div className="flex items-center justify-between gap-4 border-b pb-4">
-                                <dt className="text-muted-foreground">{t('labels.name')}</dt>
-                                <dd className="font-medium">{appName}</dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 border-b pb-4">
-                                <dt className="text-muted-foreground">{t('columns.status')}</dt>
-                                <dd className="font-medium">{t('labels.active')}</dd>
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                                <dt className="text-muted-foreground">{t('frontend.welcome.session')}</dt>
-                                <dd className="font-medium">{auth?.user ? auth.user.name : t('frontend.welcome.guest')}</dd>
-                            </div>
-                        </dl>
-                    </div>
-                </section>
-
-                <footer className="border-border border-t">
-                    <div className="text-muted-foreground mx-auto max-w-6xl px-4 py-5 text-sm md:px-6">
-                        (c) {new Date().getFullYear()} {appName}
-                    </div>
-                </footer>
+                    </section>
+                )}
             </main>
         </>
     );

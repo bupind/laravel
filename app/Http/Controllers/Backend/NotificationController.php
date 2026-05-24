@@ -28,17 +28,6 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $id): Response
-    {
-        $notification = $this->resolveUserNotification($request, $id);
-        if($notification->read_at === null) {
-            $notification->markAsRead();
-        }
-        return Inertia::render('backend/notifications/Show', [
-            'notification' => $this->notificationPayload($notification->refresh()),
-        ]);
-    }
-
     private function notificationPayload($notification): array
     {
         return [
@@ -64,10 +53,15 @@ class NotificationController extends Controller
         return [];
     }
 
-    public function read(Request $request, string $id): RedirectResponse
+    public function show(Request $request, string $id): Response
     {
-        $this->resolveUserNotification($request, $id)->markAsRead();
-        return back();
+        $notification = $this->resolveUserNotification($request, $id);
+        if($notification->read_at === null) {
+            $notification->markAsRead();
+        }
+        return Inertia::render('backend/notifications/Show', [
+            'notification' => $this->notificationPayload($notification->refresh()),
+        ]);
     }
 
     private function resolveUserNotification(Request $request, string $id): DatabaseNotification
@@ -77,5 +71,11 @@ class NotificationController extends Controller
         return $user->notifications()
             ->whereKey($id)
             ->firstOrFail();
+    }
+
+    public function read(Request $request, string $id): RedirectResponse
+    {
+        $this->resolveUserNotification($request, $id)->markAsRead();
+        return back();
     }
 }

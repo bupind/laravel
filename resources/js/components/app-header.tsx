@@ -48,7 +48,7 @@ const RIGHT_NAV_ITEMS: HeaderNavItem[] = [
     },
 ];
 
-const ACTIVE_ITEM_STYLES = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+const ACTIVE_ITEM_STYLES = 'bg-accent text-accent-foreground';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -73,10 +73,13 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                 </Button>
                             </SheetTrigger>
 
-                            <SheetContent side="left" className="flex h-full w-64 flex-col items-stretch justify-between bg-neutral-50">
+                            <SheetContent
+                                side="left"
+                                className="bg-background text-foreground flex h-full w-64 flex-col items-stretch justify-between"
+                            >
                                 <SheetTitle className="sr-only">{t('navigation.menu')}</SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
+                                    <AppLogoIcon className="text-foreground h-6 w-6 fill-current" />
                                 </SheetHeader>
 
                                 <div className="mt-6 flex h-full flex-1 flex-col justify-between space-y-4 text-sm">
@@ -84,7 +87,7 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                         {MAIN_NAV_ITEMS.map((item) => (
                                             <Link key={item.translationKey} href={item.url} className="flex items-center space-x-2 font-medium">
                                                 <Icon iconNode={item.icon} className="h-5 w-5" />
-                                                <span>{t(item.translationKey)}</span>
+                                                <span>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
                                             </Link>
                                         ))}
                                     </div>
@@ -99,7 +102,7 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 className="flex items-center space-x-2 font-medium"
                                             >
                                                 <Icon iconNode={item.icon} className="h-5 w-5" />
-                                                <span>{t(item.translationKey)}</span>
+                                                <span>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
                                             </a>
                                         ))}
                                     </div>
@@ -128,11 +131,9 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 )}
                                             >
                                                 <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />
-                                                {t(item.translationKey)}
+                                                {t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}
                                             </Link>
-                                            {isActive && (
-                                                <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white" />
-                                            )}
+                                            {isActive && <div className="bg-foreground absolute bottom-0 left-0 h-0.5 w-full translate-y-px" />}
                                         </NavigationMenuItem>
                                     );
                                 })}
@@ -157,12 +158,12 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 rel="noopener noreferrer"
                                                 className="group text-accent-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                             >
-                                                <span className="sr-only">{t(item.translationKey)}</span>
+                                                <span className="sr-only">{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
                                                 <Icon iconNode={item.icon} className="size-5 opacity-80 group-hover:opacity-100" />
                                             </a>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>{t(item.translationKey)}</p>
+                                            <p>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -174,9 +175,7 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                 <Button variant="ghost" className="size-10 rounded-full p-1">
                                     <Avatar className="size-8 overflow-hidden rounded-full">
                                         <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                                        <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                            {getInitials(auth.user.name)}
-                                        </AvatarFallback>
+                                        <AvatarFallback className="bg-muted text-foreground rounded-lg">{getInitials(auth.user.name)}</AvatarFallback>
                                     </Avatar>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -190,7 +189,7 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
 
             {breadcrumbs.length > 1 && (
                 <div className="border-sidebar-border/70 flex w-full border-b">
-                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
+                    <div className="text-muted-foreground mx-auto flex h-12 w-full items-center justify-start px-4 md:max-w-7xl">
                         <Breadcrumbs breadcrumbs={breadcrumbs} />
                     </div>
                 </div>

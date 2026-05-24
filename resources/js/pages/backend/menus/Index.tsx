@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import SortableMenuItem from '@/pages/backend/menus/SortableMenuItem';
 import { type MenuItem } from '@/types';
 import { closestCenter, DndContext, type DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -211,16 +211,16 @@ export default function MenuIndex({ menuItems }: Props) {
     const activeScopeLabel = activeScope === 'backend' ? t('pages.menus.scopeBackend') : t('pages.menus.scopeFrontend');
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('pages.menus.breadcrumb'), href: '/backend/menus' }]}>
-            <Head title={t('pages.menus.title')} />
+        <BackendLayout breadcrumbs={[{ title: t('pages.menus.breadcrumb'), href: '/backend/menus' }]}>
+            <Head title={t('pages.menus.title', { fallback: 'Menu Management' })} />
 
             <div className="flex-1 p-4 md:p-6">
                 <Card className="w-full">
                     <CardHeader className="pb-3">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <CardTitle className="text-2xl font-bold tracking-tight">{t('pages.menus.title')}</CardTitle>
-                                <p className="text-muted-foreground text-sm">{t('pages.menus.description')}</p>
+                                <CardTitle className="text-2xl font-bold tracking-tight">{t('pages.menus.title', { fallback: 'Menu Management' })}</CardTitle>
+                                <p className="text-muted-foreground text-sm">{t('pages.menus.description', { fallback: 'Arrange backend and frontend navigation menus.' })}</p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Button onClick={handleSave} disabled={isSaving}>
@@ -339,6 +339,6 @@ export default function MenuIndex({ menuItems }: Props) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

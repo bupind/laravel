@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -245,12 +245,14 @@ export default function PermissionIndex({ permissions, groups, standardActions =
     ];
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('pages.permissions.title'), href: '/backend/permissions' }]}>
-            <Head title={t('pages.permissions.title')} />
+        <BackendLayout breadcrumbs={[{ title: t('pages.permissions.title', { fallback: 'Permission Management' }), href: '/backend/permissions' }]}>
+            <Head title={t('pages.permissions.title', { fallback: 'Permission Management' })} />
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.permissions.title')}</h1>
-                    <p className="text-muted-foreground">{t('pages.permissions.description')}</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.permissions.title', { fallback: 'Permission Management' })}</h1>
+                    <p className="text-muted-foreground">
+                        {t('pages.permissions.description', { fallback: 'Manage permission modules, groups, and privileges.' })}
+                    </p>
                 </div>
 
                 <ServerDataTable<PermissionModule>
@@ -322,6 +324,6 @@ export default function PermissionIndex({ permissions, groups, standardActions =
                     />
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </BackendLayout>
     );
 }

@@ -1,4 +1,4 @@
-﻿import {
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { Head, router } from '@inertiajs/react';
 import {
     ChevronRight,
@@ -221,8 +221,8 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('pages.files.title'), href: '/backend/files' }]}>
-            <Head title={t('pages.files.title')} />
+        <BackendLayout breadcrumbs={[{ title: t('pages.files.title', { fallback: 'File Library' }), href: '/backend/files' }]}>
+            <Head title={t('pages.files.title', { fallback: 'File Library' })} />
             <div className="grid flex-1 grid-cols-1 gap-6 p-4 md:grid-cols-4 md:p-6">
                 {/* Sidebar Folder Tree */}
                 <div className="rounded-lg border p-4 md:col-span-1">
@@ -399,6 +399,6 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                     )}
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </BackendLayout>
     );
 }

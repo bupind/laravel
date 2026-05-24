@@ -24,30 +24,30 @@ class ShareMenus
             if($menuScope === 'backend' && !$user) {
                 return [];
             }
-            $roleKey  = $user ? $user->roles->pluck('name')->sort()->implode(',') : 'guest';
-            $cacheKey = "menus_v4_{$menuScope}_user_{$roleKey}";
+            $permissionKey = $user
+                ? $user->getAllPermissions()->pluck('name')->sort()->implode(',')
+                : 'guest';
+            $cacheKey      = "menus_v5_{$menuScope}_" . md5($permissionKey);
             return Cache::remember($cacheKey, 180, function() use ($user, $menuScope) {
                 $allMenus  = Menu::where('scope', $menuScope)->orderBy('order')->get();
                 $indexed   = $allMenus->keyBy('id');
                 $buildTree = function($parentId = null) use (&$buildTree, $indexed, $user, $menuScope) {
                     return $indexed
-                        ->filter(
-                            fn($menu) => $menu->parent_id === $parentId && (!$menu->permission_name || ($user && $user->can($menu->permission_name)))
-                        )
-                        ->map(function($menu) use (&$buildTree, $menuScope) {
-                            if(
-                                $menuScope === 'backend'
-                                && $menu->route !== '#'
-                                && $menu->route
-                                && str_starts_with($menu->route, '/')
-                                && !str_starts_with($menu->route, '/backend')
-                                && !str_starts_with($menu->route, '/api')
-                            ) {
-                                $menu->route = '/backend' . $menu->route;
+                        ->filter(fn($menu) => $menu->parent_id === $parentId)
+                        ->map(function($menu) use (&$buildTree, $menuScope, $user) {
+                            $children   = $buildTree($menu->id)->values();
+                            $canSeeSelf = !$menu->permission_name || ($user && $user->can($menu->permission_name));
+                            if(!$canSeeSelf && $children->isEmpty()) {
+                                return null;
                             }
-                            $menu->children = $buildTree($menu->id)->values();
+                            $menu->route = $this->normalizeRoute($menu->route, $menuScope);
+                            if(!$canSeeSelf) {
+                                $menu->route = '#';
+                            }
+                            $menu->children = $children;
                             return $menu;
                         })
+                        ->filter()
                         ->filter(fn($menu) => $menu->route || $menu->children->isNotEmpty())
                         ->values();
                 };
@@ -61,5 +61,17 @@ class ShareMenus
     {
         return $request->routeIs('home', 'frontend.*')
                || (!$request->is('backend/*') && !$request->is('api/*'));
+    }
+
+    private function normalizeRoute(?string $route, string $scope): ?string
+    {
+        if($route === null || trim($route) === '' || $route === '#') {
+            return $route;
+        }
+        $route = '/' . ltrim(trim($route), '/');
+        if($scope !== 'backend' || str_starts_with($route, '/backend') || str_starts_with($route, '/api')) {
+            return $route;
+        }
+        return '/backend' . $route;
     }
 }

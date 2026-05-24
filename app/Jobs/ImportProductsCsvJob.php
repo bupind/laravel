@@ -66,14 +66,9 @@ class ImportProductsCsvJob extends BaseQueueJob
         }
     }
 
-    public function failed(Throwable $exception): void
+    private function user(): ?User
     {
-        parent::failed($exception);
-        $this->notify($this->user(), 'error', 'Import produk error', 'Tidak ada data disimpan. ' . $exception->getMessage(), [
-            'errors'      => [$exception->getMessage()],
-            'error_count' => 1,
-        ]);
-        Storage::disk('local')->delete($this->path);
+        return User::query()->find($this->userId);
     }
 
     private function validatedRows(): array
@@ -148,6 +143,16 @@ class ImportProductsCsvJob extends BaseQueueJob
         );
     }
 
+    private function removeBom(string $value): string
+    {
+        return preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value;
+    }
+
+    private function isEmptyRow(array $columns): bool
+    {
+        return collect($columns)->every(fn(mixed $value): bool => trim((string)$value) === '');
+    }
+
     private function normalizeRow(array $row, int $rowNumber): array
     {
         return [
@@ -200,23 +205,18 @@ class ImportProductsCsvJob extends BaseQueueJob
         ];
     }
 
-    private function isEmptyRow(array $columns): bool
-    {
-        return collect($columns)->every(fn(mixed $value): bool => trim((string)$value) === '');
-    }
-
-    private function removeBom(string $value): string
-    {
-        return preg_replace('/^\xEF\xBB\xBF/', '', $value) ?? $value;
-    }
-
-    private function user(): ?User
-    {
-        return User::query()->find($this->userId);
-    }
-
     private function notify(?User $user, string $status, string $title, string $message, array $meta = []): void
     {
         $user?->notify(DatabaseNotification::make($status, $title, $message, $meta));
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        parent::failed($exception);
+        $this->notify($this->user(), 'error', 'Import produk error', 'Tidak ada data disimpan. ' . $exception->getMessage(), [
+            'errors'      => [$exception->getMessage()],
+            'error_count' => 1,
+        ]);
+        Storage::disk('local')->delete($this->path);
     }
 }

@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type NotificationItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
@@ -43,7 +43,7 @@ export default function NotificationDetail({ notification }: Props) {
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={title} />
 
             <div className="space-y-6 p-4 md:p-6">
@@ -87,6 +87,6 @@ export default function NotificationDetail({ notification }: Props) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

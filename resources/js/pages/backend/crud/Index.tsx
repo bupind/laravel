@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { FileSpreadsheet, ImageIcon, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
@@ -44,6 +44,7 @@ export interface FormField {
     placeholder?: string;
     options?: FormFieldOption[];
     help?: string;
+    rows?: number;
 }
 
 export interface TableColumn {
@@ -293,7 +294,7 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                     id={inputId}
                     value={String(value)}
                     placeholder={field.placeholder}
-                    rows={3}
+                    rows={field.rows ?? 3}
                     disabled={disabled}
                     onChange={(e) => onChange(field.name, e.target.value)}
                     className={error ? 'border-destructive resize-y' : 'resize-y'}
@@ -563,24 +564,26 @@ export default function CrudIndex(props: CrudIndexProps) {
 
     if (!crud || !resource || !collection || !routes) {
         return (
-            <AppLayout breadcrumbs={[]}>
+            <BackendLayout breadcrumbs={[]}>
                 <div className="text-muted-foreground flex h-64 items-center justify-center text-sm">
                     No resource metadata received. Check controller configuration.
                 </div>
-            </AppLayout>
+            </BackendLayout>
         );
     }
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={resource.title} />
 
             <div className="space-y-6 p-4 md:p-6">
                 {/* Page header */}
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{resource.title}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        {t(`pages.${resource.name}.title`, { fallback: resource.title })}
+                    </h1>
                     <p className="text-muted-foreground text-sm">
                         {t(`pages.${resource.name}.description`, {
-                            fallback: `Manage ${resource.label}`,
+                            fallback: `Manage ${resource.label.toLowerCase()} records, content, and settings.`,
                         })}
                     </p>
                 </div>
@@ -689,6 +692,6 @@ export default function CrudIndex(props: CrudIndexProps) {
                     </DialogContent>
                 </Dialog>
             )}
-        </AppLayout>
+        </BackendLayout>
     );
 }

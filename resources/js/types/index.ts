@@ -58,7 +58,18 @@ export interface Setting {
         description?: string;
         keywords?: string;
     };
+    whatsapp?: Record<string, unknown>;
+    email?: Record<string, unknown>;
+    payment_gateway?: Record<string, unknown>;
     [key: string]: unknown;
+}
+
+export interface PublicPageLink {
+    id: string;
+    title: string;
+    slug: string;
+    url: string;
+    placement?: string;
 }
 
 export interface SharedData {
@@ -66,7 +77,7 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     setting?: Setting;
-    translation_scope?: 'common' | 'backend' | 'frontend' | 'api' | 'mobile';
+    translation_scope?: 'global' | 'common' | 'backend' | 'frontend' | 'api' | 'mobile' | 'auth' | 'validation';
     translations?: {
         [locale: string]: Record<string, string> | undefined;
     };
@@ -76,6 +87,10 @@ export interface SharedData {
         error?: string | { key?: string; replacements?: Record<string, string | number> };
     };
     menus?: MenuItem[];
+    global_pages?: {
+        header?: PublicPageLink[];
+        footer?: PublicPageLink[];
+    };
     [key: string]: unknown;
 }
 

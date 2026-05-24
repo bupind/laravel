@@ -17,15 +17,15 @@ use Throwable;
 class ApiClientController extends BaseCrudController
 {
     protected ?string $resourceRouteName = 'api-clients';
-    protected ?string $resourceLabel = 'API Clients';
-    protected ?string $resourceTitle = 'API Client Credentials';
-    protected string $orderBy = 'created_at';
-    protected array $searchableColumns = [
+    protected ?string $resourceLabel     = 'API Clients';
+    protected ?string $resourceTitle     = 'API Client Credentials';
+    protected string  $orderBy           = 'created_at';
+    protected array   $searchableColumns = [
         'name',
         'client_key',
         'description',
     ];
-    protected array $sortableColumns = [
+    protected array   $sortableColumns   = [
         'name',
         'client_key',
         'is_active',
@@ -34,7 +34,7 @@ class ApiClientController extends BaseCrudController
         'total_requests',
         'created_at',
     ];
-    protected array $tableColumns = [
+    protected array   $tableColumns      = [
         'name',
         'client_key',
         'client_secret',
@@ -68,7 +68,7 @@ class ApiClientController extends BaseCrudController
             'type'  => 'datetime',
         ],
     ];
-    protected array $formFields = [
+    protected array   $formFields        = [
         [
             'name'     => 'name',
             'label'    => 'Name',

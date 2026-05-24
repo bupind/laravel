@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { Head, router } from '@inertiajs/react';
 import { Download, RefreshCw, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -148,14 +148,14 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
     ];
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('pages.auditLogs.title'), href: '/backend/audit-logs' }]}>
-            <Head title={t('pages.auditLogs.title')} />
+        <BackendLayout breadcrumbs={[{ title: t('pages.auditLogs.title', { fallback: 'Activity Logs' }), href: '/backend/audit-logs' }]}>
+            <Head title={t('pages.auditLogs.title', { fallback: 'Activity Logs' })} />
 
             <div className="space-y-4 p-4 md:p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">{t('pages.auditLogs.title')}</h1>
-                        <p className="text-muted-foreground text-sm">{t('pages.auditLogs.description', { total: logs.total.toLocaleString() })}</p>
+                        <h1 className="text-2xl font-bold">{t('pages.auditLogs.title', { fallback: 'Activity Logs' })}</h1>
+                        <p className="text-muted-foreground text-sm">{t('pages.auditLogs.description', { total: logs.total.toLocaleString(), fallback: 'Review :total system activities and audit events.' })}</p>
                     </div>
 
                     <div className="flex gap-2">
@@ -234,6 +234,6 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
                     }
                 />
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

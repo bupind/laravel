@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
 export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: boolean; status?: string }) {
@@ -29,7 +29,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('settings.profile.breadcrumb'), href: '/backend/settings/profile' }]}>
+        <BackendLayout breadcrumbs={[{ title: t('settings.profile.breadcrumb'), href: '/backend/settings/profile' }]}>
             <Head title={t('settings.profile.title')} />
 
             <SettingsLayout>
@@ -108,6 +108,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                 <DeleteUser />
             </SettingsLayout>
-        </AppLayout>
+        </BackendLayout>
     );
 }

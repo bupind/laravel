@@ -2,11 +2,14 @@ import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import type { ReactNode } from 'react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
 import { LanguageProvider, type LocaleOption } from './hooks/use-language';
+import BackendLayout from './layouts/backend-layout';
+import FrontendLayout from './layouts/frontend-layout';
 
 declare global {
     const route: typeof routeFn;
@@ -20,6 +23,8 @@ interface Setting {
 interface InitialPageProps {
     translations?: Record<string, Record<string, string> | undefined>;
     translation_locales?: LocaleOption[];
+    translation_default_locale?: string;
+    translation_scope?: string;
     setting?: Setting;
 }
 
@@ -34,22 +39,48 @@ function resolveAppName(): string {
     }
 }
 
+type PageModule = {
+    default?: {
+        layout?: (page: ReactNode) => ReactNode;
+    };
+};
+
+const frontendLayout = (page: ReactNode) => <FrontendLayout>{page}</FrontendLayout>;
+const backendLayout = (page: ReactNode) => <BackendLayout>{page}</BackendLayout>;
+
+function withDefaultLayout(name: string, pageModule: unknown): unknown {
+    const module = pageModule as PageModule;
+
+    if (name.startsWith('frontend/') && module.default && module.default.layout === undefined) {
+        module.default.layout = frontendLayout;
+    }
+
+    if (name.startsWith('backend/errors/') && module.default && module.default.layout === undefined) {
+        module.default.layout = backendLayout;
+    }
+
+    return pageModule;
+}
+
 createInertiaApp({
     title: (title) => {
         const appName = resolveAppName();
         return title ? `${title} – ${appName}` : appName;
     },
 
-    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+    resolve: (name) =>
+        resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')).then((pageModule) => withDefaultLayout(name, pageModule)),
 
     setup({ el, App, props }) {
         const pageProps = (props.initialPage?.props ?? {}) as InitialPageProps;
         const messages = pageProps.translations ?? {};
         const locales = pageProps.translation_locales ?? [];
+        const defaultLocale = pageProps.translation_default_locale ?? locales[0]?.code ?? 'id';
+        const scope = pageProps.translation_scope ?? 'backend';
 
         createRoot(el).render(
             <StrictMode>
-                <LanguageProvider messages={messages} locales={locales}>
+                <LanguageProvider messages={messages} locales={locales} defaultLocale={defaultLocale} scope={scope}>
                     <App {...props} />
                 </LanguageProvider>
             </StrictMode>,

@@ -16,9 +16,9 @@ class UserFileController extends Controller
 {
     public function index(Request $request)
     {
-        $user     = $request->user();
-        $folderId = $request->input('folder_id');
-        $folders  = $user->mediaFolders()->orderBy('name')->get();
+        $user          = $request->user();
+        $folderId      = $request->input('folder_id');
+        $folders       = $user->mediaFolders()->orderBy('name')->get();
         $currentFolder = $folderId ? $user->mediaFolders()->find($folderId) : null;
         if($folderId && !$currentFolder) {
             return redirect('/files');

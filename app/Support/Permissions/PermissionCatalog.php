@@ -46,11 +46,44 @@ class PermissionCatalog
                 'delete',
             ],
         ],
+        'File Manager'  => [
+            'filemanager' => [
+                'view',
+                'create',
+                'delete',
+            ],
+        ],
         'Products'      => [
             'products' => [
                 'view',
                 'create',
                 'update',
+                'delete',
+            ],
+        ],
+        'Content'       => [
+            'content'          => ['view'],
+            'sliders'          => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+            'services'         => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+            'pages'            => [
+                'view',
+                'create',
+                'update',
+                'delete',
+            ],
+            'contact-messages' => [
+                'view',
+                'reply',
                 'delete',
             ],
         ],

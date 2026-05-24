@@ -1,10 +1,8 @@
-import { FrontendHeader } from '@/components/frontend-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
-import { type SharedData } from '@/types';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Boxes, ChevronLeft, ChevronRight, ImageIcon, Search, X } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 
@@ -66,14 +64,13 @@ function ProductImage({ product }: { product: Product }) {
 }
 
 export default function Products({ products, filters }: ProductsPageProps) {
-    const { auth, setting } = usePage<SharedData>().props;
     const { t } = useLanguage();
     const [search, setSearch] = useState(filters.search ?? '');
 
     const summary = useMemo(() => {
-        if (products.total === 0) return t('pages.products.empty', { fallback: 'Tidak ada product aktif' });
+        if (products.total === 0) return t('pages.products.empty', { fallback: { id: 'Tidak ada product aktif', en: 'No active products' } });
         return t('pages.products.summary', {
-            fallback: `${products.total.toLocaleString('id-ID')} product aktif`,
+            fallback: { id: `${products.total.toLocaleString('id-ID')} product aktif`, en: `${products.total.toLocaleString('en-US')} active products` },
             total: products.total.toLocaleString('id-ID'),
         });
     }, [products.total, t]);
@@ -90,20 +87,18 @@ export default function Products({ products, filters }: ProductsPageProps) {
 
     return (
         <>
-            <Head title={t('pages.products.title', { fallback: 'Products' })} />
+            <Head title={t('pages.products.title', { fallback: { id: 'Produk', en: 'Products' } })} />
 
-            <main className="bg-background text-foreground min-h-screen">
-                <FrontendHeader setting={setting} auth={auth} />
-
+            <main className="bg-background text-foreground">
                 <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
                     {/* Header row */}
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
                             <div className="text-muted-foreground mb-2 inline-flex items-center gap-2 text-sm font-medium">
                                 <Boxes className="h-4 w-4" />
-                                {t('pages.products.category', { fallback: 'Product Catalog' })}
+                                {t('pages.products.category', { fallback: { id: 'Katalog Produk', en: 'Product Catalog' } })}
                             </div>
-                            <h1 className="text-3xl font-semibold tracking-tight">{t('pages.products.title', { fallback: 'Products' })}</h1>
+                            <h1 className="text-3xl font-semibold tracking-tight">{t('pages.products.title', { fallback: { id: 'Produk', en: 'Products' } })}</h1>
                         </div>
 
                         <Badge variant="outline" className="w-fit">
@@ -117,7 +112,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                 <Input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder={t('pages.products.search', { fallback: 'Cari nama, SKU...' })}
+                                    placeholder={t('pages.products.search', { fallback: { id: 'Cari nama, SKU...', en: 'Search name, SKU...' } })}
                                     className="h-9 pr-8 pl-8"
                                 />
                                 {search && (
@@ -132,7 +127,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                 )}
                             </div>
                             <Button type="submit" size="sm">
-                                {t('buttons.search', { fallback: 'Cari' })}
+                                {t('buttons.search', { fallback: { id: 'Cari', en: 'Search' } })}
                             </Button>
                         </form>
                     </div>
@@ -140,7 +135,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                     {/* Active filter chip */}
                     {filters.search && (
                         <div className="mb-4 flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground">{t('pages.products.filterActive', { fallback: 'Filter:' })}</span>
+                            <span className="text-muted-foreground">{t('pages.products.filterActive', { fallback: { id: 'Filter:', en: 'Filter:' } })}</span>
                             <Badge variant="secondary" className="gap-1">
                                 {filters.search}
                                 <button type="button" onClick={clearSearch} className="ml-1 hover:opacity-70">
@@ -148,7 +143,7 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                 </button>
                             </Badge>
                             <span className="text-muted-foreground">
-                                — {products.total.toLocaleString('id-ID')} {t('pages.products.results', { fallback: 'hasil' })}
+                                — {products.total.toLocaleString('id-ID')} {t('pages.products.results', { fallback: { id: 'hasil', en: 'results' } })}
                             </span>
                         </div>
                     )}
@@ -157,18 +152,18 @@ export default function Products({ products, filters }: ProductsPageProps) {
                     {products.data.length === 0 ? (
                         <div className="text-muted-foreground rounded-lg border p-8 text-center text-sm">
                             {filters.search
-                                ? t('pages.products.notFound', { fallback: 'Tidak ada product yang cocok.' })
-                                : t('pages.products.empty', { fallback: 'Product aktif belum tersedia.' })}
+                                ? t('pages.products.notFound', { fallback: { id: 'Tidak ada product yang cocok.', en: 'No matching products.' } })
+                                : t('pages.products.empty', { fallback: { id: 'Product aktif belum tersedia.', en: 'No active products available.' } })}
                         </div>
                     ) : (
                         <div className="overflow-hidden rounded-lg border">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/60 text-left">
                                     <tr>
-                                        <th className="px-4 py-3 font-medium">{t('columns.product', { fallback: 'Product' })}</th>
+                                        <th className="px-4 py-3 font-medium">{t('columns.product', { fallback: { id: 'Produk', en: 'Product' } })}</th>
                                         <th className="px-4 py-3 font-medium">SKU</th>
-                                        <th className="px-4 py-3 text-right font-medium">{t('columns.price', { fallback: 'Harga' })}</th>
-                                        <th className="px-4 py-3 text-right font-medium">{t('columns.stock', { fallback: 'Stok' })}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('columns.price', { fallback: { id: 'Harga', en: 'Price' } })}</th>
+                                        <th className="px-4 py-3 text-right font-medium">{t('columns.stock', { fallback: { id: 'Stok', en: 'Stock' } })}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

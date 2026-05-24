@@ -16,12 +16,12 @@ use Illuminate\Support\Facades\Validator;
 
 abstract class BaseResourceController extends ApiController
 {
-    protected int $perPage = 10;
-    protected array $searchableColumns = [];
-    protected array $sortableColumns = [];
-    protected string $orderBy = 'id';
-    protected string $orderDirection = 'desc';
-    protected bool $useTransactions = false;
+    protected int    $perPage           = 10;
+    protected array  $searchableColumns = [];
+    protected array  $sortableColumns   = [];
+    protected string $orderBy           = 'id';
+    protected string $orderDirection    = 'desc';
+    protected bool   $useTransactions   = false;
 
     public function index(Request $request): JsonResponse
     {

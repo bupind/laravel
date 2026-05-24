@@ -16,15 +16,19 @@
 
 use App\Http\Controllers\Backend\ApiClientController;
 use App\Http\Controllers\Backend\AuditLogController;
+use App\Http\Controllers\Backend\ContactMessageController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FileLibraryController;
 use App\Http\Controllers\Backend\MediaFolderController;
 use App\Http\Controllers\Backend\MenuController;
+use App\Http\Controllers\Backend\PageController;
 use App\Http\Controllers\Backend\NotificationController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\RoleController;
+use App\Http\Controllers\Backend\ServiceController;
 use App\Http\Controllers\Backend\SettingAppController;
+use App\Http\Controllers\Backend\SliderController;
 use App\Http\Controllers\Backend\TranslationController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\UserFileController;
@@ -68,6 +72,18 @@ Route::prefix('backend')->group(function() {
         ])->name('menus.reorder');
         Route::resource('menus', MenuController::class);
         Route::resource('api-clients', ApiClientController::class)->except('show');
+        Route::resource('sliders', SliderController::class)->except('show');
+        Route::resource('services', ServiceController::class)->except('show');
+        Route::resource('pages', PageController::class)->except('show');
+        Route::controller(ContactMessageController::class)
+            ->prefix('contact-messages')
+            ->name('contact-messages.')
+            ->group(function() {
+                Route::get('/', 'index')->name('index');
+                Route::get('{contactMessage}', 'show')->name('show');
+                Route::post('{contactMessage}/reply', 'reply')->name('reply');
+                Route::delete('{contactMessage}', 'destroy')->name('destroy');
+            });
         Route::controller(ProductController::class)
             ->prefix('products')
             ->name('products.')
@@ -100,6 +116,11 @@ Route::prefix('backend')->group(function() {
             ->group(function() {
                 Route::get('/', 'edit')->name('edit');
                 Route::post('/', 'update')->name('update');
+                Route::post('services/whatsapp/qr', 'whatsappQr')->name('services.whatsapp.qr');
+                Route::post('services/whatsapp/status', 'whatsappStatus')->name('services.whatsapp.status');
+                Route::post('services/whatsapp/logout', 'logoutWhatsapp')->name('services.whatsapp.logout');
+                Route::post('services/whatsapp/test', 'testWhatsapp')->name('services.whatsapp.test');
+                Route::post('services/email/test', 'testEmail')->name('services.email.test');
             });
         // Translations
         Route::controller(TranslationController::class)

@@ -88,12 +88,8 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
         <>
             <Head>
                 <title>{pageTitle}</title>
-
                 {setting?.seo?.description && <meta name="description" content={setting.seo.description} />}
-
                 {setting?.seo?.keywords && <meta name="keywords" content={setting.seo.keywords} />}
-
-                {/* Warna primary dinamis agar Tailwind CSS variables bekerja secara global */}
                 <style>{themeStyle}</style>
             </Head>
 
@@ -106,8 +102,6 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
                     </AppContent>
                 </AppShell>
             </div>
-
-            {/* Toaster di luar div tema agar portal z-index tidak terpengaruh */}
             <Toaster />
         </>
     );

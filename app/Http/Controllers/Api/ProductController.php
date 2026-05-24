@@ -17,13 +17,13 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends BaseResourceController
 {
-    protected int $perPage = 10;
-    protected array $searchableColumns = [
+    protected int    $perPage           = 10;
+    protected array  $searchableColumns = [
         'name',
         'sku',
         'description',
     ];
-    protected array $sortableColumns = [
+    protected array  $sortableColumns   = [
         'name',
         'sku',
         'price',
@@ -31,7 +31,7 @@ class ProductController extends BaseResourceController
         'status',
         'created_at',
     ];
-    protected string $orderBy = 'created_at';
+    protected string $orderBy           = 'created_at';
 
     public function behaviors(): array
     {

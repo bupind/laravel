@@ -4,10 +4,12 @@
     "scripts": {
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
-        "dev": "vite",
+        "dev": "concurrently --names \"vite,wwebjs\" --prefix-colors \"cyan,green\" \"vite\" \"node whatsapp-server.cjs\"",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
-        "lint": "eslint . --fix"
+        "lint": "eslint . --fix",
+        "dev:vite": "vite",
+        "dev:whatsapp": "node whatsapp-server.cjs"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
@@ -53,10 +55,13 @@
         "cmdk": "^1.1.1",
         "concurrently": "^9.0.1",
         "dayjs": "^1.11.13",
+        "express": "^5.2.1",
         "globals": "^15.14.0",
         "laravel-vite-plugin": "^1.0",
         "lucide-react": "^0.475.0",
         "next-themes": "^0.4.6",
+        "qrcode": "^1.5.4",
+        "qrcode-terminal": "^0.12.0",
         "react": "^19.2.0",
         "react-data-table-component": "^8.1.0",
         "react-dom": "^19.2.0",
@@ -67,7 +72,8 @@
         "tailwind-merge": "^3.0.1",
         "tailwindcss-animate": "^1.0.7",
         "typescript": "^5.7.2",
-        "vite": "^6.0"
+        "vite": "^6.0",
+        "whatsapp-web.js": "^1.34.7"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

@@ -23,14 +23,14 @@ class DatabaseNotification extends Notification
     {
     }
 
-    public static function make(string $status, string $title, string $message, array $meta = []): self
-    {
-        return new self($status, $title, $message, $meta);
-    }
-
     public static function success(string $title, string $message, array $meta = []): self
     {
         return self::make('success', $title, $message, $meta);
+    }
+
+    public static function make(string $status, string $title, string $message, array $meta = []): self
+    {
+        return new self($status, $title, $message, $meta);
     }
 
     public static function error(string $title, string $message, array $meta = []): self

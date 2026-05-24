@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -105,16 +105,16 @@ export default function CrudForm(props: CrudFormProps) {
 
     if (!crud || !resource) {
         return (
-            <AppLayout breadcrumbs={[]}>
+            <BackendLayout breadcrumbs={[]}>
                 <div className="text-muted-foreground flex h-64 items-center justify-center text-sm">{t('pages.crud.noMetadata')}</div>
-            </AppLayout>
+            </BackendLayout>
         );
     }
 
     const pageTitle = isEdit ? `${t('buttons.update')} ${resource.label}` : `${t('buttons.create')} ${resource.label}`;
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={pageTitle} />
 
             <div className="p-4 md:p-6">
@@ -187,6 +187,6 @@ export default function CrudForm(props: CrudFormProps) {
                     </p>
                 </div>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

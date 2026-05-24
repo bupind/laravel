@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
 
 class SyncTranslations extends Command
 {
-    protected $signature = 'translations:sync {--dry-run : Show changes without writing to database} {--keep-unused : Keep unused translation rows}';
+    protected $signature   = 'translations:sync {--dry-run : Show changes without writing to database} {--keep-unused : Keep unused translation rows}';
     protected $description = 'Scan source translation keys, add missing rows, and delete unused rows.';
 
     public function handle(TranslationSyncService $syncService): int

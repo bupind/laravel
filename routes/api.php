@@ -16,9 +16,10 @@ use App\Http\Controllers\Api\TranslationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('throttle:30,1')->group(function() {
+Route::middleware('throttle:120,1')->group(function() {
     Route::get('health', HealthCheckController::class)->name('api.health');
     Route::get('translations', TranslationController::class)->name('api.translations');
+    Route::post('translations/resolve', [TranslationController::class, 'resolve'])->name('api.translations.resolve');
 });
 Route::middleware([
     'api.client',

@@ -15,17 +15,62 @@ class SettingApp extends Model
 {
     use UsesUuid;
 
-    public const DEFAULTS      = [
-        'nama_app'  => null,
-        'deskripsi' => null,
-        'logo'      => null,
-        'favicon'   => null,
-        'warna'     => '#0ea5e9',
-        'seo'       => [
+    public const WHATSAPP_DEFAULTS = [
+        'provider'        => 'wwebjs',
+        'endpoint'        => null,
+        'token'           => null,
+        'qr_endpoint'     => null,
+        'status_endpoint' => null,
+        'test_recipient'  => null,
+        'timeout'         => 20,
+        'retry'           => 3,
+        'retry_sleep_ms'  => 300,
+    ];
+    public const EMAIL_DEFAULTS = [
+        'driver'         => 'gmail',
+        'host'           => 'smtp.gmail.com',
+        'port'           => 587,
+        'encryption'     => 'tls',
+        'username'       => null,
+        'password'       => null,
+        'from_name'      => null,
+        'from_address'   => null,
+        'test_recipient' => null,
+    ];
+    public const PAYMENT_GATEWAY_DEFAULTS = [
+        'provider' => null,
+        'endpoint' => null,
+        'token'    => null,
+        'mode'     => 'sandbox',
+    ];
+    public const TRANSLATION_DEFAULTS = [
+        'default_locale' => 'id',
+        'locales'        => [
+            [
+                'code'  => 'id',
+                'label' => 'Bahasa Indonesia',
+            ],
+            [
+                'code'  => 'en',
+                'label' => 'English',
+            ],
+        ],
+    ];
+    public const DEFAULTS = [
+        'nama_app'        => null,
+        'deskripsi'       => null,
+        'logo'            => null,
+        'favicon'         => null,
+        'warna'           => '#0ea5e9',
+        'seo'             => [
             'title'       => null,
             'description' => null,
             'keywords'    => null,
         ],
+        'whatsapp'        => self::WHATSAPP_DEFAULTS,
+        'email'           => self::EMAIL_DEFAULTS,
+        'payment_gateway' => self::PAYMENT_GATEWAY_DEFAULTS,
+        'translations'    => self::TRANSLATION_DEFAULTS,
     ];
     public const RESERVED_KEYS = [
         'nama_app',
@@ -34,31 +79,47 @@ class SettingApp extends Model
         'favicon',
         'warna',
         'seo',
+        'whatsapp',
+        'email',
+        'payment_gateway',
+        'translations',
     ];
-    public const FIELD_TYPES   = [
-        'nama_app'  => 'text',
-        'deskripsi' => 'textarea',
-        'logo'      => 'file',
-        'favicon'   => 'file',
-        'warna'     => 'color',
-        'seo'       => 'json',
+    public const FIELD_TYPES = [
+        'nama_app'        => 'text',
+        'deskripsi'       => 'textarea',
+        'logo'            => 'file',
+        'favicon'         => 'file',
+        'warna'           => 'color',
+        'seo'             => 'json',
+        'whatsapp'        => 'whatsapp',
+        'email'           => 'email_service',
+        'payment_gateway' => 'json',
+        'translations'    => 'json',
     ];
     protected $table    = 'settingapp';
     protected $fillable = [
         'key',
-        'value',
+        'value'
     ];
 
     public static function settings(): array
     {
-        $settings             = static::query()
+        $settings                  = static::query()
             ->orderBy('key')
             ->pluck('value', 'key')
             ->map(fn($value) => static::decodeValue($value))
             ->all();
-        $defaults             = self::DEFAULTS;
-        $defaults['nama_app'] = config('app.name', 'Laravel');
-        return array_replace_recursive($defaults, $settings);
+        $defaults                  = self::DEFAULTS;
+        $defaults['nama_app']      = config('app.name', 'Laravel');
+        $merged                    = array_replace_recursive($defaults, $settings);
+        $merged['whatsapp']        = static::normalizeWhatsappConfig($merged['whatsapp'] ?? []);
+        $merged['email']           = static::normalizeEmailConfig($merged['email'] ?? []);
+        $merged['payment_gateway'] = array_replace_recursive(
+            self::PAYMENT_GATEWAY_DEFAULTS,
+            is_array($merged['payment_gateway'] ?? null) ? $merged['payment_gateway'] : []
+        );
+        $merged['translations']    = static::normalizeTranslationsConfig($merged['translations'] ?? []);
+        return $merged;
     }
 
     public static function decodeValue(mixed $value): mixed
@@ -75,6 +136,112 @@ class SettingApp extends Model
         }
         $decoded = json_decode($trimmed, true);
         return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+    }
+
+    public static function normalizeWhatsappConfig(mixed $value): array
+    {
+        if(is_string($value)) {
+            $value = static::decodeValue($value);
+        }
+        if(!is_array($value)) {
+            $value = [];
+        }
+        // Legacy providers key migration
+        if(isset($value['providers']) && is_array($value['providers'])) {
+            $provider       = trim((string)($value['provider'] ?? 'wwebjs'));
+            $providerConfig = $value['providers'][$provider] ?? [];
+            if(is_array($providerConfig)) {
+                $value['endpoint'] ??= $providerConfig['endpoint'] ?? null;
+                $value['token']    ??= $providerConfig['token'] ?? null;
+            }
+            unset($value['providers']);
+        }
+        $config                    = array_replace_recursive(self::WHATSAPP_DEFAULTS, $value);
+        $provider                  = trim((string)($config['provider'] ?? 'wwebjs'));
+        $config['provider']        = $provider !== '' ? $provider : 'wwebjs';
+        $config['endpoint']        = static::nullableString($config['endpoint'] ?? null);
+        $config['token']           = static::nullableString($config['token'] ?? null);
+        $config['qr_endpoint']     = static::nullableString($config['qr_endpoint'] ?? null);
+        $config['status_endpoint'] = static::nullableString($config['status_endpoint'] ?? null);
+        $config['test_recipient']  = static::nullableString($config['test_recipient'] ?? null);
+        $config['timeout']         = max(1, (int)($config['timeout'] ?? self::WHATSAPP_DEFAULTS['timeout']));
+        $config['retry']           = max(0, (int)($config['retry'] ?? self::WHATSAPP_DEFAULTS['retry']));
+        $config['retry_sleep_ms']  = max(0, (int)($config['retry_sleep_ms'] ?? self::WHATSAPP_DEFAULTS['retry_sleep_ms']));
+        return $config;
+    }
+
+    public static function nullableString(mixed $value): ?string
+    {
+        $value = trim((string)($value ?? ''));
+        return $value === '' ? null : $value;
+    }
+
+    public static function normalizeEmailConfig(mixed $value): array
+    {
+        if(is_string($value)) {
+            $value = static::decodeValue($value);
+        }
+        if(!is_array($value)) {
+            $value = [];
+        }
+        $rawEncryption        = array_key_exists('encryption', $value) ? $value['encryption'] : self::EMAIL_DEFAULTS['encryption'];
+        $config               = array_replace_recursive(self::EMAIL_DEFAULTS, $value);
+        $config['driver']     = static::nullableString($config['driver'] ?? null) ?? 'gmail';
+        $config['host']       = static::nullableString($config['host'] ?? null) ?? 'smtp.gmail.com';
+        $config['port']       = max(1, (int)($config['port'] ?? 587));
+        $config['encryption'] = static::nullableString($rawEncryption);
+        if(($config['driver'] ?? 'gmail') === 'gmail' && $config['encryption'] === null) {
+            $config['encryption'] = 'tls';
+        }
+        $config['username']       = static::nullableString($config['username'] ?? null);
+        $config['password']       = static::nullableString($config['password'] ?? null);
+        $config['from_name']      = static::nullableString($config['from_name'] ?? null);
+        $config['from_address']   = static::nullableString($config['from_address'] ?? null);
+        $config['test_recipient'] = static::nullableString($config['test_recipient'] ?? null);
+        return $config;
+    }
+
+    public static function normalizeTranslationsConfig(mixed $value): array
+    {
+        if(is_string($value)) {
+            $value = static::decodeValue($value);
+        }
+        if(!is_array($value)) {
+            $value = [];
+        }
+        $config  = array_replace_recursive(self::TRANSLATION_DEFAULTS, $value);
+        $locales = [];
+        foreach(($config['locales'] ?? []) as $locale) {
+            if(is_string($locale)) {
+                $code  = str_replace('_', '-', strtolower(trim($locale)));
+                $label = strtoupper($code);
+            } elseif(is_array($locale)) {
+                $code  = str_replace('_', '-', strtolower(trim((string)($locale['code'] ?? ''))));
+                $label = trim((string)($locale['label'] ?? strtoupper($code)));
+            } else {
+                continue;
+            }
+            if($code === '' || !preg_match('/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/', $code)) {
+                continue;
+            }
+            $locales[$code] = [
+                'code'  => $code,
+                'label' => $label !== '' ? $label : strtoupper($code),
+            ];
+        }
+        if($locales === []) {
+            foreach(self::TRANSLATION_DEFAULTS['locales'] as $locale) {
+                $locales[$locale['code']] = $locale;
+            }
+        }
+        $defaultLocale = str_replace('_', '-', strtolower(trim((string)($config['default_locale'] ?? ''))));
+        if(!array_key_exists($defaultLocale, $locales)) {
+            $defaultLocale = array_key_first($locales);
+        }
+        return [
+            'default_locale' => $defaultLocale,
+            'locales'        => array_values($locales),
+        ];
     }
 
     public static function formRows(): array
@@ -107,7 +274,7 @@ class SettingApp extends Model
         return static::query()->orderBy('key')->get([
             'id',
             'key',
-            'value',
+            'value'
         ]);
     }
 
@@ -131,6 +298,13 @@ class SettingApp extends Model
 
     public static function setValue(string $key, mixed $value): self
     {
+        if($key === 'whatsapp') {
+            $value = static::normalizeWhatsappConfig($value);
+        } elseif($key === 'email') {
+            $value = static::normalizeEmailConfig($value);
+        } elseif($key === 'translations') {
+            $value = static::normalizeTranslationsConfig($value);
+        }
         return static::query()->updateOrCreate(
             ['key' => $key],
             ['value' => static::encodeValue($value)],

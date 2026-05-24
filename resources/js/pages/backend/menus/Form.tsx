@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
@@ -73,7 +73,7 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? t('buttons.update') : t('buttons.create')} />
 
             <div className="flex-1 p-4 md:p-6">
@@ -193,6 +193,6 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

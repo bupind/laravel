@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/use-language';
 import { usePermissions } from '@/hooks/use-permissions';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type Role } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -160,13 +160,13 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
     ];
 
     return (
-        <AppLayout breadcrumbs={[{ title: t('pages.roles.title'), href: '/backend/roles' }]}>
-            <Head title={t('pages.roles.title')} />
+        <BackendLayout breadcrumbs={[{ title: t('pages.roles.title', { fallback: 'Role Management' }), href: '/backend/roles' }]}>
+            <Head title={t('pages.roles.title', { fallback: 'Role Management' })} />
 
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.roles.title')}</h1>
-                    <p className="text-muted-foreground">{t('pages.roles.description')}</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('pages.roles.title', { fallback: 'Role Management' })}</h1>
+                    <p className="text-muted-foreground">{t('pages.roles.description', { fallback: 'Manage user roles and assigned permissions.' })}</p>
                 </div>
 
                 <ServerDataTable<RoleRow>
@@ -189,6 +189,6 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
                     }
                 />
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

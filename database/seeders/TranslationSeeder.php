@@ -535,6 +535,40 @@ class TranslationSeeder extends Seeder
             ['locale' => 'en', 'scope' => 'frontend', 'namespace' => 'menus', 'key' => 'home', 'value' => 'Home'],
             ['locale' => 'id', 'scope' => 'frontend', 'namespace' => 'menus', 'key' => 'products', 'value' => 'Produk'],
             ['locale' => 'en', 'scope' => 'frontend', 'namespace' => 'menus', 'key' => 'products', 'value' => 'Products'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'dashboard', 'value' => 'Dasbor'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'dashboard', 'value' => 'Dashboard'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'access', 'value' => 'Akses'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'access', 'value' => 'Access'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'permissions', 'value' => 'Izin'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'permissions', 'value' => 'Permissions'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'users', 'value' => 'Pengguna'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'users', 'value' => 'Users'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'roles', 'value' => 'Peran'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'roles', 'value' => 'Roles'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'products', 'value' => 'Produk'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'products', 'value' => 'Products'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'content', 'value' => 'Konten'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'content', 'value' => 'Content'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'sliders', 'value' => 'Slider'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'sliders', 'value' => 'Sliders'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'services', 'value' => 'Layanan'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'services', 'value' => 'Services'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'settings', 'value' => 'Pengaturan'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'settings', 'value' => 'Settings'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'menu_manager', 'value' => 'Manajemen Menu'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'menu_manager', 'value' => 'Menu Manager'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'app_settings', 'value' => 'Pengaturan Aplikasi'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'app_settings', 'value' => 'App Settings'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'translations', 'value' => 'Terjemahan'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'translations', 'value' => 'Translations'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'api_clients', 'value' => 'Klien API'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'api_clients', 'value' => 'API Clients'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'utilities', 'value' => 'Utilitas'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'utilities', 'value' => 'Utilities'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'audit_logs', 'value' => 'Log Audit'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'audit_logs', 'value' => 'Audit Logs'],
+            ['locale' => 'id', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'file_manager', 'value' => 'Manajemen File'],
+            ['locale' => 'en', 'scope' => 'backend', 'namespace' => 'menus', 'key' => 'file_manager', 'value' => 'File Manager'],
             ['locale' => 'id', 'scope' => 'common', 'namespace' => 'labels', 'key' => 'active', 'value' => 'Aktif'],
             ['locale' => 'en', 'scope' => 'common', 'namespace' => 'labels', 'key' => 'active', 'value' => 'Active']
         ];
@@ -553,5 +587,7 @@ class TranslationSeeder extends Seeder
                 ],
             );
         }
+
+        app(TranslationService::class)->flush();
     }
 }

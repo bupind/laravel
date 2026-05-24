@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AuditLogController extends BaseCrudController
 {
     protected ?string $permissionPrefix = 'activity-logs';
-    protected array $permissionMap = [
+    protected array   $permissionMap    = [
         'export' => 'activity-logs-view',
     ];
 

@@ -36,8 +36,22 @@ function getMenuTitle(menu: MenuItem, t: (key: string) => string): string {
     return translated === menu.translation_key ? menu.title : translated;
 }
 
+function normalizeBackendRoute(route: string | null): string {
+    if (!route || route === '#') return '#';
+    const normalized = `/${route.replace(/^\/+/, '')}`;
+
+    if (normalized.startsWith('/backend') || normalized.startsWith('/api')) {
+        return normalized;
+    }
+
+    return `/backend${normalized}`;
+}
+
 function hasActiveChild(items: MenuItem[], currentUrl: string): boolean {
-    return items.some((item) => (item.route && currentUrl.startsWith(item.route)) || (item.children && hasActiveChild(item.children, currentUrl)));
+    return items.some(
+        (item) =>
+            (item.route && currentUrl.startsWith(normalizeBackendRoute(item.route))) || (item.children && hasActiveChild(item.children, currentUrl)),
+    );
 }
 
 interface CollapsibleMenuItemProps {
@@ -60,7 +74,9 @@ const CollapsibleMenuItem = memo(function CollapsibleMenuItem({ menu, level, cur
                         className={cn(
                             'group flex w-full items-center justify-between rounded-md transition-colors',
                             level === 0 ? 'my-1 px-4 py-3' : 'px-3 py-2',
-                            open ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                            open
+                                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                         )}
                     >
                         <div className="flex items-center">
@@ -109,7 +125,8 @@ function RenderMenu({ items, level = 0 }: RenderMenuProps) {
                     return <CollapsibleMenuItem key={menu.id} menu={menu} level={level} currentUrl={currentUrl} />;
                 }
 
-                const isActive = Boolean(menu.route && currentUrl.startsWith(menu.route));
+                const href = normalizeBackendRoute(menu.route);
+                const isActive = Boolean(menu.route && currentUrl.startsWith(href));
 
                 if (level === 0) {
                     return (
@@ -120,11 +137,11 @@ function RenderMenu({ items, level = 0 }: RenderMenuProps) {
                                 className={cn(
                                     'group my-1 flex items-center rounded-md px-4 py-3 transition-colors',
                                     isActive
-                                        ? 'bg-primary/10 text-primary font-medium'
-                                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                                 )}
                             >
-                                <Link href={menu.route ?? '#'} prefetch>
+                                <Link href={href} prefetch>
                                     <Icon className="mr-3 size-4 opacity-80 group-hover:opacity-100" />
                                     <span>{getMenuTitle(menu, t)}</span>
                                 </Link>
@@ -136,7 +153,7 @@ function RenderMenu({ items, level = 0 }: RenderMenuProps) {
                 return (
                     <SidebarMenuSubItem key={menu.id}>
                         <SidebarMenuSubButton asChild isActive={isActive}>
-                            <Link href={menu.route ?? '#'} prefetch>
+                            <Link href={href} prefetch>
                                 <Icon className="size-4" />
                                 <span>{getMenuTitle(menu, t)}</span>
                             </Link>
@@ -152,8 +169,12 @@ export function AppSidebar() {
     const { menus = [] } = usePage().props as { menus?: MenuItem[] };
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-r backdrop-blur">
-            <SidebarHeader className="border-b px-4 py-3">
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="border-sidebar-border bg-sidebar/95 supports-[backdrop-filter]:bg-sidebar/80 border-r backdrop-blur"
+        >
+            <SidebarHeader className="border-sidebar-border border-b px-0 py-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
@@ -165,13 +186,13 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="px-2 py-4">
+            <SidebarContent className="px-0 py-4">
                 <SidebarMenu>
                     <RenderMenu items={menus} />
                 </SidebarMenu>
             </SidebarContent>
 
-            <SidebarFooter className="border-t">
+            <SidebarFooter className="border-sidebar-border border-t">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

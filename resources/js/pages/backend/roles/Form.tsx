@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type Permission } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React, { useMemo } from 'react';
@@ -67,7 +67,7 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('pages.roles.title'), href: '/backend/roles' },
+        { title: t('pages.roles.title', { fallback: 'Role Management' }), href: '/backend/roles' },
         { title: isEdit ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
 
@@ -124,7 +124,7 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? t('buttons.update') : t('buttons.create')} />
 
             <div className="flex-1 p-4 md:p-6">
@@ -263,6 +263,6 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

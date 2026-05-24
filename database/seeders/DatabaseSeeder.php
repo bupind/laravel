@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             SettingAppSeeder::class,
             TranslationSeeder::class,
+            PageSeeder::class,
         ]);
         $user = User::factory()->create([
             'name'     => 'Superuser',

@@ -466,7 +466,7 @@ abstract class BaseCrudController extends Controller
 
     protected function formPagePayload(Request $request, mixed $record = null): array
     {
-        if($this->usesGenericComponent()) {
+        if($this->usesGenericComponent() || $this->usesGenericFormPage()) {
             return [
                 'crud' => array_merge([
                     'modal'       => false,
@@ -484,6 +484,11 @@ abstract class BaseCrudController extends Controller
     {
         return $this->indexComponent() === $this->componentName()
                && $this->formComponent() === $this->componentName();
+    }
+
+    protected function usesGenericFormPage(): bool
+    {
+        return $this->formComponent() === 'backend/crud/Form';
     }
 
     protected function formPayload(Request $request, mixed $record = null): array

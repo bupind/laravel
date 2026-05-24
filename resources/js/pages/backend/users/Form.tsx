@@ -1,11 +1,11 @@
-﻿import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/hooks/use-language';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type Role } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
@@ -40,12 +40,12 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: t('pages.users.title'), href: '/backend/users' },
+        { title: t('pages.users.title', { fallback: 'User Management' }), href: '/backend/users' },
         { title: isEdit ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? t('buttons.update') : t('buttons.create')} />
 
             <div className="flex-1 p-4 md:p-6">
@@ -100,7 +100,7 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                                     <Input
                                         id="password"
                                         type="password"
-                                        placeholder="••••••••"
+                                        placeholder=""
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
                                         className={errors.password ? 'border-red-500' : ''}
@@ -150,6 +150,6 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

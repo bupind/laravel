@@ -28,4 +28,18 @@ class TranslationController extends Controller
             'messages'   => $translations->getMessages($locale, $scope, $namespaces),
         ]);
     }
+
+    public function resolve(Request $request, TranslationService $translations): JsonResponse
+    {
+        $locale = $request->string('locale', 'id')->toString();
+        $scope  = $request->string('scope', 'frontend')->toString();
+        $keys   = $request->input('keys', []);
+        if(is_string($keys)) {
+            $keys = array_filter(array_map('trim', explode(',', $keys)));
+        }
+        if(!is_array($keys)) {
+            $keys = [];
+        }
+        return response()->json($translations->resolveKeys($locale, $scope, $keys));
+    }
 }

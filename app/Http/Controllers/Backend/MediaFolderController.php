@@ -19,9 +19,9 @@ class MediaFolderController extends Controller
 
     public function index(Request $request)
     {
-        $user     = $request->user();
-        $folderId = $request->input('folder_id');
-        $folders = $user->mediaFolders()->orderBy('name')->get();
+        $user          = $request->user();
+        $folderId      = $request->input('folder_id');
+        $folders       = $user->mediaFolders()->orderBy('name')->get();
         $currentFolder = null;
         if($folderId) {
             $currentFolder = $user->mediaFolders()->find($folderId);
@@ -44,7 +44,7 @@ class MediaFolderController extends Controller
             'folders'         => $folders,
             'currentFolderId' => $folderId,
             'currentFolder'   => $currentFolder,
-            'files' => $files->map(fn($media) => [
+            'files'           => $files->map(fn($media) => [
                 'id'         => $media->id,
                 'name'       => $media->name,
                 'size'       => $media->humanReadableSize,
@@ -72,7 +72,7 @@ class MediaFolderController extends Controller
     {
         $folder = $medium;
         $user   = $folder->user;
-        $files = $user->media()
+        $files  = $user->media()
             ->where('collection_name', 'files')
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_properties, '$.folder_id')) = ?", [(string)$folder->id])
             ->get();

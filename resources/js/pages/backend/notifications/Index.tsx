@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type NotificationItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 
@@ -59,7 +59,7 @@ export default function NotificationInbox({ notifications }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title="Notifications" />
 
             <div className="space-y-6 p-4 md:p-6">
@@ -142,6 +142,6 @@ export default function NotificationInbox({ notifications }: Props) {
                     </div>
                 )}
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }

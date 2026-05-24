@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
-import AppLayout from '@/layouts/app-layout';
+import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Plus, X } from 'lucide-react';
@@ -285,7 +285,7 @@ export default function PermissionForm({ permission = null, groups = [], standar
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <BackendLayout breadcrumbs={breadcrumbs}>
             <Head title={permission ? t('buttons.update') : t('buttons.create')} />
             <div className="space-y-6 p-4 md:p-6">
                 <div>
@@ -297,6 +297,6 @@ export default function PermissionForm({ permission = null, groups = [], standar
                     <PermissionFormFields permission={permission} groups={groups} standardActions={standardActions} />
                 </div>
             </div>
-        </AppLayout>
+        </BackendLayout>
     );
 }
