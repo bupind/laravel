@@ -17,26 +17,36 @@ class ApiClient extends Model
 {
     use UsesUuid;
 
+    public const STATUS_ACTIVE   = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+
     protected $fillable = [
         'name',
         'client_key',
         'client_secret',
         'description',
         'allowed_ips',
-        'is_active',
+        'status',
         'expires_at',
         'created_by',
         'updated_by',
     ];
     protected $casts    = [
         'allowed_ips'          => 'array',
-        'is_active'            => 'boolean',
         'expires_at'           => 'datetime',
         'last_used_at'         => 'datetime',
         'last_response_status' => 'integer',
         'total_requests'       => 'integer',
     ];
     protected $hidden   = ['client_secret'];
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE,
+        ];
+    }
 
     public static function generateClientKey(): string
     {
@@ -52,7 +62,7 @@ class ApiClient extends Model
     {
         $client = self::query()
             ->where('client_key', $clientKey)
-            ->where('is_active', true)
+            ->where('status', self::STATUS_ACTIVE)
             ->where(function($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());

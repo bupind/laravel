@@ -16,7 +16,7 @@ declare global {
 }
 
 interface Setting {
-    nama_app?: string;
+    app_name?: string;
     seo?: { title?: string | null };
 }
 
@@ -33,7 +33,7 @@ function resolveAppName(): string {
         const raw = document.getElementById('app')?.dataset.page;
         if (!raw) throw new Error();
         const setting = (JSON.parse(raw)?.props?.setting ?? {}) as Setting;
-        return setting.seo?.title || setting.nama_app || import.meta.env.VITE_APP_NAME || 'App';
+        return setting.seo?.title || setting.app_name || import.meta.env.VITE_APP_NAME || 'App';
     } catch {
         return import.meta.env.VITE_APP_NAME || 'App';
     }

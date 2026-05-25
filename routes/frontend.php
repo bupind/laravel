@@ -8,6 +8,7 @@
 | Auth routes (login, register, dll.) dipisahkan ke backend/auth.php.
 */
 
+use App\Http\Controllers\Frontend\AiChatController;
 use App\Http\Controllers\Frontend\ContactController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\PageController;
@@ -19,5 +20,10 @@ Route::get('/products', ProductController::class)->name('frontend.products');
 Route::get('/contact', [ContactController::class, 'create'])->name('frontend.contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('frontend.contact.store');
 Route::get('/pages/{page:slug}', [PageController::class, 'show'])->name('frontend.pages.show');
+
+// AI Chat
+Route::post('/ai-chat', [AiChatController::class, 'chat'])
+    ->middleware('throttle:20,1')
+    ->name('frontend.ai-chat');
 
 require __DIR__ . '/backend/auth.php';

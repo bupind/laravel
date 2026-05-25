@@ -86,7 +86,7 @@ class TranslationService
             $locales = [];
             if(Schema::hasTable('translations')) {
                 $locales = Translation::query()
-                    ->where('is_active', true)
+                    ->where('status', Translation::STATUS_ACTIVE)
                     ->distinct()
                     ->orderBy('locale')
                     ->pluck('locale')
@@ -120,7 +120,7 @@ class TranslationService
             $scopes = $this->fallbackScopes($scope);
             $query  = Translation::query()
                 ->where('locale', $locale)
-                ->where('is_active', true)
+                ->where('status', Translation::STATUS_ACTIVE)
                 ->whereIn('scope', $scopes)
                 ->orderByRaw($this->scopeOrderSql($scopes))
                 ->orderBy('namespace')
@@ -335,7 +335,7 @@ class TranslationService
                 $fallbackLocale
             ]));
             $rows = Translation::query()
-                ->where('is_active', true)
+                ->where('status', Translation::STATUS_ACTIVE)
                 ->whereIn('locale', $locales)
                 ->whereIn('scope', $scopes)
                 ->whereIn('namespace', $namespaces)

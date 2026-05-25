@@ -96,7 +96,7 @@ class TranslationSyncService
                     'namespace' => $item['namespace'],
                     'key'       => $item['key'],
                     'value'     => $this->defaultValue($item['full_key'], $locale),
-                    'is_active' => true,
+                    'status'    => Translation::STATUS_ACTIVE,
                 ]);
             }
         }
@@ -350,7 +350,7 @@ class TranslationSyncService
                 'namespace',
                 'key',
                 'value',
-                'is_active'
+                'status'
             ]);
         $moved   = 0;
         $deleted = 0;
@@ -387,7 +387,7 @@ class TranslationSyncService
                 ],
                 [
                     'value'     => $preferred->value,
-                    'is_active' => (bool)$preferred->is_active,
+                    'status'    => $preferred->status,
                 ],
             );
         }
@@ -458,7 +458,7 @@ class TranslationSyncService
                 ],
                 [
                     'value'     => $value,
-                    'is_active' => true,
+                    'status'    => Translation::STATUS_ACTIVE,
                 ],
             );
         }

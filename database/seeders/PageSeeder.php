@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Page;
+use App\Services\Translations\TranslationService;
 use Illuminate\Database\Seeder;
 
 class PageSeeder extends Seeder
@@ -10,43 +11,44 @@ class PageSeeder extends Seeder
     public function run(): void
     {
         Page::query()->where('slug', 'contact')->delete();
+        $locales = app(TranslationService::class)->locales();
+        $text = fn(string $id, string $en): array => collect($locales)
+            ->mapWithKeys(fn(string $locale) => [$locale => $locale === 'en' ? $en : $id])
+            ->all();
 
         $pages = [
             [
-                'title' => 'Privacy Policy',
+                'title' => $text('Kebijakan Privasi', 'Privacy Policy'),
                 'slug' => 'privacy-policy',
-                'template' => 'privacy',
                 'placement' => 'footer',
-                'excerpt' => 'Kebijakan privasi penggunaan layanan dan pengelolaan data pengguna.',
-                'content' => '<p>Kami menjaga privasi pengguna dan hanya menggunakan data sesuai kebutuhan operasional layanan.</p><h2>Data yang Dikumpulkan</h2><p>Data dapat mencakup nama, email, nomor telepon, dan aktivitas penggunaan aplikasi.</p><h2>Penggunaan Data</h2><p>Data digunakan untuk autentikasi, layanan pelanggan, keamanan, dan peningkatan kualitas aplikasi.</p>',
-                'meta_title' => 'Privacy Policy',
-                'meta_description' => 'Kebijakan privasi penggunaan layanan.',
+                'excerpt' => $text('Kebijakan privasi penggunaan layanan dan pengelolaan data pengguna.', 'Privacy policy for service usage and user data management.'),
+                'content' => $text('<p>Kami menjaga privasi pengguna dan hanya menggunakan data sesuai kebutuhan operasional layanan.</p><h2>Data yang Dikumpulkan</h2><p>Data dapat mencakup nama, email, nomor telepon, dan aktivitas penggunaan aplikasi.</p><h2>Penggunaan Data</h2><p>Data digunakan untuk autentikasi, layanan pelanggan, keamanan, dan peningkatan kualitas aplikasi.</p>', '<p>We protect user privacy and only use data for operational service needs.</p><h2>Collected Data</h2><p>Data may include names, email addresses, phone numbers, and application usage activity.</p><h2>Data Usage</h2><p>Data is used for authentication, customer service, security, and application quality improvements.</p>'),
+                'meta_title' => $text('Kebijakan Privasi', 'Privacy Policy'),
+                'meta_description' => $text('Kebijakan privasi penggunaan layanan.', 'Privacy policy for service usage.'),
                 'sort_order' => 1,
-                'is_published' => true,
+                'status' => Page::STATUS_ACTIVE,
             ],
             [
-                'title' => 'About Us',
+                'title' => $text('Tentang Kami', 'About Us'),
                 'slug' => 'about-us',
-                'template' => 'about',
                 'placement' => 'footer',
-                'excerpt' => 'Informasi singkat tentang aplikasi, layanan, dan tujuan kami.',
-                'content' => '<p>Kami membangun aplikasi ini untuk membantu pengelolaan layanan digital secara lebih rapi, cepat, dan mudah digunakan.</p><p>Halaman ini dapat Anda sesuaikan dari menu Pages di backend.</p>',
-                'meta_title' => 'About Us',
-                'meta_description' => 'Tentang aplikasi dan layanan kami.',
+                'excerpt' => $text('Informasi singkat tentang aplikasi, layanan, dan tujuan kami.', 'Brief information about our application, services, and purpose.'),
+                'content' => $text('<p>Kami membangun aplikasi ini untuk membantu pengelolaan layanan digital secara lebih rapi, cepat, dan mudah digunakan.</p><p>Halaman ini dapat Anda sesuaikan dari menu Pages di backend.</p>', '<p>We built this application to help manage digital services in a cleaner, faster, and easier way.</p><p>You can customize this page from the Pages menu in the backend.</p>'),
+                'meta_title' => $text('Tentang Kami', 'About Us'),
+                'meta_description' => $text('Tentang aplikasi dan layanan kami.', 'About our application and services.'),
                 'sort_order' => 2,
-                'is_published' => true,
+                'status' => Page::STATUS_ACTIVE,
             ],
             [
-                'title' => 'FAQs',
+                'title' => $text('FAQ', 'FAQs'),
                 'slug' => 'faqs',
-                'template' => 'faqs',
                 'placement' => 'footer',
-                'excerpt' => 'Pertanyaan yang sering diajukan oleh pengguna.',
-                'content' => '<h2>Bagaimana cara menggunakan aplikasi?</h2><p>Gunakan menu yang tersedia sesuai kebutuhan Anda.</p><h2>Bagaimana menghubungi admin?</h2><p>Gunakan halaman Contact atau informasi kontak yang tersedia di aplikasi.</p>',
-                'meta_title' => 'FAQs',
-                'meta_description' => 'Pertanyaan yang sering diajukan.',
+                'excerpt' => $text('Pertanyaan yang sering diajukan oleh pengguna.', 'Frequently asked questions from users.'),
+                'content' => $text('<h2>Bagaimana cara menggunakan aplikasi?</h2><p>Gunakan menu yang tersedia sesuai kebutuhan Anda.</p><h2>Bagaimana menghubungi admin?</h2><p>Gunakan halaman Contact atau informasi kontak yang tersedia di aplikasi.</p>', '<h2>How do I use the application?</h2><p>Use the available menus according to your needs.</p><h2>How do I contact an admin?</h2><p>Use the Contact page or contact information available in the application.</p>'),
+                'meta_title' => $text('FAQ', 'FAQs'),
+                'meta_description' => $text('Pertanyaan yang sering diajukan.', 'Frequently asked questions.'),
                 'sort_order' => 3,
-                'is_published' => true,
+                'status' => Page::STATUS_ACTIVE,
             ],
         ];
 

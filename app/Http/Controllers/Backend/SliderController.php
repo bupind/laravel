@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Models\Slider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 
 class SliderController extends BaseCrudController
 {
@@ -22,7 +23,7 @@ class SliderController extends BaseCrudController
     protected array   $sortableColumns   = [
         'sort_order',
         'title',
-        'is_active',
+        'status',
         'created_at',
     ];
     protected array   $tableColumns      = [
@@ -41,9 +42,9 @@ class SliderController extends BaseCrudController
             'type'  => 'number',
         ],
         [
-            'key'   => 'is_active',
-            'label' => 'Active',
-            'type'  => 'checkbox',
+            'key'   => 'status',
+            'label' => 'Status',
+            'type'  => 'select',
         ],
     ];
     protected array   $formFields        = [
@@ -87,10 +88,20 @@ class SliderController extends BaseCrudController
             'default' => 0,
         ],
         [
-            'name'    => 'is_active',
-            'label'   => 'Active',
-            'type'    => 'checkbox',
-            'default' => true,
+            'name'    => 'status',
+            'label'   => 'Status',
+            'type'    => 'select',
+            'default' => Slider::STATUS_ACTIVE,
+            'options' => [
+                [
+                    'value' => Slider::STATUS_ACTIVE,
+                    'label' => 'Active',
+                ],
+                [
+                    'value' => Slider::STATUS_INACTIVE,
+                    'label' => 'Inactive',
+                ],
+            ],
         ],
     ];
 
@@ -141,9 +152,10 @@ class SliderController extends BaseCrudController
                 'integer',
                 'min:0',
             ],
-            'is_active'          => [
+            'status'             => [
                 'required',
-                'boolean',
+                'string',
+                Rule::in(Slider::statuses()),
             ],
         ];
     }

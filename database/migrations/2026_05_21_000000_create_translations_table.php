@@ -14,23 +14,11 @@ return new class extends Migration {
             $table->string('namespace', 100);
             $table->string('key', 255);
             $table->text('value');
-            $table->boolean('is_active')->default(true);
+            $table->string('status', 20)->default('active')->index();
             $table->timestamps();
-            $table->unique([
-                'locale',
-                'scope',
-                'namespace',
-                'key'
-            ], 'translations_unique_key');
-            $table->index([
-                'locale',
-                'scope',
-                'namespace'
-            ], 'translations_locale_scope_namespace_index');
-            $table->index([
-                'scope',
-                'namespace'
-            ], 'translations_scope_namespace_index');
+            $table->unique(['locale', 'scope', 'namespace', 'key'], 'translations_unique_key');
+            $table->index(['locale', 'scope', 'namespace'], 'translations_locale_scope_namespace_index');
+            $table->index(['scope', 'namespace'], 'translations_scope_namespace_index');
         });
     }
 

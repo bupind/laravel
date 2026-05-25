@@ -11,6 +11,9 @@ class Page extends Model
 {
     use UsesUuid;
 
+    public const STATUS_ACTIVE   = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+
     public const PLACEMENTS = [
         'none'   => 'None',
         'header' => 'Header',
@@ -23,22 +26,36 @@ class Page extends Model
         'media_id',
         'excerpt',
         'content',
-        'template',
         'placement',
         'meta_title',
         'meta_description',
         'meta_keywords',
         'sort_order',
-        'is_published',
+        'status',
     ];
     protected $casts = [
-        'sort_order'   => 'integer',
-        'is_published' => 'boolean',
+        'title'            => 'array',
+        'excerpt'          => 'array',
+        'content'          => 'array',
+        'meta_title'       => 'array',
+        'meta_description' => 'array',
+        'meta_keywords'    => 'array',
+        'sort_order'       => 'integer',
     ];
     protected $appends = [
         'url',
         'media_url',
+        'title_text',
+        'excerpt_text',
     ];
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE,
+        ];
+    }
 
     public function media(): BelongsTo
     {
@@ -52,7 +69,7 @@ class Page extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('is_published', true);
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 
     public function scopeInPlacement(Builder $query, string $placement): Builder
@@ -66,5 +83,36 @@ class Page extends Model
     public function getUrlAttribute(): string
     {
         return '/pages/' . $this->slug;
+    }
+
+    public function getTitleTextAttribute(): string
+    {
+        return $this->localized('title');
+    }
+
+    public function getExcerptTextAttribute(): ?string
+    {
+        $value = $this->localized('excerpt');
+        return $value !== '' ? $value : null;
+    }
+
+    public function localized(string $attribute, ?string $locale = null): string
+    {
+        $values = $this->getAttribute($attribute);
+        if(!is_array($values)) {
+            return trim((string)($values ?? ''));
+        }
+
+        $locale ??= app(\App\Services\Translations\TranslationService::class)->defaultLocale();
+        $locale = str_replace('_', '-', strtolower(trim($locale)));
+        $fallbackLocale = app(\App\Services\Translations\TranslationService::class)->defaultLocale();
+
+        $baseLocale = explode('-', $locale)[0] ?? $locale;
+        $value = $values[$locale] ?? $values[$baseLocale] ?? $values[$fallbackLocale] ?? null;
+        if($value === null) {
+            $value = collect($values)->first(fn($item) => trim((string)$item) !== '');
+        }
+
+        return trim((string)($value ?? ''));
     }
 }

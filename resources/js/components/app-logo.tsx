@@ -5,18 +5,18 @@ export default function AppLogo() {
     const props = usePage().props as {
         name?: string;
         setting?: {
-            nama_app?: string;
+            app_name?: string;
             logo?: string;
         } | null;
     };
     const setting = props.setting as {
-        nama_app?: string;
+        app_name?: string;
         logo?: string;
     } | null;
 
     const defaultLogo = '';
 
-    const appName = setting?.nama_app || props.name || '';
+    const appName = setting?.app_name || props.name || '';
     const logo = setting?.logo || defaultLogo;
 
     return (

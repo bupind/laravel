@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->string('button_label')->nullable();
             $table->string('button_url')->nullable();
             $table->unsignedInteger('sort_order')->default(0)->index();
-            $table->boolean('is_active')->default(true)->index();
+            $table->string('status', 20)->default('active')->index();
             $table->timestamps();
         });
     }

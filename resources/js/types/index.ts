@@ -48,11 +48,11 @@ export interface NavItem {
 }
 
 export interface Setting {
-    nama_app: string;
-    deskripsi?: string;
+    app_name: string;
+    description?: string;
     logo?: string;
     favicon?: string;
-    warna?: string;
+    color?: string;
     seo?: {
         title?: string;
         description?: string;
@@ -67,6 +67,7 @@ export interface Setting {
 export interface PublicPageLink {
     id: string;
     title: string;
+    title_translations?: Record<string, string | null | undefined>;
     slug: string;
     url: string;
     placement?: string;

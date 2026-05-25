@@ -130,6 +130,7 @@ Route::prefix('backend')->group(function() {
                 Route::get('/', 'edit')->name('edit');
                 Route::put('/', 'update')->name('update');
                 Route::post('sync', 'sync')->name('sync');
+                Route::delete('key', 'destroyKey')->name('destroy-key');
             });
         // Audit Logs
         Route::controller(AuditLogController::class)

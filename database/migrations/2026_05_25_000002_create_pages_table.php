@@ -9,18 +9,17 @@ return new class extends Migration {
     {
         Schema::create('pages', function(Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('title');
+            $table->json('title');
             $table->string('slug')->unique();
             $table->uuid('media_id')->nullable()->index();
-            $table->string('template')->default('default')->index();
             $table->string('placement')->default('none')->index();
-            $table->text('excerpt')->nullable();
-            $table->longText('content')->nullable();
-            $table->string('meta_title')->nullable();
-            $table->text('meta_description')->nullable();
-            $table->string('meta_keywords')->nullable();
+            $table->json('excerpt')->nullable();
+            $table->json('content')->nullable();
+            $table->json('meta_title')->nullable();
+            $table->json('meta_description')->nullable();
+            $table->json('meta_keywords')->nullable();
             $table->unsignedInteger('sort_order')->default(0)->index();
-            $table->boolean('is_published')->default(true)->index();
+            $table->string('status', 20)->default('active')->index();
             $table->timestamps();
         });
     }

@@ -35,7 +35,7 @@ class TranslationController extends Controller
                 'namespace',
                 'key',
                 'value',
-                'is_active',
+                'status',
             ]);
         $rows         = $translations
             ->groupBy(fn(Translation $translation) => "{$translation->namespace}|{$translation->key}")
@@ -63,7 +63,9 @@ class TranslationController extends Controller
                     'namespace' => $first->namespace,
                     'key'       => $first->key,
                     'full_key'  => "{$first->namespace}.{$first->key}",
-                    'is_active' => $items->contains(fn(Translation $item) => $item->is_active),
+                    'status'    => $items->contains(fn(Translation $item) => $item->status === Translation::STATUS_ACTIVE)
+                        ? Translation::STATUS_ACTIVE
+                        : Translation::STATUS_INACTIVE,
                     'values'    => $values,
                 ];
             })
@@ -128,12 +130,12 @@ class TranslationController extends Controller
             'mode'        => null,
             'open'        => false,
             'permissions' => [
-                'view'   => $this->userCanTranslation('view'),
-                'create' => false,
-                'update' => $this->userCanTranslation('update'),
-                'delete' => false,
-                'export' => false,
-                'sync'   => $this->userCanTranslation('update'),
+                'view'        => $this->userCanTranslation('view'),
+                'create'      => false,
+                'update'      => $this->userCanTranslation('update'),
+                'delete'      => $this->userCanTranslation('update'),  // Task 5: allow delete key
+                'export'      => false,
+                'sync'        => $this->userCanTranslation('update'),
             ],
             'resource'    => [
                 'name'              => 'translations',
@@ -142,9 +144,10 @@ class TranslationController extends Controller
                 'title'             => 'Translations',
                 'permission_prefix' => 'translations',
                 'routes'            => [
-                    'index'  => route('translations.edit', absolute: false),
-                    'update' => route('translations.update', absolute: false),
-                    'sync'   => route('translations.sync', absolute: false),
+                    'index'       => route('translations.edit', absolute: false),
+                    'update'      => route('translations.update', absolute: false),
+                    'sync'        => route('translations.sync', absolute: false),
+                    'destroy_key' => route('translations.destroy-key', absolute: false),
                 ],
             ],
         ];
@@ -173,9 +176,10 @@ class TranslationController extends Controller
                 'string',
                 'max:255',
             ],
-            'rows.*.is_active' => [
+            'rows.*.status'    => [
                 'nullable',
-                'boolean',
+                'string',
+                \Illuminate\Validation\Rule::in(Translation::statuses()),
             ],
             'rows.*.values'    => [
                 'required',
@@ -185,33 +189,15 @@ class TranslationController extends Controller
                 'nullable',
                 'string',
             ],
-            'locales'          => [
-                'nullable',
-                'array',
-            ],
-            'locales.*.code'   => [
-                'required_with:locales',
-                'string',
-                'max:20',
-            ],
-            'locales.*.label'  => [
-                'nullable',
-                'string',
-                'max:80',
-            ],
+            ...collect($translationService->locales())
+                ->mapWithKeys(fn(string $locale) => ["rows.*.values.{$locale}" => [
+                    'required',
+                    'string',
+                ]])
+                ->all(),
         ]);
-        $localeOptions = $validated['locales'] ?? [];
-        $activeLocales = collect($localeOptions)
-            ->map(fn(array $locale): string => str_replace('_', '-', strtolower(trim((string)($locale['code'] ?? '')))))
-            ->filter(fn(string $locale): bool => preg_match('/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/', $locale) === 1)
-            ->unique()
-            ->values()
-            ->all();
-        if($activeLocales === []) {
-            $activeLocales = $translationService->locales();
-        }
-        DB::transaction(function() use ($validated, $translationService, $localeOptions, $activeLocales) {
-            $translationService->saveLocaleOptions($localeOptions, $activeLocales[0] ?? null);
+        $activeLocales = $translationService->locales();
+        DB::transaction(function() use ($validated, $activeLocales) {
             Translation::query()->whereNotIn('locale', $activeLocales)->delete();
             foreach($validated['rows'] as $row) {
                 foreach($row['values'] as $locale => $rawValue) {
@@ -240,8 +226,8 @@ class TranslationController extends Controller
                             'key'       => $row['key'],
                         ],
                         [
-                            'value'     => $value,
-                            'is_active' => (bool)($row['is_active'] ?? true),
+                            'value'  => $value,
+                            'status' => (string)($row['status'] ?? Translation::STATUS_ACTIVE),
                         ],
                     );
                 }
@@ -265,4 +251,36 @@ class TranslationController extends Controller
                 $result['deleted'],
             ));
     }
+
+    /**
+     * Task 5: Hapus satu key translation lengkap (semua locale sekaligus).
+     */
+    public function destroyKey(Request $request, TranslationService $translationService): RedirectResponse
+    {
+        $this->authorizeTranslation('update');
+
+        $validated = $request->validate([
+            'namespace' => ['required', 'string', 'max:100'],
+            'key'       => ['required', 'string', 'max:255'],
+            'scope'     => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $query = Translation::query()
+            ->where('namespace', $validated['namespace'])
+            ->where('key', $validated['key']);
+
+        if (!empty($validated['scope'])) {
+            $query->where('scope', $validated['scope']);
+        }
+
+        $deleted = $query->delete();
+
+        $translationService->flush();
+
+        return redirect()->back()->with(
+            'success',
+            $this->flashMessage('notifications.common.deleted') . " ({$deleted} entries)"
+        );
+    }
+
 }

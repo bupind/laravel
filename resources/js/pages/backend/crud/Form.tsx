@@ -8,10 +8,11 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { type AnyRecord, buildFormData, type CrudMeta, FormFieldRenderer, type FormValue } from './Index';
+import { type AnyRecord, buildFormData, type CrudMeta, FormFieldsGrid, type FormValue } from './Index';
 
 export type {
     AnyRecord,
+    ColSize,
     CrudMeta,
     CrudPermissions,
     DatatableMeta,
@@ -20,6 +21,7 @@ export type {
     FormField,
     FormFieldOption,
     FormValue,
+    ModalSize,
     ResourceMeta,
     ResourceRoutes,
     TableColumn,
@@ -156,16 +158,13 @@ export default function CrudForm(props: CrudFormProps) {
                                         {t('pages.crud.noFormFields')} <code>$formFields</code> {t('pages.crud.inController')}
                                     </p>
                                 ) : (
-                                    formSchema.map((field) => (
-                                        <FormFieldRenderer
-                                            key={field.name}
-                                            field={field}
-                                            value={data[field.name] ?? field.default}
-                                            error={errors[field.name]}
-                                            disabled={processing}
-                                            onChange={(name, value) => setData(name as never, value as never)}
-                                        />
-                                    ))
+                                    <FormFieldsGrid
+                                        fields={formSchema}
+                                        data={data}
+                                        errors={errors}
+                                        processing={processing}
+                                        setData={(name, value) => setData(name as never, value as never)}
+                                    />
                                 )}
                             </CardContent>
 

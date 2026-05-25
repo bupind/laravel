@@ -13,9 +13,9 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
     const { props } = usePage();
 
     const setting = props?.setting as {
-        nama_app: string;
+        app_name: string;
         logo?: string;
-        warna?: string;
+        color?: string;
         seo?: {
             title?: string;
             description?: string;
@@ -23,7 +23,7 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
         };
     };
 
-    const primaryColor = setting?.warna || '#0ea5e9';
+    const primaryColor = setting?.color || '#0ea5e9';
     const primaryForeground = '#ffffff';
 
     useEffect(() => {
@@ -43,7 +43,7 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
                                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--primary)] p-2 shadow-sm">
                                     <AppLogoIcon className="size-8 fill-current text-[var(--primary-foreground)]" />
                                 </div>
-                                <span className="text-lg font-semibold text-gray-900 dark:text-white">{setting?.nama_app}</span>
+                                <span className="text-lg font-semibold text-gray-900 dark:text-white">{setting?.app_name}</span>
                             </Link>
 
                             <div className="space-y-1.5 text-center">
@@ -58,7 +58,7 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
 
                 <div className="border-t border-gray-100 px-8 py-6 text-center dark:border-gray-700/50">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        © {new Date().getFullYear()} {setting?.nama_app}. All rights reserved.
+                        © {new Date().getFullYear()} {setting?.app_name}. All rights reserved.
                     </p>
                 </div>
             </div>

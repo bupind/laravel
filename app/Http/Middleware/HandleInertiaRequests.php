@@ -147,7 +147,6 @@ class HandleInertiaRequests extends Middleware
                 $pages = Page::query()
                     ->published()
                     ->where('slug', '!=', 'contact')
-                    ->where('template', '!=', 'contact')
                     ->whereIn('placement', [
                         'header',
                         'footer',
@@ -163,11 +162,12 @@ class HandleInertiaRequests extends Middleware
                         'sort_order'
                     ]);
                 $mapPage = fn(Page $page): array => [
-                    'id'        => $page->id,
-                    'title'     => $page->title,
-                    'slug'      => $page->slug,
-                    'url'       => $page->url,
-                    'placement' => $page->placement,
+                    'id'                 => $page->id,
+                    'title'              => $page->title_text,
+                    'title_translations' => $page->title,
+                    'slug'               => $page->slug,
+                    'url'                => $page->url,
+                    'placement'          => $page->placement,
                 ];
                 return [
                     'header' => $pages

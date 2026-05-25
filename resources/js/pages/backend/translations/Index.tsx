@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
-import { Head, useForm } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, X } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type TranslationValues = {
@@ -16,7 +16,7 @@ type TranslationRow = {
     namespace: string;
     key: string;
     full_key?: string;
-    is_active: boolean;
+    status: 'active' | 'inactive';
     values: TranslationValues;
 };
 
@@ -40,12 +40,14 @@ interface Props {
                 index?: string;
                 update?: string;
                 sync?: string;
+                destroy_key?: string;
             };
         };
     };
 }
 
 const PAGE_SIZE = 12;
+
 function normalizeLocaleCode(locale: string): string {
     return locale.trim().toLowerCase().replaceAll('_', '-');
 }
@@ -60,11 +62,7 @@ function normalizeLocaleList(locales: string[] = [], rows: TranslationRow[] = []
     const normalized = [...locales, ...optionLocales, ...rowLocales]
         .map(normalizeLocaleCode)
         .filter((locale) => /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(locale));
-
-    if (normalized.length === 0) {
-        normalized.push('id');
-    }
-
+    if (normalized.length === 0) normalized.push('id');
     return Array.from(new Set(normalized)).map((code) => ({
         code,
         label: localeLabel(code, localeOptions),
@@ -81,31 +79,21 @@ function normalizeRows(rows: TranslationRow[] = [], locales: { code: string }[] 
         namespace: row.namespace || 'common',
         key: row.key || '',
         full_key: row.full_key || `${row.namespace}.${row.key}`,
-        is_active: row.is_active ?? true,
-        values: {
-            ...emptyValues(locales),
-            ...(row.values ?? {}),
-        },
+        status: row.status ?? 'active',
+        values: { ...emptyValues(locales), ...(row.values ?? {}) },
     }));
 }
 
 function buildDictionary(rows: TranslationRow[], locales: { code: string }[]) {
     const messages = Object.fromEntries(locales.map((locale) => [locale.code, {} as Record<string, string>]));
-
     rows.forEach((row) => {
-        if (!row.is_active || !row.namespace || !row.key) {
-            return;
-        }
-
+        if (row.status !== 'active' || !row.namespace || !row.key) return;
         const fullKey = `${row.namespace}.${row.key}`;
         locales.forEach((locale) => {
             const value = row.values[locale.code] ?? '';
-            if (value !== '') {
-                messages[locale.code][fullKey] = value;
-            }
+            if (value !== '') messages[locale.code][fullKey] = value;
         });
     });
-
     return messages;
 }
 
@@ -121,22 +109,23 @@ export default function TranslationIndex({
     const initialLocales = useMemo(() => normalizeLocaleList(locales, rows, localeOptions), [locales, rows, localeOptions]);
     const canUpdate = crud?.permissions?.update ?? false;
     const canSync = crud?.permissions?.sync ?? canUpdate;
+    const canDelete = crud?.permissions?.delete ?? canUpdate;
     const updateRoute = crud?.resource?.routes?.update ?? route('translations.update');
     const syncRoute = crud?.resource?.routes?.sync ?? route('translations.sync');
+    const destroyKeyRoute = crud?.resource?.routes?.destroy_key ?? route('translations.destroy-key');
+
     const [keyword, setKeyword] = useState('');
     const [scopeFilter, setScopeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const [newLocale, setNewLocale] = useState('');
-    const [editableLocales, setEditableLocales] = useState(initialLocales);
+    const [deletingKey, setDeletingKey] = useState<string | null>(null);
+    const editableLocales = initialLocales;
 
-    const { data, setData, put, post, processing } = useForm<{ rows: TranslationRow[]; locales: { code: string; label: string }[] }>({
+    const { data, setData, put, post, processing } = useForm<{ rows: TranslationRow[] }>({
         rows: normalizeRows(rows, initialLocales),
-        locales: initialLocales,
     });
 
     const filteredRows = useMemo(() => {
         const query = keyword.trim().toLowerCase();
-
         return data.rows.filter((row) => {
             const fullKey = `${row.namespace}.${row.key}`;
             const matchScope = scopeFilter === 'all' || row.scope === scopeFilter;
@@ -145,7 +134,6 @@ export default function TranslationIndex({
                 [row.scope, row.namespace, row.key, fullKey, ...Object.values(row.values ?? {})].some((value = '') =>
                     value.toLowerCase().includes(query),
                 );
-
             return matchScope && matchKeyword;
         });
     }, [data.rows, keyword, scopeFilter]);
@@ -153,89 +141,24 @@ export default function TranslationIndex({
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
     const pageRows = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
-
         return filteredRows.slice(start, start + PAGE_SIZE);
     }, [currentPage, filteredRows]);
     const fromRow = filteredRows.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
     const toRow = Math.min(currentPage * PAGE_SIZE, filteredRows.length);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [keyword, scopeFilter]);
-
-    useEffect(() => {
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
+    useEffect(() => { setCurrentPage(1); }, [keyword, scopeFilter]);
+    useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
 
     const updateRow = (index: number, patch: Partial<TranslationRow>) => {
         const nextRows = [...data.rows];
-        nextRows[index] = {
-            ...nextRows[index],
-            ...patch,
-        };
+        nextRows[index] = { ...nextRows[index], ...patch };
         setData('rows', nextRows);
     };
 
     const updateValue = (index: number, locale: string, value: string) => {
         const nextRows = [...data.rows];
-        nextRows[index] = {
-            ...nextRows[index],
-            values: {
-                ...nextRows[index].values,
-                [locale]: value,
-            },
-        };
+        nextRows[index] = { ...nextRows[index], values: { ...nextRows[index].values, [locale]: value } };
         setData('rows', nextRows);
-    };
-
-    const addLocale = () => {
-        const code = normalizeLocaleCode(newLocale);
-        if (!/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(code) || editableLocales.some((locale) => locale.code === code)) {
-            return;
-        }
-
-        const nextLocales = [...editableLocales, { code, label: localeLabel(code, localeOptions) }];
-        setEditableLocales(nextLocales);
-        setData({
-            ...data,
-            locales: nextLocales,
-            rows: data.rows.map((row) => ({
-                ...row,
-                values: {
-                    ...row.values,
-                    [code]: '',
-                },
-            })),
-        });
-        setNewLocale('');
-    };
-
-    const removeLocale = (code: string) => {
-        if (!canUpdate || editableLocales.length <= 1) {
-            return;
-        }
-
-        const locale = normalizeLocaleCode(code);
-        if (!window.confirm(`Hapus bahasa ${locale.toUpperCase()} dari daftar translate? Semua value bahasa ini akan dihapus saat disimpan.`)) {
-            return;
-        }
-
-        const nextLocales = editableLocales.filter((item) => item.code !== locale);
-        setEditableLocales(nextLocales);
-        setData({
-            ...data,
-            locales: nextLocales,
-            rows: data.rows.map((row) => {
-                const nextValues = { ...row.values };
-                delete nextValues[locale];
-                return {
-                    ...row,
-                    values: nextValues,
-                };
-            }),
-        });
     };
 
     const addRow = () => {
@@ -245,7 +168,7 @@ export default function TranslationIndex({
                 namespace: 'custom',
                 key: 'new_key',
                 full_key: 'custom.new_key',
-                is_active: true,
+                status: 'active',
                 values: emptyValues(editableLocales),
             },
             ...data.rows,
@@ -253,28 +176,44 @@ export default function TranslationIndex({
         setCurrentPage(1);
     };
 
-    const submit = () => {
-        if (!canUpdate || processing) {
+    // ── Task 5: Hapus satu key lengkap (semua locale sekaligus) ──────────────
+    const deleteKey = (row: TranslationRow, realIndex: number) => {
+        const label = `${row.namespace}.${row.key}`;
+        if (!window.confirm(`Hapus key "${label}" beserta semua terjemahannya?\n\nAksi ini tidak bisa dibatalkan.`)) return;
+
+        // Jika row ini belum pernah disimpan (baru ditambah di-client), cukup hapus dari state
+        const hasValues = Object.values(row.values).some((v) => v && v.trim() !== '');
+        if (!hasValues) {
+            setData('rows', data.rows.filter((_, i) => i !== realIndex));
             return;
         }
 
-        setData('locales', editableLocales);
-        put(updateRoute, {
+        setDeletingKey(label);
+        router.delete(destroyKeyRoute, {
+            data: { namespace: row.namespace, key: row.key, scope: row.scope },
             preserveScroll: true,
             onSuccess: () => {
-                updateOverrides(buildDictionary(data.rows, editableLocales));
+                setData('rows', data.rows.filter((_, i) => i !== realIndex));
+                setDeletingKey(null);
+            },
+            onError: () => {
+                setDeletingKey(null);
+                alert(`Gagal menghapus key "${label}". Silakan coba lagi.`);
             },
         });
     };
 
-    const syncTranslations = () => {
-        if (!canSync || processing) {
-            return;
-        }
-
-        post(syncRoute, {
+    const submit = () => {
+        if (!canUpdate || processing) return;
+        put(updateRoute, {
             preserveScroll: true,
+            onSuccess: () => { updateOverrides(buildDictionary(data.rows, editableLocales)); },
         });
+    };
+
+    const syncTranslations = () => {
+        if (!canSync || processing) return;
+        post(syncRoute, { preserveScroll: true });
     };
 
     return (
@@ -296,9 +235,7 @@ export default function TranslationIndex({
                         >
                             <option value="all">{t('settings.translations.allScopes')}</option>
                             {scopes.map((scope) => (
-                                <option key={scope} value={scope}>
-                                    {scope}
-                                </option>
+                                <option key={scope} value={scope}>{scope}</option>
                             ))}
                         </select>
                         <Input
@@ -307,30 +244,6 @@ export default function TranslationIndex({
                             placeholder={t('settings.translations.search')}
                             className="h-9 w-full sm:w-[280px]"
                         />
-                        <div className="flex gap-2">
-                            <Input
-                                value={newLocale}
-                                onChange={(event) => setNewLocale(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter') {
-                                        event.preventDefault();
-                                        addLocale();
-                                    }
-                                }}
-                                placeholder="ar"
-                                disabled={!canUpdate || processing}
-                                className="h-9 w-20"
-                            />
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={addLocale}
-                                disabled={!canUpdate || processing || !newLocale.trim()}
-                                className="h-9"
-                            >
-                                {t('buttons.add')}
-                            </Button>
-                        </div>
                         <Button type="button" variant="secondary" onClick={addRow} disabled={!canUpdate || processing} className="h-9">
                             <Plus className="h-4 w-4" />
                             {t('buttons.add')}
@@ -350,59 +263,53 @@ export default function TranslationIndex({
                     <div>{t('settings.translations.resultSummary', { from: fromRow, to: toRow, total: filteredRows.length })}</div>
                     <div className="flex flex-wrap gap-2">
                         {scopes.map((scope) => (
-                            <Badge key={scope} variant={scopeFilter === scope ? 'default' : 'secondary'}>
-                                {scope}
-                            </Badge>
+                            <Badge key={scope} variant={scopeFilter === scope ? 'default' : 'secondary'}>{scope}</Badge>
                         ))}
                     </div>
                 </div>
 
                 <div className="bg-card overflow-hidden rounded-lg border">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm" style={{ minWidth: `${620 + editableLocales.length * 260}px` }}>
+                        {/* +1 kolom untuk delete button */}
+                        <table className="w-full text-sm" style={{ minWidth: `${680 + editableLocales.length * 260}px` }}>
                             <thead className="bg-muted text-muted-foreground">
                                 <tr className="border-b">
-                                    <th className="w-[12%] px-4 py-3 text-left font-semibold">{t('settings.translations.scope')}</th>
-                                    <th className="w-[14%] px-4 py-3 text-left font-semibold">{t('settings.translations.namespace')}</th>
-                                    <th className="w-[18%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
+                                    <th className="w-[11%] px-4 py-3 text-left font-semibold">{t('settings.translations.scope')}</th>
+                                    <th className="w-[13%] px-4 py-3 text-left font-semibold">{t('settings.translations.namespace')}</th>
+                                    <th className="w-[17%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
                                     {editableLocales.map((locale) => (
                                         <th key={locale.code} className="min-w-[240px] px-4 py-3 text-left font-semibold">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span>
-                                                    {locale.label}
-                                                    <span className="text-muted-foreground ml-2 font-mono text-xs">{locale.code}</span>
-                                                    {locale.code === defaultLocale && <span className="text-muted-foreground ml-2 text-xs">default</span>}
-                                                </span>
-                                                {canUpdate && editableLocales.length > 1 && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeLocale(locale.code)}
-                                                        className="h-7 w-7"
-                                                        title={`Hapus bahasa ${locale.code}`}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                )}
+                                            <div className="flex items-center gap-2">
+                                                <span>{locale.label}</span>
+                                                <span className="text-muted-foreground font-mono text-xs">{locale.code}</span>
+                                                {locale.code === defaultLocale && <span className="text-muted-foreground text-xs">default</span>}
                                             </div>
                                         </th>
                                     ))}
+                                    {/* ── Task 5: Kolom aksi delete ── */}
+                                    {canDelete && (
+                                        <th className="w-[52px] px-2 py-3 text-center font-semibold"></th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredRows.length === 0 ? (
                                     <tr>
-                                        <td colSpan={3 + editableLocales.length} className="text-muted-foreground px-4 py-8 text-center">
+                                        <td colSpan={3 + editableLocales.length + (canDelete ? 1 : 0)} className="text-muted-foreground px-4 py-8 text-center">
                                             {t('settings.translations.noKeys')}
                                         </td>
                                     </tr>
                                 ) : (
                                     pageRows.map((row) => {
                                         const realIndex = data.rows.indexOf(row);
+                                        const rowKey = `${row.scope}.${row.namespace}.${row.key}.${realIndex}`;
+                                        const isDeleting = deletingKey === `${row.namespace}.${row.key}`;
 
                                         return (
-                                            <tr key={`${row.scope}.${row.namespace}.${row.key}.${realIndex}`} className="border-b last:border-b-0">
+                                            <tr
+                                                key={rowKey}
+                                                className={`border-b last:border-b-0 ${isDeleting ? 'opacity-40' : ''}`}
+                                            >
                                                 <td className="px-4 py-3 align-top">
                                                     <select
                                                         value={row.scope}
@@ -411,9 +318,7 @@ export default function TranslationIndex({
                                                         className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                                                     >
                                                         {scopes.map((scope) => (
-                                                            <option key={scope} value={scope}>
-                                                                {scope}
-                                                            </option>
+                                                            <option key={scope} value={scope}>{scope}</option>
                                                         ))}
                                                     </select>
                                                 </td>
@@ -446,6 +351,22 @@ export default function TranslationIndex({
                                                         />
                                                     </td>
                                                 ))}
+                                                {/* ── Task 5: Tombol delete key ── */}
+                                                {canDelete && (
+                                                    <td className="px-2 py-3 align-top text-center">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => deleteKey(row, realIndex)}
+                                                            disabled={isDeleting || processing}
+                                                            title={`Hapus key ${row.namespace}.${row.key}`}
+                                                            className="h-9 w-9 hover:bg-red-50 hover:text-red-600"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })
@@ -465,7 +386,9 @@ export default function TranslationIndex({
                         <ChevronLeft className="h-4 w-4" />
                         {t('buttons.previous')}
                     </Button>
-                    <div className="text-muted-foreground text-sm">{t('pagination.summary', { current: currentPage, total: totalPages })}</div>
+                    <div className="text-muted-foreground text-sm">
+                        {t('pagination.summary', { current: currentPage, total: totalPages })}
+                    </div>
                     <Button
                         type="button"
                         variant="outline"

@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->string('icon')->nullable();
             $table->string('link_url')->nullable();
             $table->unsignedInteger('sort_order')->default(0)->index();
-            $table->boolean('is_active')->default(true)->index();
+            $table->string('status', 20)->default('active')->index();
             $table->timestamps();
         });
     }

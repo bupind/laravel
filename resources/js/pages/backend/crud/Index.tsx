@@ -1,5 +1,7 @@
 import { type DataTableColumn, type PaginatedResponse, ServerDataTable } from '@/components/datatable/server-data-table';
 import FileLibraryPicker from '@/components/files/file-library-picker';
+import IconPicker from '@/components/ui/icon-picker';
+import WysiwygEditor from '@/components/ui/wysiwyg-editor';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,14 +29,17 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { FileSpreadsheet, ImageIcon, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo } from 'react';
 
-export type FieldType = 'text' | 'email' | 'password' | 'textarea' | 'checkbox' | 'select' | 'datetime' | 'number' | 'media';
+export type FieldType = 'text' | 'email' | 'password' | 'textarea' | 'checkbox' | 'select' | 'datetime' | 'number' | 'media' | 'translatable' | 'icon' | 'wysiwyg';
 
-export type FormValue = string | boolean | number;
+export type FormValue = string | boolean | number | Record<string, string>;
 
 export interface FormFieldOption {
     value: string | number;
     label: string;
 }
+export type ColSize = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+
 export interface FormField {
     name: string;
     label: string;
@@ -45,6 +50,9 @@ export interface FormField {
     options?: FormFieldOption[];
     help?: string;
     rows?: number;
+    locales?: { code: string; label: string }[];
+    wysiwyg?: boolean;
+    col?: ColSize;
 }
 
 export interface TableColumn {
@@ -86,6 +94,7 @@ export interface ResourceMeta {
 
 export interface CrudMeta {
     modal: boolean;
+    modal_size?: ModalSize;
     mode: 'create' | 'edit' | null;
     open: boolean;
     permissions: CrudPermissions;
@@ -132,7 +141,11 @@ export function buildFormData(fields: FormField[], record: AnyRecord | null | un
     fields.forEach((field) => {
         const raw = record?.[field.name];
 
-        if (field.type === 'checkbox') {
+        if (field.type === 'translatable') {
+            const locales = field.locales ?? [];
+            const values = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, string>) : {};
+            data[field.name] = Object.fromEntries(locales.map((locale) => [locale.code, String(values[locale.code] ?? '')]));
+        } else if (field.type === 'checkbox') {
             data[field.name] = raw !== undefined ? Boolean(raw) : (field.default as boolean);
         } else if (field.type === 'number') {
             data[field.name] = raw !== undefined ? Number(raw) : ((field.default as number) ?? 0);
@@ -158,6 +171,16 @@ export function formatCellValue(value: unknown, type: FieldType): React.ReactNod
                 </Badge>
             );
         }
+
+        case 'select':
+            if (['active', 'inactive'].includes(String(value))) {
+                return (
+                    <Badge variant={String(value) === 'active' ? 'default' : 'secondary'} className="text-xs capitalize">
+                        {String(value)}
+                    </Badge>
+                );
+            }
+            return <span className="text-sm">{String(value)}</span>;
 
         case 'datetime': {
             try {
@@ -192,6 +215,49 @@ export function formatCellValue(value: unknown, type: FieldType): React.ReactNod
             return <span className="text-sm">{String(value)}</span>;
     }
 }
+
+export function getColClass(col?: ColSize): string {
+    const map: Record<ColSize, string> = {
+        1: 'col-span-1',
+        2: 'col-span-2',
+        3: 'col-span-3',
+        4: 'col-span-4',
+        5: 'col-span-5',
+        6: 'col-span-6',
+        7: 'col-span-7',
+        8: 'col-span-8',
+        9: 'col-span-9',
+        10: 'col-span-10',
+        11: 'col-span-11',
+        12: 'col-span-12',
+    };
+    return map[col ?? 12] ?? 'col-span-12';
+}
+
+export function FormFieldsGrid({ fields, data, errors, processing, setData }: {
+    fields: FormField[];
+    data: Record<string, FormValue>;
+    errors: Record<string, string>;
+    processing: boolean;
+    setData: (name: string, value: FormValue) => void;
+}) {
+    return (
+        <div className="grid grid-cols-12 gap-4">
+            {fields.map((field) => (
+                <div key={field.name} className={getColClass(field.col)}>
+                    <FormFieldRenderer
+                        field={field}
+                        value={data[field.name] ?? field.default}
+                        error={errors[field.name]}
+                        disabled={processing}
+                        onChange={(name, value) => setData(name, value)}
+                    />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 
 export interface FormFieldRendererProps {
     field: FormField;
@@ -282,6 +348,121 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
         );
     }
 
+    if (field.type === 'icon') {
+        return (
+            <div className="min-w-0 space-y-2">
+                <Label htmlFor={inputId}>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                <IconPicker value={String(value ?? '')} onChange={(val) => onChange(field.name, val)} />
+                {field.help && <p className="text-muted-foreground text-xs">{field.help}</p>}
+                {error && <p className="text-destructive text-xs">{error}</p>}
+            </div>
+        );
+    }
+
+    if (field.type === 'wysiwyg') {
+        return (
+            <div className="min-w-0 space-y-2">
+                <Label htmlFor={inputId}>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                <WysiwygEditor
+                    value={String(value ?? '')}
+                    onChange={(val) => onChange(field.name, val)}
+                    placeholder={field.placeholder}
+                    disabled={disabled}
+                    minHeight={field.rows ? field.rows * 24 : 200}
+                    className={error ? 'border-destructive' : ''}
+                />
+                {field.help && <p className="text-muted-foreground text-xs">{field.help}</p>}
+                {error && <p className="text-destructive text-xs">{error}</p>}
+            </div>
+        );
+    }
+
+    if (field.type === 'translatable') {
+        const locales = field.locales ?? [];
+        const values = typeof value === 'object' && value !== null ? (value as Record<string, string>) : {};
+        const [activeLocale, setActiveLocale] = React.useState<string>(locales[0]?.code ?? '');
+        const currentLocale = locales.find((l) => l.code === activeLocale) ?? locales[0];
+        const localeInputId = `${inputId}-${currentLocale?.code ?? 'locale'}`;
+        const localeError = error && currentLocale && error.includes(currentLocale.code) ? error : undefined;
+
+        return (
+            <div className="min-w-0 space-y-2">
+                <Label>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                </Label>
+
+                <div className="rounded-md border">
+                    {/* Tab bar */}
+                    <div className="flex border-b bg-muted/30">
+                        {locales.map((locale) => {
+                            const hasValue = !!(values[locale.code] ?? '');
+                            return (
+                                <button
+                                    key={locale.code}
+                                    type="button"
+                                    onClick={() => setActiveLocale(locale.code)}
+                                    className={`border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
+                                        activeLocale === locale.code
+                                            ? 'border-primary text-foreground -mb-px bg-background'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    <span className="font-mono uppercase">{locale.code}</span>
+                                    {hasValue && <span className="bg-primary ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Active locale input */}
+                    <div className={field.wysiwyg ? '' : 'p-3'}>
+                        {currentLocale && (
+                            field.wysiwyg ? (
+                                <WysiwygEditor
+                                    value={values[currentLocale.code] ?? ''}
+                                    onChange={(val) => onChange(field.name, { ...values, [currentLocale.code]: val })}
+                                    placeholder={field.placeholder}
+                                    disabled={disabled}
+                                    minHeight={field.rows ? field.rows * 24 : 240}
+                                    className={`rounded-t-none border-0 border-t ${localeError ? 'border-t-destructive' : 'border-t-border'}`}
+                                />
+                            ) : field.rows && field.rows > 1 ? (
+                                <Textarea
+                                    id={localeInputId}
+                                    value={values[currentLocale.code] ?? ''}
+                                    placeholder={field.placeholder}
+                                    rows={field.rows}
+                                    disabled={disabled}
+                                    onChange={(e) => onChange(field.name, { ...values, [currentLocale.code]: e.target.value })}
+                                    className={localeError ? 'border-destructive resize-y' : 'resize-y'}
+                                />
+                            ) : (
+                                <Input
+                                    id={localeInputId}
+                                    value={values[currentLocale.code] ?? ''}
+                                    placeholder={field.placeholder}
+                                    disabled={disabled}
+                                    onChange={(e) => onChange(field.name, { ...values, [currentLocale.code]: e.target.value })}
+                                    className={localeError ? 'border-destructive min-w-0' : 'min-w-0'}
+                                />
+                            )
+                        )}
+                    </div>
+                </div>
+
+                {field.help && <p className="text-muted-foreground text-xs">{field.help}</p>}
+                {error && <p className="text-destructive text-xs">{error}</p>}
+            </div>
+        );
+    }
+
     return (
         <div className="min-w-0 space-y-1.5">
             <Label htmlFor={inputId}>
@@ -316,7 +497,7 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                 </Select>
             )}
 
-            {!['textarea', 'select', 'checkbox', 'media'].includes(field.type) && (
+            {!['textarea', 'select', 'checkbox', 'media', 'translatable', 'icon', 'wysiwyg'].includes(field.type) && (
                 <Input
                     id={inputId}
                     type={field.type === 'datetime' ? 'datetime-local' : field.type}
@@ -640,7 +821,14 @@ export default function CrudIndex(props: CrudIndexProps) {
 
             {crud.modal && (
                 <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-                    <DialogContent className="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto sm:max-w-xl">
+                    <DialogContent className={[
+                        'max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto',
+                        crud.modal_size === 'sm'  ? 'sm:max-w-sm'  :
+                        crud.modal_size === 'lg'  ? 'sm:max-w-2xl' :
+                        crud.modal_size === 'xl'  ? 'sm:max-w-4xl' :
+                        crud.modal_size === 'xxl' ? 'sm:max-w-6xl' :
+                        'sm:max-w-xl',
+                    ].join(' ')}>
                         <DialogHeader>
                             <DialogTitle>
                                 {isEdit
@@ -662,25 +850,22 @@ export default function CrudIndex(props: CrudIndexProps) {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <form className="min-w-0 space-y-4" onSubmit={handleSubmit} noValidate>
+                        <form className="min-w-0" onSubmit={handleSubmit} noValidate>
                             {formSchema.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
                                     {t('pages.crud.noFormFieldsBefore')} <code>$formFields</code> {t('pages.crud.noFormFieldsAfter')}
                                 </p>
                             ) : (
-                                formSchema.map((field) => (
-                                    <FormFieldRenderer
-                                        key={field.name}
-                                        field={field}
-                                        value={data[field.name] ?? field.default}
-                                        error={errors[field.name]}
-                                        disabled={processing}
-                                        onChange={(name, value) => setData(name as never, value as never)}
-                                    />
-                                ))
+                                <FormFieldsGrid
+                                    fields={formSchema}
+                                    data={data}
+                                    errors={errors}
+                                    processing={processing}
+                                    setData={(name, value) => setData(name as never, value as never)}
+                                />
                             )}
 
-                            <DialogFooter className="pt-2">
+                            <DialogFooter className="pt-4">
                                 <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)} disabled={processing}>
                                     {t('buttons.cancel')}
                                 </Button>

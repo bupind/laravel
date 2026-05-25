@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $setting = $page['props']['setting'] ?? null;
-        $appName = data_get($setting, 'nama_app', config('app.name', 'Laravel'));
+        $appName = data_get($setting, 'app_name', config('app.name', 'Laravel'));
         $favicon = data_get($setting, 'favicon');
     @endphp
 

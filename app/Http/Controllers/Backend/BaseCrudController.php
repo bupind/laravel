@@ -26,6 +26,7 @@ abstract class BaseCrudController extends Controller
 {
     protected static array $schemaColumnsCache     = [];
     protected bool         $modal                  = true;
+    protected string       $modalSize              = 'md'; // sm, md, lg, xl, xxl
     protected ?string      $componentName          = 'backend/crud/Index';
     protected ?string      $indexComponentName     = null;
     protected ?string      $formComponentName      = null;
@@ -256,6 +257,7 @@ abstract class BaseCrudController extends Controller
     {
         return array_merge([
             'modal'       => $this->usesModal(),
+            'modal_size'  => $this->modalSize,
             'mode'        => null,
             'open'        => false,
             'permissions' => $this->resolvedPermissions(),
@@ -433,13 +435,15 @@ abstract class BaseCrudController extends Controller
         }
         $name = (string)($field['name'] ?? $field['key'] ?? '');
         $type = (string)($field['type'] ?? $this->guessFieldType($name));
-        return array_merge([
+        $normalized = array_merge([
             'name'     => $name,
             'label'    => $this->humanize($name),
             'type'     => $type,
             'default'  => $type === 'checkbox' ? false : '',
             'required' => false,
         ], $field);
+        // Ensure col is passed through (default col-12 is handled on the frontend)
+        return $normalized;
     }
 
     protected function additionalIndexProps(Request $request): array
@@ -516,6 +520,7 @@ abstract class BaseCrudController extends Controller
         return [
             'crud' => array_merge([
                 'modal'       => true,
+                'modal_size'  => $this->modalSize,
                 'mode'        => $mode,
                 'open'        => true,
                 'permissions' => $this->resolvedPermissions(),

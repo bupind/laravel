@@ -31,7 +31,7 @@ class DashboardController extends Controller
             $activeProducts = $this->safeCount('products', fn() => Product::where('status', Product::STATUS_ACTIVE)
                 ->count());
             $totalServices  = $this->safeCount('services', fn() => Service::count());
-            $publishedPages = $this->safeCount('pages', fn() => Page::where('is_published', true)->count());
+            $publishedPages = $this->safeCount('pages', fn() => Page::where('status', Page::STATUS_ACTIVE)->count());
             $totalMessages  = $this->safeCount('contact_messages', fn() => ContactMessage::count());
             $newMessages    = $this->safeCount('contact_messages', fn() => ContactMessage::where('status', ContactMessage::STATUS_NEW)
                 ->count());

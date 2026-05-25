@@ -186,8 +186,8 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
     const [mobileOpen, setMobileOpen] = useState(false);
     const sharedName = (page.props as { name?: string }).name;
 
-    const appName = setting?.nama_app ?? sharedName ?? '';
-    const primaryColor = setting?.warna || '#2563eb';
+    const appName = setting?.app_name ?? sharedName ?? '';
+    const primaryColor = setting?.color || '#2563eb';
     const isAuthenticated = Boolean(auth?.user);
     const currentPath = page.url.split('?')[0];
 
@@ -230,7 +230,7 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
                                         isRouteActive(item.url, currentPath) && 'bg-muted text-foreground',
                                     )}
                                 >
-                                    {item.title}
+                                    {item.title_translations?.[language] ?? item.title}
                                 </Link>
                             ))}
                         </nav>
@@ -300,7 +300,7 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
                                                 isRouteActive(item.url, currentPath) && 'bg-muted text-foreground',
                                             )}
                                         >
-                                            {item.title}
+                                            {item.title_translations?.[language] ?? item.title}
                                         </Link>
                                     ))}
                                 </nav>

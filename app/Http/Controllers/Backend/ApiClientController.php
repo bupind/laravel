@@ -28,7 +28,7 @@ class ApiClientController extends BaseCrudController
     protected array   $sortableColumns   = [
         'name',
         'client_key',
-        'is_active',
+        'status',
         'expires_at',
         'last_used_at',
         'total_requests',
@@ -39,9 +39,9 @@ class ApiClientController extends BaseCrudController
         'client_key',
         'client_secret',
         [
-            'key'   => 'is_active',
-            'label' => 'Active',
-            'type'  => 'checkbox',
+            'key'   => 'status',
+            'label' => 'Status',
+            'type'  => 'select',
         ],
         [
             'key'   => 'last_used_at',
@@ -96,10 +96,20 @@ class ApiClientController extends BaseCrudController
             'placeholder' => 'Satu IP per baris atau pisahkan dengan koma',
         ],
         [
-            'name'    => 'is_active',
-            'label'   => 'Active',
-            'type'    => 'checkbox',
-            'default' => true,
+            'name'    => 'status',
+            'label'   => 'Status',
+            'type'    => 'select',
+            'default' => ApiClient::STATUS_ACTIVE,
+            'options' => [
+                [
+                    'value' => ApiClient::STATUS_ACTIVE,
+                    'label' => 'Active',
+                ],
+                [
+                    'value' => ApiClient::STATUS_INACTIVE,
+                    'label' => 'Inactive',
+                ],
+            ],
         ],
         [
             'name'  => 'expires_at',
@@ -157,8 +167,10 @@ class ApiClientController extends BaseCrudController
             'allowed_ips'   => [
                 'nullable',
             ],
-            'is_active'     => [
-                'boolean',
+            'status'        => [
+                'required',
+                'string',
+                Rule::in(ApiClient::statuses()),
             ],
             'expires_at'    => [
                 'nullable',
@@ -219,8 +231,8 @@ class ApiClientController extends BaseCrudController
 
     protected function applyFilters(Builder $query, Request $request): void
     {
-        if($request->filled('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
+        if($request->filled('status')) {
+            $query->where('status', (string)$request->string('status'));
         }
     }
 }

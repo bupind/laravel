@@ -24,9 +24,9 @@ function isExternalUrl(url: string): boolean {
 export default function Welcome({ sliders = [], services = [] }: WelcomeProps) {
     const { setting } = usePage<SharedData>().props;
 
-    const primaryColor = setting?.warna || '#ef3b2d';
-    const appName = setting?.nama_app ?? '';
-    const appDesc = setting?.deskripsi ?? '';
+    const primaryColor = setting?.color || '#ef3b2d';
+    const appName = setting?.app_name ?? '';
+    const appDesc = setting?.description ?? '';
     const title = setting?.seo?.title ?? appName;
 
     return (

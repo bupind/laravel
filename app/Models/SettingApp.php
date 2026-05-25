@@ -10,6 +10,7 @@ namespace App\Models;
 use App\Models\Concerns\UsesUuid;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class SettingApp extends Model
 {
@@ -43,6 +44,26 @@ class SettingApp extends Model
         'token'    => null,
         'mode'     => 'sandbox',
     ];
+    public const AVAILABLE_LOCALES = [
+        ['code' => 'id', 'label' => 'Bahasa Indonesia'],
+        ['code' => 'en', 'label' => 'English'],
+        ['code' => 'ar', 'label' => 'Arabic (العربية)'],
+        ['code' => 'zh', 'label' => 'Chinese Simplified (简体中文)'],
+        ['code' => 'zh-tw', 'label' => 'Chinese Traditional (繁體中文)'],
+        ['code' => 'fr', 'label' => 'French (Français)'],
+        ['code' => 'de', 'label' => 'German (Deutsch)'],
+        ['code' => 'hi', 'label' => 'Hindi (हिन्दी)'],
+        ['code' => 'ja', 'label' => 'Japanese (日本語)'],
+        ['code' => 'ko', 'label' => 'Korean (한국어)'],
+        ['code' => 'ms', 'label' => 'Malay (Bahasa Melayu)'],
+        ['code' => 'pt', 'label' => 'Portuguese (Português)'],
+        ['code' => 'ru', 'label' => 'Russian (Русский)'],
+        ['code' => 'es', 'label' => 'Spanish (Español)'],
+        ['code' => 'th', 'label' => 'Thai (ภาษาไทย)'],
+        ['code' => 'tr', 'label' => 'Turkish (Türkçe)'],
+        ['code' => 'vi', 'label' => 'Vietnamese (Tiếng Việt)'],
+    ];
+
     public const TRANSLATION_DEFAULTS = [
         'default_locale' => 'id',
         'locales'        => [
@@ -57,11 +78,11 @@ class SettingApp extends Model
         ],
     ];
     public const DEFAULTS = [
-        'nama_app'        => null,
-        'deskripsi'       => null,
+        'app_name'        => null,
+        'description'     => null,
         'logo'            => null,
         'favicon'         => null,
-        'warna'           => '#0ea5e9',
+        'color'           => '#0ea5e9',
         'seo'             => [
             'title'       => null,
             'description' => null,
@@ -73,11 +94,11 @@ class SettingApp extends Model
         'translations'    => self::TRANSLATION_DEFAULTS,
     ];
     public const RESERVED_KEYS = [
-        'nama_app',
-        'deskripsi',
+        'app_name',
+        'description',
         'logo',
         'favicon',
-        'warna',
+        'color',
         'seo',
         'whatsapp',
         'email',
@@ -85,16 +106,16 @@ class SettingApp extends Model
         'translations',
     ];
     public const FIELD_TYPES = [
-        'nama_app'        => 'text',
-        'deskripsi'       => 'textarea',
+        'app_name'        => 'text',
+        'description'     => 'textarea',
         'logo'            => 'file',
         'favicon'         => 'file',
-        'warna'           => 'color',
+        'color'           => 'color',
         'seo'             => 'json',
         'whatsapp'        => 'whatsapp',
         'email'           => 'email_service',
         'payment_gateway' => 'json',
-        'translations'    => 'json',
+        'translations'    => 'translations',
     ];
     protected $table    = 'settingapp';
     protected $fillable = [
@@ -110,7 +131,7 @@ class SettingApp extends Model
             ->map(fn($value) => static::decodeValue($value))
             ->all();
         $defaults                  = self::DEFAULTS;
-        $defaults['nama_app']      = config('app.name', 'Laravel');
+        $defaults['app_name']      = config('app.name', 'Laravel');
         $merged                    = array_replace_recursive($defaults, $settings);
         $merged['whatsapp']        = static::normalizeWhatsappConfig($merged['whatsapp'] ?? []);
         $merged['email']           = static::normalizeEmailConfig($merged['email'] ?? []);
@@ -252,7 +273,7 @@ class SettingApp extends Model
             ])
             ->all();
         foreach(self::DEFAULTS as $key => $value) {
-            $rows[$key] ??= static::encodeValue($key === 'nama_app' ? config('app.name', 'Laravel') : $value) ?? '';
+            $rows[$key] ??= static::encodeValue($key === 'app_name' ? config('app.name', 'Laravel') : $value) ?? '';
         }
         return collect($rows)
             ->map(fn(string $value, string $key) => [
@@ -305,10 +326,15 @@ class SettingApp extends Model
         } elseif($key === 'translations') {
             $value = static::normalizeTranslationsConfig($value);
         }
-        return static::query()->updateOrCreate(
+        $setting = static::query()->updateOrCreate(
             ['key' => $key],
             ['value' => static::encodeValue($value)],
         );
+        if($key === 'translations') {
+            $version = (int)Cache::get('translations:version', 1);
+            Cache::forever('translations:version', $version + 1);
+        }
+        return $setting;
     }
 
     public static function deleteKeys(array $keys): void

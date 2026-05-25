@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('client_key')->unique();
             $table->string('client_secret');
-            $table->boolean('is_active')->default(true)->index();
+            $table->string('status', 20)->default('active')->index();
             $table->json('allowed_ips')->nullable();
             $table->text('description')->nullable();
             $table->timestamp('expires_at')->nullable()->index();

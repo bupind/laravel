@@ -31,10 +31,74 @@ class SettingAppController extends Controller
                                        && !($serviceFeatures[$row['key']]['enabled'] ?? false))
             ->values()
             ->all();
+        $tabs = $this->buildTabs($settings, $serviceFeatures);
+        $availableLocales = SettingApp::AVAILABLE_LOCALES;
         return Inertia::render('backend/settingapp/Form', [
-            'settings'        => $settings,
-            'serviceFeatures' => $serviceFeatures,
+            'settings'         => $settings,
+            'serviceFeatures'  => $serviceFeatures,
+            'tabs'             => $tabs,
+            'availableLocales' => $availableLocales,
         ]);
+    }
+
+    /**
+     * Task 3: Bangun definisi tab untuk form builder.
+     * Field translatable (title, excerpt, dll.) akan di-render sebagai tab per bahasa.
+     */
+    private function buildTabs(array $settings, array $serviceFeatures): array
+    {
+        $translatableKeys = [
+            'app_name',
+            'description'
+        ];
+        $tabs             = [
+            [
+                'key'   => 'general',
+                'label' => 'Umum',
+                'keys'  => [
+                    'app_name',
+                    'description',
+                    'logo',
+                    'favicon',
+                    'color'
+                ],
+            ],
+            [
+                'key'   => 'seo',
+                'label' => 'SEO',
+                'keys'  => ['seo'],
+            ],
+            [
+                'key'          => 'translations',
+                'label'        => 'Bahasa & Terjemahan',
+                'keys'         => ['translations'],
+                'translatable' => true,
+            ],
+        ];
+        foreach($serviceFeatures as $serviceKey => $feature) {
+            if($feature['enabled'] ?? false) {
+                $tabs[] = [
+                    'key'   => $serviceKey,
+                    'label' => $feature['label'],
+                    'keys'  => [$serviceKey],
+                ];
+            }
+        }
+        // Tambahkan custom keys (non-system) ke tab "Lainnya"
+        $systemKeys = array_merge(...array_column($tabs, 'keys'));
+        $customKeys = collect($settings)
+            ->filter(fn(array $row) => !in_array($row['key'], $systemKeys, true))
+            ->pluck('key')
+            ->values()
+            ->all();
+        if($customKeys !== []) {
+            $tabs[] = [
+                'key'   => 'custom',
+                'label' => 'Lainnya',
+                'keys'  => $customKeys,
+            ];
+        }
+        return $tabs;
     }
 
     private function serviceFeatures(): array
@@ -163,7 +227,6 @@ class SettingAppController extends Controller
     }
 
     // ─── Private Helpers ────────────────────────────────────────────────────
-
     private function resolveWwebjsEndpoint(array $config, string $type = 'send'): string
     {
         $explicit = match ($type) {
@@ -285,13 +348,13 @@ class SettingAppController extends Controller
             'to'      => 'nullable|string|max:50',
             'message' => 'nullable|string|max:500',
         ]);
-        $config   = $this->resolveWhatsappConfig($request);
-        $provider = (string)($config['provider'] ?? 'wwebjs');
-        $endpoint = $provider === 'wwebjs'
+        $config    = $this->resolveWhatsappConfig($request);
+        $provider  = (string)($config['provider'] ?? 'wwebjs');
+        $endpoint  = $provider === 'wwebjs'
             ? $this->resolveWwebjsEndpoint($config, 'send')
             : (string)($config['endpoint'] ?? '');
-        $to       = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
-        $message  = trim((string)($validated['message'] ?? ''));
+        $to        = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
+        $message   = trim((string)($validated['message'] ?? ''));
         if($endpoint === '') {
             return response()->json(['message' => 'Endpoint WhatsApp belum diisi.'], 422);
         }
@@ -325,10 +388,10 @@ class SettingAppController extends Controller
             'subject' => 'nullable|string|max:255',
             'message' => 'nullable|string|max:5000',
         ]);
-        $config  = $this->resolveEmailConfig($request);
-        $to      = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
-        $subject = trim((string)($validated['subject'] ?? 'Test Email'));
-        $message = trim((string)($validated['message'] ?? 'Test email dari setting.'));
+        $config    = $this->resolveEmailConfig($request);
+        $to        = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
+        $subject   = trim((string)($validated['subject'] ?? 'Test Email'));
+        $message   = trim((string)($validated['message'] ?? 'Test email dari setting.'));
         if($to === '') {
             return response()->json(['message' => 'Tujuan test email belum diisi.'], 422);
         }

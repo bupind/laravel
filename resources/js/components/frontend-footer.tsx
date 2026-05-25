@@ -1,16 +1,18 @@
 import { type PublicPageLink, type Setting } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { memo } from 'react';
+import { useLanguage } from '@/hooks/use-language';
 
 interface FrontendFooterProps {
     setting?: Setting;
 }
 
 export const FrontendFooter = memo(function FrontendFooter({ setting }: FrontendFooterProps) {
+    const { language } = useLanguage();
     const props = usePage().props as { name?: string; global_pages?: { footer?: PublicPageLink[] } };
-    const appName = setting?.nama_app ?? props.name ?? '';
-    const appDesc = setting?.deskripsi;
-    const primaryColor = setting?.warna || '#ef3b2d';
+    const appName = setting?.app_name ?? props.name ?? '';
+    const appDesc = setting?.description;
+    const primaryColor = setting?.color || '#ef3b2d';
     const footerPages = props.global_pages?.footer ?? [];
 
     return (
@@ -41,7 +43,7 @@ export const FrontendFooter = memo(function FrontendFooter({ setting }: Frontend
                     {footerPages.length > 0 ? (
                         footerPages.map((page) => (
                             <Link key={page.id} href={page.url} className="hover:text-foreground">
-                                {page.title}
+                                {page.title_translations?.[language] ?? page.title}
                             </Link>
                         ))
                     ) : (

@@ -583,7 +583,7 @@ class TranslationSeeder extends Seeder
                 ],
                 [
                     'value' => $row['value'],
-                    'is_active' => true,
+                    'status' => Translation::STATUS_ACTIVE,
                 ],
             );
         }

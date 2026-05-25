@@ -14,17 +14,25 @@ class Translation extends Model
 {
     use UsesUuid;
 
+    public const STATUS_ACTIVE   = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+
     protected $fillable = [
         'locale',
         'scope',
         'namespace',
         'key',
         'value',
-        'is_active',
+        'status',
     ];
-    protected $casts    = [
-        'is_active' => 'boolean',
-    ];
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE,
+        ];
+    }
 
     public static function splitFullKey(string $fullKey): array
     {

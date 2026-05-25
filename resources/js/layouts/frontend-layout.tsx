@@ -1,3 +1,4 @@
+import AiChatBubble from '@/components/ai-chat-bubble';
 import { FrontendFooter } from '@/components/frontend-footer';
 import { FrontendHeader } from '@/components/frontend-header';
 import { type SharedData } from '@/types';
@@ -11,7 +12,7 @@ interface FrontendLayoutProps {
 export default function FrontendLayout({ children }: FrontendLayoutProps) {
     const page = usePage<SharedData>();
     const { auth, setting } = page.props;
-    const primaryColor = setting?.warna || '#ef3b2d';
+    const primaryColor = setting?.color || '#ef3b2d';
 
     useEffect(() => {
         document.documentElement.style.setProperty('--primary', primaryColor);
@@ -25,6 +26,7 @@ export default function FrontendLayout({ children }: FrontendLayoutProps) {
                 {children}
             </div>
             <FrontendFooter setting={setting} />
+            {/*<AiChatBubble chatRoute="/ai-chat" />*/}
         </div>
     );
 }

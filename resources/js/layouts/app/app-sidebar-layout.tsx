@@ -50,7 +50,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
 
     useFlashToast(flash);
 
-    const primaryColor = setting?.warna ?? '#0ea5e9';
+    const primaryColor = setting?.color ?? '#0ea5e9';
     const primaryForeground = '#ffffff';
 
     const themeVars = useMemo<CSSProperties>(
@@ -82,7 +82,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [], title }: 
     );
 
     const breadcrumbTitle = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1]?.title : undefined;
-    const pageTitle = title ?? breadcrumbTitle ?? setting?.seo?.title ?? setting?.nama_app ?? t('pages.dashboard.title');
+    const pageTitle = title ?? breadcrumbTitle ?? setting?.seo?.title ?? setting?.app_name ?? t('pages.dashboard.title');
 
     return (
         <>
