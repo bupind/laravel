@@ -1,24 +1,46 @@
-import { type PublicPageLink, type Setting } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
-import { memo } from 'react';
 import { useLanguage } from '@/hooks/use-language';
+import { type MenuItem, type Setting } from '@/types';
+import { Link } from '@inertiajs/react';
+import { memo } from 'react';
 
 interface FrontendFooterProps {
+    appName: string;
     setting?: Setting;
+    menus: MenuItem[];
 }
 
-export const FrontendFooter = memo(function FrontendFooter({ setting }: FrontendFooterProps) {
-    const { language } = useLanguage();
-    const props = usePage().props as { name?: string; global_pages?: { footer?: PublicPageLink[] } };
-    const appName = setting?.app_name ?? props.name ?? '';
+function menuTitle(menu: MenuItem, t: (key: string) => string): string {
+    if (!menu.translation_key) return menu.title;
+    const translated = t(menu.translation_key);
+    return translated === menu.translation_key ? menu.title : translated;
+}
+
+function FooterMenuLinks({ menus, t }: { menus: MenuItem[]; t: (key: string) => string }) {
+    return (
+        <>
+            {menus.map((menu) => (
+                <span key={menu.id} className="inline-flex flex-wrap items-center gap-x-6 gap-y-2">
+                    {menu.route && menu.route !== '#' && (
+                        <Link href={menu.route} prefetch={['mount', 'hover']} cacheFor="2m" className="hover:text-foreground">
+                            {menuTitle(menu, t)}
+                        </Link>
+                    )}
+                    {menu.children && menu.children.length > 0 && <FooterMenuLinks menus={menu.children} t={t} />}
+                </span>
+            ))}
+        </>
+    );
+}
+
+export const FrontendFooter = memo(function FrontendFooter({ appName, setting, menus }: FrontendFooterProps) {
+    const { t } = useLanguage();
     const appDesc = setting?.description;
     const primaryColor = setting?.color || '#ef3b2d';
-    const footerPages = props.global_pages?.footer ?? [];
 
     return (
         <footer className="border-border bg-card text-card-foreground border-t">
             <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-7 text-sm md:flex-row md:items-center md:justify-between md:px-6">
-                <Link href="/" className="flex min-w-0 items-center gap-3">
+                <Link href="/" prefetch={['mount', 'hover']} cacheFor="2m" className="flex min-w-0 items-center gap-3">
                     {setting?.logo ? (
                         <img src={`/storage/${setting.logo}`} alt={appName} className="h-9 max-w-36 object-contain" loading="lazy" />
                     ) : (
@@ -36,27 +58,11 @@ export const FrontendFooter = memo(function FrontendFooter({ setting }: Frontend
                     </span>
                 </Link>
 
-                <nav className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-xs" aria-label="Footer navigation">
-                    <Link href="/contact" className="hover:text-foreground">
-                        Contact
-                    </Link>
-                    {footerPages.length > 0 ? (
-                        footerPages.map((page) => (
-                            <Link key={page.id} href={page.url} className="hover:text-foreground">
-                                {page.title_translations?.[language] ?? page.title}
-                            </Link>
-                        ))
-                    ) : (
-                        <>
-                            <Link href="/pages/privacy-policy" className="hover:text-foreground">
-                                Privacy Policy
-                            </Link>
-                            <Link href="/pages/about-us" className="hover:text-foreground">
-                                About Us
-                            </Link>
-                        </>
-                    )}
-                </nav>
+                {menus.length > 0 && (
+                    <nav className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-xs" aria-label="Footer navigation">
+                        <FooterMenuLinks menus={menus} t={t} />
+                    </nav>
+                )}
 
                 <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} All rights reserved.</p>
             </div>

@@ -64,15 +64,6 @@ export interface Setting {
     [key: string]: unknown;
 }
 
-export interface PublicPageLink {
-    id: string;
-    title: string;
-    title_translations?: Record<string, string | null | undefined>;
-    slug: string;
-    url: string;
-    placement?: string;
-}
-
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
@@ -88,10 +79,6 @@ export interface SharedData {
         error?: string | { key?: string; replacements?: Record<string, string | number> };
     };
     menus?: MenuItem[];
-    global_pages?: {
-        header?: PublicPageLink[];
-        footer?: PublicPageLink[];
-    };
     [key: string]: unknown;
 }
 
@@ -127,6 +114,7 @@ export interface MenuItem {
     title: string;
     translation_key?: string | null;
     scope?: 'backend' | 'frontend';
+    location?: 'sidebar' | 'header' | 'footer';
     route: string | null;
     icon: string;
     parent_id?: string | null;

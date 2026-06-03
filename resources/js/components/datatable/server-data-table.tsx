@@ -308,7 +308,7 @@ export function ServerDataTable<T>({
                     </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-1">
                     <form onSubmit={onSearchSubmit} className="relative" role="search">
                         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                         <Input
@@ -363,7 +363,7 @@ export function ServerDataTable<T>({
                 columns={tableColumns}
                 data={data.data}
                 keyField={keyField}
-                noDataComponent={<div className="text-muted-foreground py-10 text-sm">{emptyMessage ?? t('datatable.empty')}</div>}
+                noDataComponent={<div className="text-muted-foreground w-full py-10 text-center text-sm">{emptyMessage ?? t('datatable.empty')}</div>}
                 pagination
                 paginationServer
                 paginationTotalRows={data.total}
@@ -422,6 +422,13 @@ export function ServerDataTable<T>({
                         style: {
                             paddingTop: '0.75rem',
                             paddingBottom: '0.75rem',
+                        },
+                    },
+                    noData: {
+                        style: {
+                            backgroundColor: 'var(--card)',
+                            color: 'var(--muted-foreground)',
+                            borderBottom: '1px solid var(--border)',
                         },
                     },
                     pagination: {

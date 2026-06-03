@@ -1,7 +1,5 @@
 import { type DataTableColumn, type PaginatedResponse, ServerDataTable } from '@/components/datatable/server-data-table';
 import FileLibraryPicker from '@/components/files/file-library-picker';
-import IconPicker from '@/components/ui/icon-picker';
-import WysiwygEditor from '@/components/ui/wysiwyg-editor';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,19 +15,33 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import IconPicker from '@/components/ui/icon-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import WysiwygEditor from '@/components/ui/wysiwyg-editor';
 import { useLanguage } from '@/hooks/use-language';
 import { useModalShortcuts } from '@/hooks/use-modal-shortcuts';
 import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { FileSpreadsheet, ImageIcon, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Eye, FileSpreadsheet, ImageIcon, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo } from 'react';
 
-export type FieldType = 'text' | 'email' | 'password' | 'textarea' | 'checkbox' | 'select' | 'datetime' | 'number' | 'media' | 'translatable' | 'icon' | 'wysiwyg';
+export type FieldType =
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'textarea'
+    | 'checkbox'
+    | 'select'
+    | 'datetime'
+    | 'number'
+    | 'media'
+    | 'translatable'
+    | 'icon'
+    | 'wysiwyg';
 
 export type FormValue = string | boolean | number | Record<string, string>;
 
@@ -69,6 +81,7 @@ export interface ResourceRoutes {
     index: string;
     create: string;
     store: string;
+    show?: string | null;
     export?: string | null;
     import?: string | null;
     import_template?: string | null;
@@ -95,11 +108,12 @@ export interface ResourceMeta {
 export interface CrudMeta {
     modal: boolean;
     modal_size?: ModalSize;
-    mode: 'create' | 'edit' | null;
+    mode: 'create' | 'edit' | 'view' | null;
     open: boolean;
     permissions: CrudPermissions;
     resource: ResourceMeta;
     table: { columns: TableColumn[] };
+    view_schema?: { fields: TableColumn[] };
     form_schema: { fields: FormField[] };
 }
 
@@ -159,14 +173,14 @@ export function buildFormData(fields: FormField[], record: AnyRecord | null | un
 
 export function formatCellValue(value: unknown, type: FieldType): React.ReactNode {
     if (value === null || value === undefined || value === '') {
-        return <span className="text-muted-foreground text-xs">—</span>;
+        return <span className="text-muted-foreground text-xs">-</span>;
     }
 
     switch (type) {
         case 'checkbox': {
             const active = Boolean(value);
             return (
-                <Badge variant={active ? 'default' : 'secondary'} className="text-xs">
+                <Badge variant={active ? 'default' : 'secondary'} className="text-xs rounded-sm">
                     {active ? 'Active' : 'Inactive'}
                 </Badge>
             );
@@ -174,11 +188,7 @@ export function formatCellValue(value: unknown, type: FieldType): React.ReactNod
 
         case 'select':
             if (['active', 'inactive'].includes(String(value))) {
-                return (
-                    <Badge variant={String(value) === 'active' ? 'default' : 'secondary'} className="text-xs capitalize">
-                        {String(value)}
-                    </Badge>
-                );
+                return <span className="text-sm capitalize">{String(value)}</span>;
             }
             return <span className="text-sm">{String(value)}</span>;
 
@@ -208,12 +218,132 @@ export function formatCellValue(value: unknown, type: FieldType): React.ReactNod
         case 'number':
             return <span className="text-sm tabular-nums">{Number(value).toLocaleString('id-ID')}</span>;
 
-        case 'media':
-            return <img src={String(value)} alt="" className="h-10 w-10 rounded-md border object-cover" loading="lazy" />;
+        case 'media': {
+            const src = String(value);
+            const isImageSource = /^(https?:\/\/|\/|data:image\/|blob:)/i.test(src);
+
+            return isImageSource ? (
+                <img src={src} alt="" className="h-10 w-10 rounded-sm border object-cover" loading="lazy" />
+            ) : (
+                <span className="text-sm">{src}</span>
+            );
+        }
 
         default:
             return <span className="text-sm">{String(value)}</span>;
     }
+}
+
+type DetailLocaleValue = string | number | boolean | null | undefined;
+
+function isTranslatableDetailValue(value: unknown): value is Record<string, DetailLocaleValue> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return false;
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>);
+
+    return (
+        entries.length > 0 &&
+        entries.every(([locale, localeValue]) => {
+            const primitive = ['string', 'number', 'boolean', 'undefined'].includes(typeof localeValue) || localeValue === null;
+
+            return /^[a-z]{2,5}(-[a-z0-9]{2,8})?$/i.test(locale) && primitive;
+        })
+    );
+}
+
+function containsHtml(value: string): boolean {
+    return /<\/?[a-z][\s\S]*>/i.test(value);
+}
+
+function TranslatableDetailTabs({ value }: { value: Record<string, DetailLocaleValue> }) {
+    const entries = Object.entries(value);
+    const [activeLocale, setActiveLocale] = React.useState(entries[0]?.[0] ?? '');
+    const activeEntry = entries.find(([locale]) => locale === activeLocale) ?? entries[0];
+    const activeValue = activeEntry ? String(activeEntry[1] ?? '') : '';
+
+    if (entries.length === 0) {
+        return <span className="text-muted-foreground text-sm">-</span>;
+    }
+
+    return (
+        <div className="overflow-hidden rounded-md border">
+            <div className="bg-muted/30 flex flex-wrap border-b">
+                {entries.map(([locale, localeValue]) => {
+                    const hasValue = String(localeValue ?? '').trim() !== '';
+
+                    return (
+                        <button
+                            key={locale}
+                            type="button"
+                            onClick={() => setActiveLocale(locale)}
+                            className={`border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
+                                activeLocale === locale
+                                    ? 'border-primary text-foreground bg-background -mb-px'
+                                    : 'text-muted-foreground hover:text-foreground border-transparent'
+                            }`}
+                        >
+                            <span className="font-mono uppercase">{locale}</span>
+                            {hasValue && <span className="bg-primary ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />}
+                        </button>
+                    );
+                })}
+            </div>
+            <div className="bg-background p-3">
+                {activeValue.trim() === '' ? (
+                    <span className="text-muted-foreground text-sm">-</span>
+                ) : containsHtml(activeValue) ? (
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: activeValue }} />
+                ) : (
+                    <p className="text-sm whitespace-pre-wrap">{activeValue}</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function formatDetailValue(value: unknown, type: FieldType): React.ReactNode {
+    if (value === null || value === undefined || value === '') {
+        return <span className="text-muted-foreground text-sm">-</span>;
+    }
+
+    if (typeof value === 'object') {
+        if (type === 'translatable' && isTranslatableDetailValue(value)) {
+            return <TranslatableDetailTabs value={value} />;
+        }
+
+        return <pre className="bg-muted/50 max-h-64 overflow-auto rounded-md p-3 text-xs whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>;
+    }
+
+    return formatCellValue(value, type);
+}
+
+export function RecordDetails({ record, fields }: { record?: AnyRecord | null; fields: TableColumn[] }) {
+    const detailFields =
+        fields.length > 0
+            ? fields
+            : Object.keys(record ?? {}).map((key) => ({
+                  key,
+                  label: key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+                  sortable: false,
+                  type: 'text' as FieldType,
+              }));
+
+    if (!record) {
+        return <p className="text-muted-foreground text-sm">No record selected.</p>;
+    }
+
+    return (
+        <dl className="divide-border overflow-hidden rounded-lg border">
+            {detailFields.map((field) => (
+                <div key={field.key} className="grid gap-1 border-b px-4 py-3 last:border-b-0 sm:grid-cols-[180px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground text-sm font-medium">{field.label}</dt>
+                    <dd className="min-w-0 text-sm break-words">{formatDetailValue(record[field.key], field.type)}</dd>
+                </div>
+            ))}
+        </dl>
+    );
 }
 
 export function getColClass(col?: ColSize): string {
@@ -234,7 +364,13 @@ export function getColClass(col?: ColSize): string {
     return map[col ?? 12] ?? 'col-span-12';
 }
 
-export function FormFieldsGrid({ fields, data, errors, processing, setData }: {
+export function FormFieldsGrid({
+    fields,
+    data,
+    errors,
+    processing,
+    setData,
+}: {
     fields: FormField[];
     data: Record<string, FormValue>;
     errors: Record<string, string>;
@@ -257,7 +393,6 @@ export function FormFieldsGrid({ fields, data, errors, processing, setData }: {
         </div>
     );
 }
-
 
 export interface FormFieldRendererProps {
     field: FormField;
@@ -400,7 +535,7 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
 
                 <div className="rounded-md border">
                     {/* Tab bar */}
-                    <div className="flex border-b bg-muted/30">
+                    <div className="bg-muted/30 flex border-b">
                         {locales.map((locale) => {
                             const hasValue = !!(values[locale.code] ?? '');
                             return (
@@ -410,8 +545,8 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                                     onClick={() => setActiveLocale(locale.code)}
                                     className={`border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
                                         activeLocale === locale.code
-                                            ? 'border-primary text-foreground -mb-px bg-background'
-                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                            ? 'border-primary text-foreground bg-background -mb-px'
+                                            : 'text-muted-foreground hover:text-foreground border-transparent'
                                     }`}
                                 >
                                     <span className="font-mono uppercase">{locale.code}</span>
@@ -423,8 +558,8 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
 
                     {/* Active locale input */}
                     <div className={field.wysiwyg ? '' : 'p-3'}>
-                        {currentLocale && (
-                            field.wysiwyg ? (
+                        {currentLocale &&
+                            (field.wysiwyg ? (
                                 <WysiwygEditor
                                     value={values[currentLocale.code] ?? ''}
                                     onChange={(val) => onChange(field.name, { ...values, [currentLocale.code]: val })}
@@ -452,8 +587,7 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                                     onChange={(e) => onChange(field.name, { ...values, [currentLocale.code]: e.target.value })}
                                     className={localeError ? 'border-destructive min-w-0' : 'min-w-0'}
                                 />
-                            )
-                        )}
+                            ))}
                     </div>
                 </div>
 
@@ -525,9 +659,11 @@ export default function CrudIndex(props: CrudIndexProps) {
     const resource = crud?.resource;
     const formSchema = crud?.form_schema?.fields ?? [];
     const tableSchema = crud?.table?.columns ?? [];
+    const viewSchema = crud?.view_schema?.fields ?? tableSchema;
     const routes = resource?.routes;
 
     const perms = crud?.permissions;
+    const canView = perms?.view ?? false;
     const canCreate = perms?.create ?? false;
     const canUpdate = perms?.update ?? false;
     const canDelete = perms?.delete ?? false;
@@ -558,9 +694,10 @@ export default function CrudIndex(props: CrudIndexProps) {
     const activeQueryString = useMemo(() => buildQueryString(activeQuery), [activeQuery]);
 
     const isModalOpen = Boolean(crud?.modal && crud?.open);
+    const isView = crud?.mode === 'view' && Boolean(formRecord);
     const isEdit = crud?.mode === 'edit' && Boolean(formRecord);
     useEffect(() => {
-        if (!crud?.modal) return;
+        if (!crud?.modal || crud.mode === 'view') return;
 
         clearErrors();
         const populated = buildFormData(formSchema, crud.mode === 'edit' ? formRecord : null);
@@ -584,7 +721,7 @@ export default function CrudIndex(props: CrudIndexProps) {
     );
 
     const submitForm = useCallback(() => {
-        if (!routes) return;
+        if (!routes || isView) return;
 
         if (isEdit && formRecord?.id) {
             put(`${routes.index}/${formRecord.id}`, { preserveScroll: true });
@@ -592,7 +729,7 @@ export default function CrudIndex(props: CrudIndexProps) {
         }
 
         post(routes.store, { preserveScroll: true });
-    }, [isEdit, formRecord?.id, routes, post, put]);
+    }, [isView, isEdit, formRecord?.id, routes, post, put]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -667,13 +804,13 @@ export default function CrudIndex(props: CrudIndexProps) {
             render: (record: AnyRecord) => formatCellValue(record[col.key], col.type),
         }));
 
-        if (!canUpdate && !canDelete) return schemaColumns;
+        if (!canView && !canUpdate && !canDelete) return schemaColumns;
         const actionsCol: DataTableColumn<AnyRecord> = {
             key: 'actions',
             label: t('columns.actions'),
-            width: '80px',
-            minWidth: '80px',
-            maxWidth: '80px',
+            width: '112px',
+            minWidth: '112px',
+            maxWidth: '112px',
             grow: 0,
             right: true,
             render: (record: AnyRecord) => {
@@ -683,6 +820,19 @@ export default function CrudIndex(props: CrudIndexProps) {
                 return (
                     <div className="flex justify-end">
                         <div className="border-border bg-background inline-flex overflow-hidden rounded-md border">
+                            {canView && (
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="border-border h-7 w-7 rounded-none border-r"
+                                    title={t('buttons.view', { fallback: 'View' })}
+                                    onClick={() => router.get(`${recordUrl}${activeQueryString}`, {}, { preserveScroll: true })}
+                                >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    <span className="sr-only">{t('buttons.view', { fallback: 'View' })}</span>
+                                </Button>
+                            )}
+
                             {canUpdate && (
                                 <Button
                                     size="icon"
@@ -741,7 +891,7 @@ export default function CrudIndex(props: CrudIndexProps) {
 
         return [...schemaColumns, actionsCol];
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tableSchema, sortableSet, canUpdate, canDelete, activeQueryString, processing, resource, routes]);
+    }, [tableSchema, sortableSet, canView, canUpdate, canDelete, activeQueryString, processing, resource, routes]);
 
     if (!crud || !resource || !collection || !routes) {
         return (
@@ -759,9 +909,7 @@ export default function CrudIndex(props: CrudIndexProps) {
             <div className="space-y-6 p-4 md:p-6">
                 {/* Page header */}
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        {t(`pages.${resource.name}.title`, { fallback: resource.title })}
-                    </h1>
+                    <h1 className="text-2xl font-bold tracking-tight">{t(`pages.${resource.name}.title`, { fallback: resource.title })}</h1>
                     <p className="text-muted-foreground text-sm">
                         {t(`pages.${resource.name}.description`, {
                             fallback: `Manage ${resource.label.toLowerCase()} records, content, and settings.`,
@@ -782,13 +930,13 @@ export default function CrudIndex(props: CrudIndexProps) {
                     toolbarLeft={
                         canCreate ? (
                             <Button size="sm" onClick={() => router.get(`${routes.create}${activeQueryString}`, {}, { preserveScroll: true })}>
-                                <Plus className="mr-1.5 h-4 w-4" />
+                                <Plus className="h-4 w-4" />
                             </Button>
                         ) : undefined
                     }
                     toolbarRight={
                         canCreate && (routes.import || routes.import_template) ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                                 <input ref={importInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportFileChange} />
                                 {routes.import_template && (
                                     <Button
@@ -821,59 +969,99 @@ export default function CrudIndex(props: CrudIndexProps) {
 
             {crud.modal && (
                 <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-                    <DialogContent className={[
-                        'max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto',
-                        crud.modal_size === 'sm'  ? 'sm:max-w-sm'  :
-                        crud.modal_size === 'lg'  ? 'sm:max-w-2xl' :
-                        crud.modal_size === 'xl'  ? 'sm:max-w-4xl' :
-                        crud.modal_size === 'xxl' ? 'sm:max-w-6xl' :
-                        'sm:max-w-xl',
-                    ].join(' ')}>
+                    <DialogContent
+                        className={[
+                            'max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] overflow-x-hidden overflow-y-auto',
+                            crud.modal_size === 'sm'
+                                ? 'sm:max-w-sm'
+                                : crud.modal_size === 'lg'
+                                  ? 'sm:max-w-2xl'
+                                  : crud.modal_size === 'xl'
+                                    ? 'sm:max-w-4xl'
+                                    : crud.modal_size === 'xxl'
+                                      ? 'sm:max-w-6xl'
+                                      : 'sm:max-w-xl',
+                        ].join(' ')}
+                    >
                         <DialogHeader>
                             <DialogTitle>
-                                {isEdit
-                                    ? t('buttons.update', {
-                                          resource: resource.label,
+                                {isView
+                                    ? t('buttons.view', {
+                                          fallback: 'View',
                                       })
-                                    : t('buttons.create', {
-                                          resource: resource.label,
-                                      })}
+                                    : isEdit
+                                      ? t('buttons.update', {
+                                            resource: resource.label,
+                                        })
+                                      : t('buttons.create', {
+                                            resource: resource.label,
+                                        })}
                             </DialogTitle>
                             <DialogDescription>
-                                {isEdit
-                                    ? t('dialog.edit.description', {
+                                {isView
+                                    ? t('dialog.view.description', {
                                           resource: resource.label,
+                                          fallback: `Detail ${resource.label.toLowerCase()} record.`,
                                       })
-                                    : t('dialog.create.description', {
-                                          resource: resource.label,
-                                      })}
+                                    : isEdit
+                                      ? t('dialog.edit.description', {
+                                            resource: resource.label,
+                                        })
+                                      : t('dialog.create.description', {
+                                            resource: resource.label,
+                                        })}
                             </DialogDescription>
                         </DialogHeader>
 
-                        <form className="min-w-0" onSubmit={handleSubmit} noValidate>
-                            {formSchema.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    {t('pages.crud.noFormFieldsBefore')} <code>$formFields</code> {t('pages.crud.noFormFieldsAfter')}
-                                </p>
-                            ) : (
-                                <FormFieldsGrid
-                                    fields={formSchema}
-                                    data={data}
-                                    errors={errors}
-                                    processing={processing}
-                                    setData={(name, value) => setData(name as never, value as never)}
-                                />
-                            )}
+                        {isView ? (
+                            <div className="min-w-0">
+                                <RecordDetails record={formRecord} fields={viewSchema} />
+                                <DialogFooter className="pt-4">
+                                    {canUpdate && formRecord?.id && (
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                router.get(
+                                                    `${routes.index}/${formRecord[resource.key] ?? formRecord.id}/edit${activeQueryString}`,
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            {t('buttons.edit')}
+                                        </Button>
+                                    )}
+                                    <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)}>
+                                        {t('buttons.close', { fallback: 'Close' })}
+                                    </Button>
+                                </DialogFooter>
+                            </div>
+                        ) : (
+                            <form className="min-w-0" onSubmit={handleSubmit} noValidate>
+                                {formSchema.length === 0 ? (
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('pages.crud.noFormFieldsBefore')} <code>$formFields</code> {t('pages.crud.noFormFieldsAfter')}
+                                    </p>
+                                ) : (
+                                    <FormFieldsGrid
+                                        fields={formSchema}
+                                        data={data}
+                                        errors={errors}
+                                        processing={processing}
+                                        setData={(name, value) => setData(name as never, value as never)}
+                                    />
+                                )}
 
-                            <DialogFooter className="pt-4">
-                                <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)} disabled={processing}>
-                                    {t('buttons.cancel')}
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? t('buttons.saving') : t('buttons.save')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
+                                <DialogFooter className="pt-4">
+                                    <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)} disabled={processing}>
+                                        {t('buttons.cancel')}
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? t('buttons.saving') : t('buttons.save')}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        )}
                     </DialogContent>
                 </Dialog>
             )}

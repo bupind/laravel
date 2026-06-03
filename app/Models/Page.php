@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesUuid;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,22 +13,12 @@ class Page extends Model
     public const STATUS_ACTIVE   = 'active';
     public const STATUS_INACTIVE = 'inactive';
 
-    public const PLACEMENTS = [
-        'none'   => 'None',
-        'header' => 'Header',
-        'footer' => 'Footer',
-        'both'   => 'Header & Footer',
-    ];
     protected $fillable = [
         'title',
         'slug',
         'media_id',
         'excerpt',
         'content',
-        'placement',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
         'sort_order',
         'status',
     ];
@@ -37,9 +26,6 @@ class Page extends Model
         'title'            => 'array',
         'excerpt'          => 'array',
         'content'          => 'array',
-        'meta_title'       => 'array',
-        'meta_description' => 'array',
-        'meta_keywords'    => 'array',
         'sort_order'       => 'integer',
     ];
     protected $appends = [
@@ -67,17 +53,9 @@ class Page extends Model
         return $this->media?->getFullUrl();
     }
 
-    public function scopePublished(Builder $query): Builder
+    public function scopePublished(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('status', self::STATUS_ACTIVE);
-    }
-
-    public function scopeInPlacement(Builder $query, string $placement): Builder
-    {
-        return $query->whereIn('placement', [
-            $placement,
-            'both'
-        ]);
     }
 
     public function getUrlAttribute(): string

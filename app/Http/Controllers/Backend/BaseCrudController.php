@@ -30,6 +30,7 @@ abstract class BaseCrudController extends Controller
     protected ?string      $componentName          = 'backend/crud/Index';
     protected ?string      $indexComponentName     = null;
     protected ?string      $formComponentName      = null;
+    protected ?string      $viewComponentName      = null;
     protected ?string      $resourceRouteName      = null;
     protected ?string      $resourceLabel          = null;
     protected ?string      $resourceTitle          = null;
@@ -56,6 +57,7 @@ abstract class BaseCrudController extends Controller
     protected array        $excludeSortableColumns = [];
     protected array        $sortColumnMap          = [];
     protected array        $tableColumns           = [];
+    protected array        $viewFields             = [];
     protected array        $formFields             = [];
     protected array        $exportColumns          = [];
     protected array        $excludeExportColumns   = [];
@@ -68,6 +70,10 @@ abstract class BaseCrudController extends Controller
         'id',
         'created_at',
         'updated_at',
+        'deleted_at',
+    ];
+    protected array        $excludeViewFields      = [
+        'id',
         'deleted_at',
     ];
 
@@ -285,6 +291,7 @@ abstract class BaseCrudController extends Controller
         return [
             'resource'    => $this->resourceMetadata($request),
             'table'       => ['columns' => $this->resolvedTableColumns()],
+            'view_schema' => ['fields' => $this->resolvedViewFields()],
             'form_schema' => ['fields' => $this->resolvedFormFields()],
         ];
     }
@@ -390,6 +397,47 @@ abstract class BaseCrudController extends Controller
         ], $column);
     }
 
+    protected function resolvedViewFields(): array
+    {
+        $fields = $this->viewFields !== []
+            ? $this->viewFields
+            : $this->defaultViewFields();
+        $fields = array_map(
+            fn(string|array $field) => $this->normalizeViewField($field),
+            $fields
+        );
+        return array_values(array_filter(
+            $fields,
+            fn(array $field) => !in_array((string)($field['key'] ?? $field['name'] ?? ''), $this->excludeViewFields, true)
+        ));
+    }
+
+    protected function defaultViewFields(): array
+    {
+        if($this->formFields !== []) {
+            return $this->resolvedFormFields();
+        }
+        $fields = $this->schemaColumns();
+        foreach($this->withCount as $relation) {
+            $fields[] = $relation . '_count';
+        }
+        return array_values(array_diff(array_unique($fields), $this->excludeViewFields));
+    }
+
+    protected function normalizeViewField(string|array $field): array
+    {
+        if(is_string($field)) {
+            $field = ['key' => $field];
+        }
+        $key = (string)($field['key'] ?? $field['name'] ?? '');
+        return array_merge([
+            'key'      => $key,
+            'label'    => $this->humanize($key),
+            'sortable' => false,
+            'type'     => $this->guessFieldType($key),
+        ], $field);
+    }
+
     protected function guessFieldType(string $name): string
     {
         return match (true) {
@@ -468,6 +516,11 @@ abstract class BaseCrudController extends Controller
         return $this->formComponentName ?? $this->componentName();
     }
 
+    protected function viewComponent(): string
+    {
+        return $this->viewComponentName ?? 'backend/crud/Show';
+    }
+
     protected function formPagePayload(Request $request, mixed $record = null): array
     {
         if($this->usesGenericComponent() || $this->usesGenericFormPage()) {
@@ -522,6 +575,47 @@ abstract class BaseCrudController extends Controller
                 'modal'       => true,
                 'modal_size'  => $this->modalSize,
                 'mode'        => $mode,
+                'open'        => true,
+                'permissions' => $this->resolvedPermissions(),
+            ], $this->crudMetadata($request)),
+            'form' => $this->formPayload($request, $record),
+        ];
+    }
+
+    public function show(Request $request, mixed $id): Response
+    {
+        $this->authorize('view');
+        $record = $this->resolveViewRecord($id);
+        if(!$this->usesModal()) {
+            return Inertia::render($this->viewComponent(), $this->viewPagePayload($request, $record));
+        }
+        return Inertia::render(
+            $this->indexComponent(),
+            array_merge($this->indexPayload($request), $this->crudPayload('view', $record, $request))
+        );
+    }
+
+    protected function resolveViewRecord(mixed $value): mixed
+    {
+        $record = $this->resolveRecord($value);
+        if($record instanceof Model) {
+            if($this->with !== []) {
+                $record->loadMissing($this->with);
+            }
+            if($this->withCount !== []) {
+                $record->loadCount($this->withCount);
+            }
+        }
+        return $record;
+    }
+
+    protected function viewPagePayload(Request $request, mixed $record): array
+    {
+        return [
+            'crud' => array_merge([
+                'modal'       => false,
+                'modal_size'  => $this->modalSize,
+                'mode'        => 'view',
                 'open'        => true,
                 'permissions' => $this->resolvedPermissions(),
             ], $this->crudMetadata($request)),

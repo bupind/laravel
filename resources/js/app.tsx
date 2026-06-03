@@ -51,7 +51,7 @@ const backendLayout = (page: ReactNode) => <BackendLayout>{page}</BackendLayout>
 function withDefaultLayout(name: string, pageModule: unknown): unknown {
     const module = pageModule as PageModule;
 
-    if (name.startsWith('frontend/') && module.default && module.default.layout === undefined) {
+    if (name.startsWith('frontend/') && module.default) {
         module.default.layout = frontendLayout;
     }
 

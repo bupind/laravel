@@ -71,10 +71,10 @@ Route::prefix('backend')->group(function() {
             'reorder'
         ])->name('menus.reorder');
         Route::resource('menus', MenuController::class);
-        Route::resource('api-clients', ApiClientController::class)->except('show');
-        Route::resource('sliders', SliderController::class)->except('show');
-        Route::resource('services', ServiceController::class)->except('show');
-        Route::resource('pages', PageController::class)->except('show');
+        Route::resource('api-clients', ApiClientController::class);
+        Route::resource('sliders', SliderController::class);
+        Route::resource('services', ServiceController::class);
+        Route::resource('pages', PageController::class);
         Route::controller(ContactMessageController::class)
             ->prefix('contact-messages')
             ->name('contact-messages.')
@@ -91,7 +91,7 @@ Route::prefix('backend')->group(function() {
                 Route::get('import-template', 'importTemplate')->name('import-template');
                 Route::post('import', 'import')->name('import');
             });
-        Route::resource('products', ProductController::class)->except('show');
+        Route::resource('products', ProductController::class);
         Route::controller(PermissionController::class)
             ->prefix('permissions')
             ->name('permissions.')

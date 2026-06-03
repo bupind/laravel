@@ -51,20 +51,26 @@ export default function ContactMessageShow({ message, can }: Props) {
             <Head title={message.subject} />
             <div className="mx-auto max-w-4xl space-y-5 p-4 md:p-6">
                 <Button asChild variant="ghost" size="sm" className="gap-1.5 pl-0">
-                    <Link href="/backend/contact-messages"><ArrowLeft className="h-4 w-4" />Back</Link>
+                    <Link href="/backend/contact-messages">
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </Link>
                 </Button>
                 <Card>
                     <CardHeader>
                         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <CardTitle>{message.subject}</CardTitle>
-                                <CardDescription>{message.name} · {message.email}{message.phone ? ` · ${message.phone}` : ''}</CardDescription>
+                                <CardDescription>
+                                    {message.name} · {message.email}
+                                    {message.phone ? ` · ${message.phone}` : ''}
+                                </CardDescription>
                             </div>
-                            <Badge>{message.status}</Badge>
+                            <Badge className={`${message.status} rounded-sm`}>{message.status}</Badge>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="rounded-lg bg-muted/50 p-4 whitespace-pre-wrap text-sm leading-6">{message.message}</div>
+                        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-6 whitespace-pre-wrap">{message.message}</div>
                         <div className="text-muted-foreground grid gap-1 text-xs sm:grid-cols-3">
                             <span>Created: {message.created_at ?? '-'}</span>
                             <span>Read: {message.read_at ?? '-'}</span>
@@ -76,10 +82,15 @@ export default function ContactMessageShow({ message, can }: Props) {
                 {message.reply_message && (
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><Mail className="h-4 w-4" />Last Reply</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Mail className="h-4 w-4" />
+                                Last Reply
+                            </CardTitle>
                             <CardDescription>{message.reply_subject}</CardDescription>
                         </CardHeader>
-                        <CardContent><div className="whitespace-pre-wrap rounded-lg border p-4 text-sm leading-6">{message.reply_message}</div></CardContent>
+                        <CardContent>
+                            <div className="rounded-lg border p-4 text-sm leading-6 whitespace-pre-wrap">{message.reply_message}</div>
+                        </CardContent>
                     </Card>
                 )}
 
@@ -93,15 +104,32 @@ export default function ContactMessageShow({ message, can }: Props) {
                             <form onSubmit={submit} className="space-y-4">
                                 <div className="grid gap-2">
                                     <Label htmlFor="reply-subject">Subject</Label>
-                                    <input id="reply-subject" className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none" value={data.subject} onChange={(e) => setData('subject', e.target.value)} disabled={processing} />
+                                    <input
+                                        id="reply-subject"
+                                        className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                                        value={data.subject}
+                                        onChange={(e) => setData('subject', e.target.value)}
+                                        disabled={processing}
+                                    />
                                     <InputError message={errors.subject} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="reply-message">Message</Label>
-                                    <Textarea id="reply-message" rows={8} value={data.message} onChange={(e) => setData('message', e.target.value)} disabled={processing} />
+                                    <Textarea
+                                        id="reply-message"
+                                        rows={8}
+                                        value={data.message}
+                                        onChange={(e) => setData('message', e.target.value)}
+                                        disabled={processing}
+                                    />
                                     <InputError message={errors.message} />
                                 </div>
-                                <Button type="submit" disabled={processing} className="gap-2"><Send className="h-4 w-4" />Send Reply</Button>
+                                <div className="text-end">
+                                    <Button type="submit" disabled={processing} className="gap-2">
+                                        <Send className="h-4 w-4" />
+                                        Send Reply
+                                    </Button>
+                                </div>
                             </form>
                         </CardContent>
                     </Card>

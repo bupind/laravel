@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class MenuController extends Controller
@@ -26,6 +27,9 @@ class MenuController extends Controller
             ->whereNull('parent_id')
             ->orderBy('order')
             ->get();
+        if(!Schema::hasColumn('menus', 'location')) {
+            $menus->each(fn(Menu $menu) => $this->applyLegacyLocation($menu));
+        }
         return Inertia::render('backend/menus/Index', [
             'menuItems' => $menus,
         ]);
@@ -37,15 +41,24 @@ class MenuController extends Controller
             'title'           => 'required|string',
             'translation_key' => 'nullable|string|max:255',
             'scope'           => 'required|in:backend,frontend',
+            'location'        => 'nullable|in:sidebar,header,footer',
             'icon'            => 'nullable|string',
             'route'           => 'nullable|string',
             'parent_id'       => 'nullable|exists:menus,id',
             'order'           => 'nullable|integer',
             'permission_name' => 'nullable|string|exists:permissions,name',
         ]);
+        $data = $this->normalizeMenuLocation($data);
         if(!isset($data['order'])) {
-            $data['order'] = Menu::where('scope', $data['scope'])->where('parent_id', $data['parent_id'] ?? null)
-                                 ->max('order') + 1;
+            $query = Menu::where('scope', $data['scope'])
+                ->where('parent_id', $data['parent_id'] ?? null);
+            if(Schema::hasColumn('menus', 'location')) {
+                $query->where('location', $data['location']);
+            }
+            $data['order'] = $query->max('order') + 1;
+        }
+        if(!Schema::hasColumn('menus', 'location')) {
+            unset($data['location']);
         }
         Menu::create($data);
         return redirect()->route('menus.index')->with('success', $this->flashMessage('notifications.common.saved'));
@@ -54,21 +67,33 @@ class MenuController extends Controller
     public function create(Request $request)
     {
         $menus        = Menu::orderBy('title')->get();
+        if(!Schema::hasColumn('menus', 'location')) {
+            $menus->each(fn(Menu $menu) => $this->applyLegacyLocation($menu));
+        }
         $permissions  = Permission::orderBy('name')->pluck('name');
         $initialScope = $request->string('scope', 'backend')->toString();
+        $initialLocation = $request->string('location', 'header')->toString();
         return Inertia::render('backend/menus/Form', [
-            'parentMenus'  => $menus,
-            'permissions'  => $permissions,
-            'initialScope' => in_array($initialScope, [
+            'parentMenus'     => $menus,
+            'permissions'     => $permissions,
+            'initialScope'    => in_array($initialScope, [
                 'backend',
                 'frontend',
             ], true) ? $initialScope : 'backend',
+            'initialLocation' => in_array($initialLocation, [
+                'header',
+                'footer',
+            ], true) ? $initialLocation : 'header',
         ]);
     }
 
     public function edit(Menu $menu)
     {
         $menus       = Menu::where('id', '!=', $menu->id)->orderBy('title')->get();
+        if(!Schema::hasColumn('menus', 'location')) {
+            $this->applyLegacyLocation($menu);
+            $menus->each(fn(Menu $item) => $this->applyLegacyLocation($item));
+        }
         $permissions = Permission::orderBy('name')->pluck('name');
         return Inertia::render('backend/menus/Form', [
             'menu'        => $menu,
@@ -108,17 +133,49 @@ class MenuController extends Controller
             'title'           => 'required|string',
             'translation_key' => 'nullable|string|max:255',
             'scope'           => 'required|in:backend,frontend',
+            'location'        => 'nullable|in:sidebar,header,footer',
             'icon'            => 'nullable|string',
             'route'           => 'nullable|string',
             'parent_id'       => 'nullable|exists:menus,id|not_in:' . $menu->id,
             'order'           => 'nullable|integer',
             'permission_name' => 'nullable|string|exists:permissions,name',
         ]);
+        $data = $this->normalizeMenuLocation($data);
         if(!isset($data['order'])) {
-            $data['order'] = Menu::where('scope', $data['scope'])->where('parent_id', $data['parent_id'] ?? null)
-                                 ->max('order') + 1;
+            $query = Menu::where('scope', $data['scope'])
+                ->where('parent_id', $data['parent_id'] ?? null);
+            if(Schema::hasColumn('menus', 'location')) {
+                $query->where('location', $data['location']);
+            }
+            $data['order'] = $query->max('order') + 1;
+        }
+        if(!Schema::hasColumn('menus', 'location')) {
+            unset($data['location']);
         }
         $menu->update($data);
         return redirect()->route('menus.index')->with('success', $this->flashMessage('notifications.common.saved'));
+    }
+
+    private function normalizeMenuLocation(array $data): array
+    {
+        $data['location'] = ($data['scope'] ?? 'backend') === 'frontend'
+            ? ($data['location'] ?? 'header')
+            : 'sidebar';
+
+        if(!empty($data['parent_id'])) {
+            $parent = Menu::query()->find($data['parent_id']);
+            if($parent !== null) {
+                $data['scope']    = $parent->scope;
+                $data['location'] = $parent->location ?? 'sidebar';
+            }
+        }
+
+        return $data;
+    }
+
+    private function applyLegacyLocation(Menu $menu): void
+    {
+        $menu->setAttribute('location', $menu->scope === 'frontend' ? 'header' : 'sidebar');
+        $menu->children?->each(fn(Menu $child) => $this->applyLegacyLocation($child));
     }
 }

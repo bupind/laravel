@@ -143,7 +143,6 @@ export default function PermissionIndex({ permissions, groups, standardActions =
             render: (permission) => (
                 <div className="space-y-1">
                     <div className="font-medium">{permission.module_label}</div>
-                    <div className="text-muted-foreground text-xs">{permission.module}</div>
                 </div>
             ),
         },
@@ -158,9 +157,9 @@ export default function PermissionIndex({ permissions, groups, standardActions =
             label: t('columns.permissions'),
             sortable: false,
             render: (permission) => (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                     {permission.children.map((child) => (
-                        <Badge key={child.id} variant="secondary" className="font-normal">
+                        <Badge key={child.id} variant="secondary" className="font-normal rounded-sm">
                             {child.label}
                         </Badge>
                     ))}

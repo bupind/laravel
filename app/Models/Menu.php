@@ -20,6 +20,7 @@ class Menu extends Model
         'title',
         'translation_key',
         'scope',
+        'location',
         'icon',
         'route',
         'parent_id',

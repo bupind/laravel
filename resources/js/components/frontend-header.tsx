@@ -13,14 +13,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
-import { type MenuItem, type PublicPageLink, type Setting, type User } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { type MenuItem, type Setting, type User } from '@/types';
+import { Link } from '@inertiajs/react';
 import { ChevronDown, LayoutDashboard, LogIn, Menu, UserCircle, X } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useState } from 'react';
 
 interface FrontendHeaderProps {
+    appName: string;
     setting?: Setting;
     auth?: { user?: User | null };
+    menus: MenuItem[];
+    currentPath: string;
 }
 
 function menuTitle(menu: MenuItem, t: (key: string) => string): string {
@@ -90,7 +93,9 @@ function DesktopSubMenuItems({ items, currentPath, t }: { items: MenuItem[]; cur
                             <DropdownMenuSubContent>
                                 {hasNavigableRoute(item) && (
                                     <DropdownMenuItem asChild>
-                                        <Link href={item.route ?? '#'}>{menuTitle(item, t)}</Link>
+                                        <Link href={item.route ?? '#'} prefetch={['mount', 'hover']} cacheFor="2m">
+                                            {menuTitle(item, t)}
+                                        </Link>
                                     </DropdownMenuItem>
                                 )}
                                 <DesktopSubMenuItems items={children} currentPath={currentPath} t={t} />
@@ -107,7 +112,9 @@ function DesktopSubMenuItems({ items, currentPath, t }: { items: MenuItem[]; cur
                         asChild
                         className={cn(isRouteActive(item.route, currentPath) && 'bg-accent text-accent-foreground')}
                     >
-                        <Link href={item.route ?? '#'}>{menuTitle(item, t)}</Link>
+                        <Link href={item.route ?? '#'} prefetch={['mount', 'hover']} cacheFor="2m">
+                            {menuTitle(item, t)}
+                        </Link>
                     </DropdownMenuItem>
                 );
             })}
@@ -140,7 +147,9 @@ function DesktopMenuItem({ menu, currentPath, t }: { menu: MenuItem; currentPath
             <DropdownMenuContent align="start" className="min-w-48">
                 {hasNavigableRoute(menu) && (
                     <DropdownMenuItem asChild>
-                        <Link href={menu.route ?? '#'}>{menuTitle(menu, t)}</Link>
+                        <Link href={menu.route ?? '#'} prefetch={['mount', 'hover']} cacheFor="2m">
+                            {menuTitle(menu, t)}
+                        </Link>
                     </DropdownMenuItem>
                 )}
                 <DesktopSubMenuItems items={children} currentPath={currentPath} t={t} />
@@ -180,19 +189,12 @@ function MobileMenuItem({ menu, currentPath, t, onNavigate }: NavLinkProps) {
     );
 }
 
-export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: FrontendHeaderProps) {
+export const FrontendHeader = memo(function FrontendHeader({ appName, setting, auth, menus, currentPath }: FrontendHeaderProps) {
     const { language, setLanguage, locales, t } = useLanguage();
-    const page = usePage();
     const [mobileOpen, setMobileOpen] = useState(false);
-    const sharedName = (page.props as { name?: string }).name;
 
-    const appName = setting?.app_name ?? sharedName ?? '';
     const primaryColor = setting?.color || '#2563eb';
     const isAuthenticated = Boolean(auth?.user);
-    const currentPath = page.url.split('?')[0];
-
-    const menus = useMemo(() => ((page.props as { menus?: MenuItem[] }).menus ?? []).filter((m) => m.scope === 'frontend'), [page.props]);
-    const headerPages = useMemo(() => ((page.props as { global_pages?: { header?: PublicPageLink[] } }).global_pages?.header ?? []), [page.props]);
 
     return (
         <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/82 sticky top-0 z-40 border-b backdrop-blur">
@@ -213,25 +215,10 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
                 </Link>
 
                 <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2">
-                    {(menus.length > 0 || headerPages.length > 0) && (
+                    {menus.length > 0 && (
                         <nav className="hidden min-w-0 items-center justify-end gap-1 md:flex" aria-label={t('navigation.main')}>
                             {menus.map((menu) => (
                                 <DesktopMenuItem key={menu.id} menu={menu} currentPath={currentPath} t={t} />
-                            ))}
-                            {headerPages.map((item) => (
-                                <Link
-                                    key={item.id}
-                                    href={item.url}
-                                    prefetch={['mount', 'hover']}
-                                    cacheFor="2m"
-                                    preserveScroll
-                                    className={cn(
-                                        'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                                        isRouteActive(item.url, currentPath) && 'bg-muted text-foreground',
-                                    )}
-                                >
-                                    {item.title_translations?.[language] ?? item.title}
-                                </Link>
                             ))}
                         </nav>
                     )}
@@ -267,7 +254,7 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
                         </Button>
                     )}
 
-                    {(menus.length > 0 || headerPages.length > 0) && (
+                    {menus.length > 0 && (
                         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="shrink-0 md:hidden" aria-label={t('navigation.openMenu')}>
@@ -289,19 +276,6 @@ export const FrontendHeader = memo(function FrontendHeader({ setting, auth }: Fr
                                             t={t}
                                             onNavigate={() => setMobileOpen(false)}
                                         />
-                                    ))}
-                                    {headerPages.map((item) => (
-                                        <Link
-                                            key={item.id}
-                                            href={item.url}
-                                            onClick={() => setMobileOpen(false)}
-                                            className={cn(
-                                                'text-muted-foreground hover:bg-muted hover:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                                                isRouteActive(item.url, currentPath) && 'bg-muted text-foreground',
-                                            )}
-                                        >
-                                            {item.title_translations?.[language] ?? item.title}
-                                        </Link>
                                     ))}
                                 </nav>
 

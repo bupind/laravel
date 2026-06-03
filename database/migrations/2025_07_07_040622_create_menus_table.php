@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->string('title');
             $table->string('translation_key')->nullable();
             $table->string('scope', 20)->default('backend')->index();
+            $table->string('location', 20)->default('sidebar')->index();
             $table->string('icon')->nullable();
             $table->string('route')->nullable();
             $table->string('permission_name')->nullable();

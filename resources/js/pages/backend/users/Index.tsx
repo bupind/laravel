@@ -184,26 +184,28 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
         disabled: processing,
     });
 
-    // Only show actions column if user has at least one action permission
     const showActionsColumn = canUpdate || canDelete || canReset;
 
     const columns: DataTableColumn<User>[] = [
         {
             key: 'name',
-            label: t('columns.user'),
+            label: t('columns.fullName'),
             sortable: canSort('name'),
             render: (user) => (
                 <div className="flex items-start gap-3">
-                    <div className="bg-muted text-primary flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold">
-                        {getInitials(user.name)}
-                    </div>
                     <div className="space-y-1">
                         <div className="font-medium">{user.name}</div>
-                        <div className="text-muted-foreground text-sm">{user.email}</div>
-                        <div className="text-muted-foreground text-xs italic">
-                            {t('users.registered')} {dayjs(user.created_at).fromNow()}
-                        </div>
                     </div>
+                </div>
+            ),
+        },
+        {
+            key: 'email',
+            label: t('columns.email'),
+            sortable: canSort('name'),
+            render: (user) => (
+                <div className="flex items-start gap-3">
+                    <div className="text-muted-foreground text-sm">{user.email}</div>
                 </div>
             ),
         },
@@ -216,7 +218,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                         <span className="text-muted-foreground text-xs">{t('users.noRole')}</span>
                     ) : (
                         user.roles.map((role) => (
-                            <Badge key={role.id} variant="secondary" className="text-xs font-normal">
+                            <Badge key={role.id} variant="secondary" className="text-xs font-normal rounded-sm">
                                 {role.name}
                             </Badge>
                         ))

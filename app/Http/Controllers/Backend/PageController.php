@@ -7,7 +7,6 @@ use App\Services\Translations\TranslationService;
 use App\Support\Slugs\GeneratesUniqueSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class PageController extends BaseCrudController
@@ -87,6 +86,7 @@ class PageController extends BaseCrudController
             'label' => 'Excerpt',
             'type'  => 'translatable',
             'rows'  => 3,
+            'help'  => 'Used as SEO description. If empty, description falls back to Content.',
             'col'   => 12,
         ],
         [
@@ -95,40 +95,22 @@ class PageController extends BaseCrudController
             'type'    => 'translatable',
             'wysiwyg' => true,
             'rows'    => 10,
-            'help'    => 'Rich text editor. Supports headings, bold, lists, links, and more.',
+            'help'    => 'Rich text editor. SEO title uses Title, and SEO description uses Excerpt or this content.',
             'col'     => 12,
-        ],
-        [
-            'name'  => 'meta_title',
-            'label' => 'SEO Title',
-            'type'  => 'translatable',
-            'col'   => 6,
-        ],
-        [
-            'name'  => 'meta_description',
-            'label' => 'SEO Description',
-            'type'  => 'translatable',
-            'col'   => 6,
-        ],
-        [
-            'name'  => 'meta_keywords',
-            'label' => 'SEO Keywords',
-            'col'   => 6,
         ],
         [
             'name'    => 'status',
             'label'   => 'Status',
             'type'    => 'select',
             'default' => Page::STATUS_ACTIVE,
-            'col'     => 6,
             'options' => [
                 [
                     'value' => Page::STATUS_ACTIVE,
-                    'label' => 'Active'
+                    'label' => 'Active',
                 ],
                 [
                     'value' => Page::STATUS_INACTIVE,
-                    'label' => 'Inactive'
+                    'label' => 'Inactive',
                 ],
             ],
         ],
@@ -157,17 +139,17 @@ class PageController extends BaseCrudController
         return $this->applyGeneratedSlug($validated);
     }
 
-    private function normalizeSlugValue(string $slug, string $title): string
-    {
-        $slug = trim($slug);
-        return $slug !== '' ? $slug : $title;
-    }
-
     protected function beforeUpdate(array $validated, Request $request, Model $record): array
     {
         $validated         = $this->normalizeTranslatablePayload($validated);
         $validated['slug'] = $this->normalizeSlugValue($validated['slug'] ?? '', $this->defaultLocaleValue($validated['title'] ?? [], 'page'));
         return $this->applyGeneratedSlug($validated, $record);
+    }
+
+    private function normalizeSlugValue(string $slug, string $title): string
+    {
+        $slug = trim($slug);
+        return $slug !== '' ? $slug : $title;
     }
 
     private function normalizeTranslatablePayload(array $validated): array
@@ -176,9 +158,6 @@ class PageController extends BaseCrudController
                     'title',
                     'excerpt',
                     'content',
-                    'meta_title',
-                    'meta_description',
-                    'meta_keywords',
                 ] as $field) {
             $validated[$field] = $this->onlyActiveLocaleValues($validated[$field] ?? []);
         }
@@ -218,65 +197,47 @@ class PageController extends BaseCrudController
 
     protected function afterStore(Model $record, array $validated, Request $request): void
     {
-        Cache::forget('global_pages_frontend_v1');
     }
 
     protected function afterUpdate(Model $record, array $validated, Request $request): void
     {
-        Cache::forget('global_pages_frontend_v1');
     }
 
     protected function afterDestroy(Model $record): void
     {
-        Cache::forget('global_pages_frontend_v1');
     }
 
     protected function rules(?Model $record = null): array
     {
         $ignoreId = $record?->getKey();
         return [
-            'title'            => [
+            'title'    => [
                 'required',
-                'array'
+                'array',
             ],
             ...$this->localeValueRules('title', true, 255),
-            'media_id'         => [
+            'media_id' => [
                 'nullable',
                 'uuid',
-                'exists:media,id'
+                'exists:media,id',
             ],
-            'slug'             => [
+            'slug'     => [
                 'nullable',
                 'string',
                 'max:255',
                 Rule::unique('pages', 'slug')->ignore($ignoreId),
             ],
-            'excerpt'          => [
+            'excerpt'  => [
                 'nullable',
-                'array'
+                'array',
             ],
             ...$this->localeValueRules('excerpt'),
-            'content'          => [
+            'content'  => [
                 'nullable',
-                'array'
+                'array',
             ],
             ...$this->localeValueRules('content'),
-            'meta_title'       => [
-                'nullable',
-                'array'
-            ],
-            ...$this->localeValueRules('meta_title', false, 255),
-            'meta_description' => [
-                'nullable',
-                'array'
-            ],
-            ...$this->localeValueRules('meta_description'),
-            'meta_keywords'    => [
-                'nullable',
-                'array'
-            ],
-            ...$this->localeValueRules('meta_keywords', false, 255),
-            'status'           => [
+            'status'   => [
                 'required',
                 'string',
                 Rule::in(Page::statuses()),
@@ -290,7 +251,7 @@ class PageController extends BaseCrudController
         foreach(app(TranslationService::class)->locales() as $locale) {
             $fieldRules = [
                 $required ? 'required' : 'nullable',
-                'string'
+                'string',
             ];
             if($max !== null) {
                 $fieldRules[] = "max:{$max}";

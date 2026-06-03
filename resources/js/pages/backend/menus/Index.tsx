@@ -25,8 +25,10 @@ import { ChevronDown, ChevronRight, Edit, Globe2, Plus, Save, Search, Server, Tr
 import { useCallback, useMemo, useState } from 'react';
 
 type MenuScope = 'backend' | 'frontend';
+type MenuLocation = 'sidebar' | 'header' | 'footer';
 
 interface MenuOrderPayload {
+    [key: string]: string | number | MenuOrderPayload[];
     id: string;
     order: number;
     children: MenuOrderPayload[];
@@ -140,6 +142,7 @@ export default function MenuIndex({ menuItems }: Props) {
     const { t } = useLanguage();
     const [menus, setMenus] = useState<MenuItem[]>(menuItems);
     const [activeScope, setActiveScope] = useState<MenuScope>('backend');
+    const [activeLocation, setActiveLocation] = useState<MenuLocation>('sidebar');
     const [isSaving, setIsSaving] = useState(false);
     const [expandedIds, setExpandedIds] = useState<string[]>([]);
     const [keyword, setKeyword] = useState('');
@@ -151,14 +154,18 @@ export default function MenuIndex({ menuItems }: Props) {
         }),
         [menus],
     );
+    const activeBaseMenus = useMemo(() => {
+        const scoped = menusByScope[activeScope];
+        if (activeScope === 'backend') return scoped;
+        return scoped.filter((menu) => (menu.location ?? 'header') === activeLocation);
+    }, [menusByScope, activeScope, activeLocation]);
 
     // Filter menus by keyword (title match)
     const activeMenus = useMemo(() => {
-        const scope = menusByScope[activeScope];
-        if (!keyword.trim()) return scope;
+        if (!keyword.trim()) return activeBaseMenus;
         const q = keyword.toLowerCase();
-        return scope.filter((m) => m.title.toLowerCase().includes(q));
-    }, [menusByScope, activeScope, keyword]);
+        return activeBaseMenus.filter((m) => m.title.toLowerCase().includes(q));
+    }, [activeBaseMenus, keyword]);
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -170,13 +177,20 @@ export default function MenuIndex({ menuItems }: Props) {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        const base = menusByScope[activeScope];
+        const base = activeBaseMenus;
         const oldIndex = base.findIndex((m) => m.id === String(active.id));
         const newIndex = base.findIndex((m) => m.id === String(over.id));
         if (oldIndex === -1 || newIndex === -1) return;
 
         const reordered = arrayMove(base, oldIndex, newIndex);
-        setMenus((prev) => [...prev.filter((m) => (m.scope ?? 'backend') !== activeScope), ...reordered]);
+        setMenus((prev) => [
+            ...prev.filter((m) => {
+                if ((m.scope ?? 'backend') !== activeScope) return true;
+                if (activeScope === 'backend') return false;
+                return (m.location ?? 'header') !== activeLocation;
+            }),
+            ...reordered,
+        ]);
     };
 
     const handleChildDragEnd = useCallback((parentId: string, event: DragEndEvent) => {
@@ -196,7 +210,7 @@ export default function MenuIndex({ menuItems }: Props) {
 
     const handleSave = () => {
         setIsSaving(true);
-        router.post('/backend/menus/reorder', { menus: buildOrderPayload(menusByScope[activeScope]) }, { onFinish: () => setIsSaving(false) });
+        router.post('/backend/menus/reorder', { menus: buildOrderPayload(activeBaseMenus) }, { onFinish: () => setIsSaving(false) });
     };
 
     const handleDelete = useCallback((id: string) => {
@@ -227,7 +241,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                     <Save className="mr-2 h-4 w-4" />
                                     {isSaving ? t('buttons.saving') : t('buttons.save')}
                                 </Button>
-                                <Link href={`/backend/menus/create?scope=${activeScope}`}>
+                                <Link href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}>
                                     <Button>
                                         <Plus className="mr-2 h-4 w-4" />
                                         {t('buttons.add')}
@@ -248,6 +262,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                     type="button"
                                     onClick={() => {
                                         setActiveScope(scope);
+                                        setActiveLocation(scope === 'frontend' ? 'header' : 'sidebar');
                                         setKeyword('');
                                     }}
                                     className={`rounded-lg border p-4 text-left transition-colors ${
@@ -276,12 +291,41 @@ export default function MenuIndex({ menuItems }: Props) {
                             ))}
                         </div>
 
+                        {activeScope === 'frontend' && (
+                            <div className="mb-6 inline-flex rounded-lg border bg-muted/30 p-1">
+                                {(['header', 'footer'] as MenuLocation[]).map((location) => (
+                                    <button
+                                        key={location}
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveLocation(location);
+                                            setKeyword('');
+                                        }}
+                                        className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                                            activeLocation === location ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                    >
+                                        {location}
+                                        <Badge variant={activeLocation === location ? 'default' : 'secondary'} className="rounded-md">
+                                            {menusByScope.frontend.filter((menu) => (menu.location ?? 'header') === location).length}
+                                        </Badge>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Search bar — same pattern as translations module */}
                         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h2 className="font-semibold">{activeScopeLabel}</h2>
+                                <h2 className="font-semibold">
+                                    {activeScope === 'frontend' ? `${activeScopeLabel} - ${activeLocation}` : activeScopeLabel}
+                                </h2>
                                 <p className="text-muted-foreground text-sm">
-                                    {activeScope === 'backend' ? 'Sedang mengelola menu backend.' : 'Sedang mengelola menu frontend.'}
+                                    {activeScope === 'backend'
+                                        ? 'Sedang mengelola menu backend.'
+                                        : activeLocation === 'header'
+                                          ? 'Sedang mengelola menu header frontend.'
+                                          : 'Sedang mengelola menu footer frontend.'}
                                 </p>
                             </div>
 
@@ -296,7 +340,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                     />
                                 </div>
                                 <Badge variant="outline" className="rounded-md">
-                                    {activeMenus.length} / {menusByScope[activeScope].length}
+                                    {activeMenus.length} / {activeBaseMenus.length}
                                 </Badge>
                             </div>
                         </div>
@@ -308,7 +352,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                     {keyword ? t('pages.menus.noResults', { fallback: 'Menu tidak ditemukan.' }) : t('pages.menus.empty')}
                                 </p>
                                 {!keyword && (
-                                    <Link href={`/backend/menus/create?scope=${activeScope}`}>
+                                    <Link href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}>
                                         <Button>
                                             <Plus className="mr-2 h-4 w-4" />
                                             {t('buttons.add')}

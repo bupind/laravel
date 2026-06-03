@@ -11,6 +11,7 @@ use App\Models\Menu;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,15 +22,29 @@ class ShareMenus
         $user      = $request->user();
         $menuScope = $this->isFrontendRequest($request) ? 'frontend' : 'backend';
         Inertia::share('menus', function() use ($user, $menuScope) {
+            if(!Schema::hasTable('menus')) {
+                return [];
+            }
             if($menuScope === 'backend' && !$user) {
                 return [];
             }
             $permissionKey = $user
                 ? $user->getAllPermissions()->pluck('name')->sort()->implode(',')
                 : 'guest';
-            $cacheKey      = "menus_v5_{$menuScope}_" . md5($permissionKey);
+            $hasLocation   = Schema::hasColumn('menus', 'location');
+            $cacheKey      = "menus_v7_{$menuScope}_" . ($hasLocation ? 'loc' : 'legacy') . '_' . md5($permissionKey);
             return Cache::remember($cacheKey, 180, function() use ($user, $menuScope) {
-                $allMenus  = Menu::where('scope', $menuScope)->orderBy('order')->get();
+                $hasLocation = Schema::hasColumn('menus', 'location');
+                $query = Menu::where('scope', $menuScope);
+                if($hasLocation) {
+                    $query->orderBy('location');
+                }
+                $allMenus = $query->orderBy('order')->get();
+                if(!$hasLocation) {
+                    $allMenus->each(function(Menu $menu): void {
+                        $menu->setAttribute('location', $menu->scope === 'frontend' ? 'header' : 'sidebar');
+                    });
+                }
                 $indexed   = $allMenus->keyBy('id');
                 $buildTree = function($parentId = null) use (&$buildTree, $indexed, $user, $menuScope) {
                     return $indexed

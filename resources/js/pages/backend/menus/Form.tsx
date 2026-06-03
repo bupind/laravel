@@ -17,6 +17,7 @@ interface MenuData {
     title: string;
     translation_key?: string | null;
     scope?: 'backend' | 'frontend';
+    location?: 'sidebar' | 'header' | 'footer';
     route: string;
     icon: string;
     parent_id: string | null;
@@ -27,6 +28,7 @@ interface ParentMenu {
     id: string;
     title: string;
     scope?: 'backend' | 'frontend';
+    location?: 'sidebar' | 'header' | 'footer';
 }
 
 interface Props {
@@ -34,9 +36,10 @@ interface Props {
     parentMenus: ParentMenu[];
     permissions: string[];
     initialScope?: 'backend' | 'frontend';
+    initialLocation?: 'header' | 'footer';
 }
 
-export default function MenuForm({ menu, parentMenus, permissions, initialScope = 'backend' }: Props) {
+export default function MenuForm({ menu, parentMenus, permissions, initialScope = 'backend', initialLocation = 'header' }: Props) {
     const { t } = useLanguage();
     const isEdit = !!menu;
 
@@ -44,19 +47,42 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
         title: menu?.title ?? '',
         translation_key: menu?.translation_key ?? '',
         scope: menu?.scope ?? initialScope,
+        location: menu?.location ?? (initialScope === 'frontend' ? initialLocation : 'sidebar'),
         route: menu?.route ?? '',
         icon: menu?.icon ?? '',
         parent_id: menu?.parent_id ?? (null as string | null),
         permission_name: menu?.permission_name ?? '',
     });
 
-    const availableParentMenus = parentMenus.filter((parentMenu) => (parentMenu.scope ?? 'backend') === data.scope);
+    const availableParentMenus = parentMenus.filter(
+        (parentMenu) => (parentMenu.scope ?? 'backend') === data.scope && (parentMenu.location ?? 'sidebar') === data.location,
+    );
 
     const handleScopeChange = (scope: 'backend' | 'frontend') => {
+        const location = scope === 'frontend' ? 'header' : 'sidebar';
         setData({
             ...data,
             scope,
-            parent_id: parentMenus.some((parentMenu) => parentMenu.id === data.parent_id && (parentMenu.scope ?? 'backend') === scope)
+            location,
+            parent_id: parentMenus.some(
+                (parentMenu) =>
+                    parentMenu.id === data.parent_id && (parentMenu.scope ?? 'backend') === scope && (parentMenu.location ?? 'sidebar') === location,
+            )
+                ? data.parent_id
+                : null,
+        });
+    };
+
+    const handleLocationChange = (location: 'header' | 'footer') => {
+        setData({
+            ...data,
+            location,
+            parent_id: parentMenus.some(
+                (parentMenu) =>
+                    parentMenu.id === data.parent_id &&
+                    (parentMenu.scope ?? 'backend') === data.scope &&
+                    (parentMenu.location ?? 'sidebar') === location,
+            )
                 ? data.parent_id
                 : null,
         });
@@ -112,6 +138,29 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
                                     </Select>
                                     {errors.scope && <p className="text-sm text-red-500">{errors.scope}</p>}
                                 </div>
+
+                                {data.scope === 'frontend' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="location">Area Frontend</Label>
+                                        <div id="location" className={`inline-flex rounded-lg border bg-muted/30 p-1 ${errors.location ? 'border-red-500' : ''}`}>
+                                            {(['header', 'footer'] as const).map((location) => (
+                                                <button
+                                                    key={location}
+                                                    type="button"
+                                                    onClick={() => handleLocationChange(location)}
+                                                    className={`rounded-md px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                                                        data.location === location
+                                                            ? 'bg-background text-foreground shadow-sm'
+                                                            : 'text-muted-foreground hover:text-foreground'
+                                                    }`}
+                                                >
+                                                    {location}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {errors.location && <p className="text-sm text-red-500">{errors.location}</p>}
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <Label htmlFor="route">{t('pages.menus.route')}</Label>

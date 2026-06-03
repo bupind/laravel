@@ -1,16 +1,9 @@
-/**
- * Dev script — jalankan Vite + PHP server bersamaan.
- * Dipanggil via: npm run dev
- */
-
 const { execSync, spawn } = require('child_process');
 const path = require('path');
-const fs   = require('fs');
 
 const root   = path.resolve(__dirname, '..');
 const isWin  = process.platform === 'win32';
 
-// Cari php di PATH atau laragon
 function findPhp() {
     const candidates = isWin
         ? [

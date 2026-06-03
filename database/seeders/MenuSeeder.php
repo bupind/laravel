@@ -121,6 +121,7 @@ class MenuSeeder extends Seeder
             'title'           => 'Home',
             'translation_key' => 'menus.home',
             'scope'           => 'frontend',
+            'location'        => 'header',
             'icon'            => 'Home',
             'route'           => '/',
             'order'           => 1,
@@ -129,6 +130,7 @@ class MenuSeeder extends Seeder
             'title'           => 'Products',
             'translation_key' => 'menus.products',
             'scope'           => 'frontend',
+            'location'        => 'header',
             'icon'            => 'Boxes',
             'route'           => '/products',
             'order'           => 2,
@@ -137,8 +139,36 @@ class MenuSeeder extends Seeder
             'title'           => 'Contact',
             'translation_key' => 'menus.contact',
             'scope'           => 'frontend',
+            'location'        => 'header',
             'icon'            => 'Mail',
             'route'           => '/contact',
+            'order'           => 3,
+        ]);
+        $this->menu([
+            'title'           => 'Privacy Policy',
+            'translation_key' => 'menus.privacy_policy',
+            'scope'           => 'frontend',
+            'location'        => 'footer',
+            'icon'            => 'Shield',
+            'route'           => '/pages/privacy-policy',
+            'order'           => 1,
+        ]);
+        $this->menu([
+            'title'           => 'About Us',
+            'translation_key' => 'menus.about_us',
+            'scope'           => 'frontend',
+            'location'        => 'footer',
+            'icon'            => 'Info',
+            'route'           => '/pages/about-us',
+            'order'           => 2,
+        ]);
+        $this->menu([
+            'title'           => 'FAQ',
+            'translation_key' => 'menus.faq',
+            'scope'           => 'frontend',
+            'location'        => 'footer',
+            'icon'            => 'CircleHelp',
+            'route'           => '/pages/faq',
             'order'           => 3,
         ]);
         $settings = $this->menu([

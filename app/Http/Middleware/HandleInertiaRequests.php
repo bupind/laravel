@@ -7,7 +7,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Page;
 use App\Models\SettingApp;
 use App\Models\User;
 use App\Services\Translations\TranslationService;
@@ -83,7 +82,6 @@ class HandleInertiaRequests extends Middleware
             // Ringan: jangan kirim dictionary besar lewat Inertia.
             // Frontend mengambil key yang dibutuhkan saja via /api/translations/resolve.
             'translations'               => fn() => [],
-            'global_pages'               => fn() => $this->globalPagesPayload($request),
         ]);
     }
 
@@ -132,67 +130,5 @@ class HandleInertiaRequests extends Middleware
             }
         }
         return [];
-    }
-
-    private function globalPagesPayload(Request $request): array
-    {
-        if(!$this->isFrontendRequest($request) || !Schema::hasTable('pages')) {
-            return [
-                'header' => [],
-                'footer' => [],
-            ];
-        }
-        try {
-            return Cache::remember('global_pages_frontend_v1', 300, function() {
-                $pages = Page::query()
-                    ->published()
-                    ->where('slug', '!=', 'contact')
-                    ->whereIn('placement', [
-                        'header',
-                        'footer',
-                        'both'
-                    ])
-                    ->orderBy('sort_order')
-                    ->orderBy('title')
-                    ->get([
-                        'id',
-                        'title',
-                        'slug',
-                        'placement',
-                        'sort_order'
-                    ]);
-                $mapPage = fn(Page $page): array => [
-                    'id'                 => $page->id,
-                    'title'              => $page->title_text,
-                    'title_translations' => $page->title,
-                    'slug'               => $page->slug,
-                    'url'                => $page->url,
-                    'placement'          => $page->placement,
-                ];
-                return [
-                    'header' => $pages
-                        ->filter(fn(Page $page) => in_array($page->placement, [
-                            'header',
-                            'both'
-                        ], true))
-                        ->map($mapPage)
-                        ->values()
-                        ->all(),
-                    'footer' => $pages
-                        ->filter(fn(Page $page) => in_array($page->placement, [
-                            'footer',
-                            'both'
-                        ], true))
-                        ->map($mapPage)
-                        ->values()
-                        ->all(),
-                ];
-            });
-        } catch(Exception) {
-            return [
-                'header' => [],
-                'footer' => [],
-            ];
-        }
     }
 }

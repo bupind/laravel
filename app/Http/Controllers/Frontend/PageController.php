@@ -22,9 +22,6 @@ class PageController extends Controller
                 'media_url'        => $page->media_url,
                 'excerpt'          => $page->excerpt,
                 'content'          => $page->content,
-                'meta_title'       => $page->meta_title,
-                'meta_description' => $page->meta_description,
-                'meta_keywords'    => $page->meta_keywords,
                 'url'              => $page->url,
             ],
         ]);

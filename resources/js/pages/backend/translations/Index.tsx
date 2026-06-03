@@ -176,12 +176,10 @@ export default function TranslationIndex({
         setCurrentPage(1);
     };
 
-    // ── Task 5: Hapus satu key lengkap (semua locale sekaligus) ──────────────
     const deleteKey = (row: TranslationRow, realIndex: number) => {
         const label = `${row.namespace}.${row.key}`;
         if (!window.confirm(`Hapus key "${label}" beserta semua terjemahannya?\n\nAksi ini tidak bisa dibatalkan.`)) return;
 
-        // Jika row ini belum pernah disimpan (baru ditambah di-client), cukup hapus dari state
         const hasValues = Object.values(row.values).some((v) => v && v.trim() !== '');
         if (!hasValues) {
             setData('rows', data.rows.filter((_, i) => i !== realIndex));
@@ -259,23 +257,11 @@ export default function TranslationIndex({
                     </div>
                 </div>
 
-                <div className="text-muted-foreground flex flex-col gap-2 text-sm md:flex-row md:items-center md:justify-between">
-                    <div>{t('settings.translations.resultSummary', { from: fromRow, to: toRow, total: filteredRows.length })}</div>
-                    <div className="flex flex-wrap gap-2">
-                        {scopes.map((scope) => (
-                            <Badge key={scope} variant={scopeFilter === scope ? 'default' : 'secondary'}>{scope}</Badge>
-                        ))}
-                    </div>
-                </div>
-
                 <div className="bg-card overflow-hidden rounded-lg border">
                     <div className="overflow-x-auto">
-                        {/* +1 kolom untuk delete button */}
                         <table className="w-full text-sm" style={{ minWidth: `${680 + editableLocales.length * 260}px` }}>
                             <thead className="bg-muted text-muted-foreground">
                                 <tr className="border-b">
-                                    <th className="w-[11%] px-4 py-3 text-left font-semibold">{t('settings.translations.scope')}</th>
-                                    <th className="w-[13%] px-4 py-3 text-left font-semibold">{t('settings.translations.namespace')}</th>
                                     <th className="w-[17%] px-4 py-3 text-left font-semibold">{t('settings.translations.key')}</th>
                                     {editableLocales.map((locale) => (
                                         <th key={locale.code} className="min-w-[240px] px-4 py-3 text-left font-semibold">
@@ -286,7 +272,6 @@ export default function TranslationIndex({
                                             </div>
                                         </th>
                                     ))}
-                                    {/* ── Task 5: Kolom aksi delete ── */}
                                     {canDelete && (
                                         <th className="w-[52px] px-2 py-3 text-center font-semibold"></th>
                                     )}
@@ -306,43 +291,28 @@ export default function TranslationIndex({
                                         const isDeleting = deletingKey === `${row.namespace}.${row.key}`;
 
                                         return (
-                                            <tr
-                                                key={rowKey}
-                                                className={`border-b last:border-b-0 ${isDeleting ? 'opacity-40' : ''}`}
-                                            >
-                                                <td className="px-4 py-3 align-top">
-                                                    <select
-                                                        value={row.scope}
-                                                        onChange={(event) => updateRow(realIndex, { scope: event.target.value })}
-                                                        disabled={!canUpdate}
-                                                        className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
-                                                    >
-                                                        {scopes.map((scope) => (
-                                                            <option key={scope} value={scope}>{scope}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                                <td className="px-4 py-3 align-top">
+                                            <tr key={rowKey} className={`border-b p-1 last:border-b-0 ${isDeleting ? 'opacity-40' : ''}`}>
+                                                <td className="align-center px-1 py-1">
                                                     <Input
-                                                        value={row.namespace}
-                                                        onChange={(event) => updateRow(realIndex, { namespace: event.target.value })}
-                                                        disabled={!canUpdate}
+                                                        value={`${row.namespace}.${row.key}`}
+                                                        onChange={(event) => {
+                                                            const value = event.target.value;
+
+                                                            const parts = value.split('.');
+                                                            const namespace = parts[0] ?? '';
+                                                            const key = parts.slice(1).join('.') ?? '';
+
+                                                            updateRow(realIndex, {
+                                                                namespace,
+                                                                key,
+                                                            });
+                                                        }}
+                                                        disabled={true}
                                                         className="h-9"
                                                     />
-                                                </td>
-                                                <td className="px-4 py-3 align-top">
-                                                    <Input
-                                                        value={row.key}
-                                                        onChange={(event) => updateRow(realIndex, { key: event.target.value })}
-                                                        disabled={!canUpdate}
-                                                        className="h-9"
-                                                    />
-                                                    <code className="text-muted-foreground mt-1 block text-xs break-all">
-                                                        {row.namespace}.{row.key}
-                                                    </code>
                                                 </td>
                                                 {editableLocales.map((locale) => (
-                                                    <td key={locale.code} className="px-4 py-3 align-top">
+                                                    <td key={locale.code} className="align-center px-1 py-1">
                                                         <Input
                                                             value={row.values[locale.code] ?? ''}
                                                             onChange={(event) => updateValue(realIndex, locale.code, event.target.value)}
@@ -351,9 +321,8 @@ export default function TranslationIndex({
                                                         />
                                                     </td>
                                                 ))}
-                                                {/* ── Task 5: Tombol delete key ── */}
                                                 {canDelete && (
-                                                    <td className="px-2 py-3 align-top text-center">
+                                                    <td className="align-center px-2 py-3 text-center">
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
