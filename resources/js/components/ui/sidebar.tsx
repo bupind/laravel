@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLanguage } from '@/hooks/use-language';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -70,12 +71,12 @@ const SidebarProvider = React.forwardRef<
         [setOpenProp, open],
     );
 
-    // Helper to toggle the sidebar.
+    
     const toggleSidebar = React.useCallback(() => {
         return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
     }, [isMobile, setOpen, setOpenMobile]);
 
-    // Listen for mobile navigation events
+    
     React.useEffect(() => {
         const handleMobileNavigation = () => {
             if (isMobile) {
@@ -87,7 +88,7 @@ const SidebarProvider = React.forwardRef<
         return () => window.removeEventListener('mobile-navigation', handleMobileNavigation);
     }, [isMobile, setOpenMobile]);
 
-    // Adds a keyboard shortcut to toggle the sidebar.
+    
     React.useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -100,8 +101,8 @@ const SidebarProvider = React.forwardRef<
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [toggleSidebar]);
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
+    
+    
     const state = open ? 'expanded' : 'collapsed';
 
     const contextValue = React.useMemo<SidebarContext>(
@@ -148,6 +149,7 @@ const Sidebar = React.forwardRef<
         collapsible?: 'offcanvas' | 'icon' | 'none';
     }
 >(({ side = 'left', variant = 'sidebar', collapsible = 'offcanvas', className, children, ...props }, ref) => {
+    const { t } = useLanguage();
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
     if (collapsible === 'none') {
@@ -172,7 +174,7 @@ const Sidebar = React.forwardRef<
                     }
                     side={side}
                 >
-                    <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
+                    <SheetTitle className="sr-only">{t('navigation.sidebar')}</SheetTitle>
                     <div className="flex h-full w-full flex-col">{children}</div>
                 </SheetContent>
             </Sheet>
@@ -188,7 +190,7 @@ const Sidebar = React.forwardRef<
             data-variant={variant}
             data-side={side}
         >
-            {/* This is what handles the sidebar gap on desktop */}
+            
             <div
                 className={cn(
                     'relative h-svh w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
@@ -226,6 +228,7 @@ Sidebar.displayName = 'Sidebar';
 
 const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentProps<typeof Button>>(
     ({ className, onClick, ...props }, ref) => {
+        const { t } = useLanguage();
         const { toggleSidebar } = useSidebar();
 
         return (
@@ -242,7 +245,7 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
                 {...props}
             >
                 <PanelLeft />
-                <span className="sr-only">Toggle Sidebar</span>
+                <span className="sr-only">{t('navigation.toggleSidebar')}</span>
             </Button>
         );
     },
@@ -250,16 +253,17 @@ const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.C
 SidebarTrigger.displayName = 'SidebarTrigger';
 
 const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'button'>>(({ className, ...props }, ref) => {
+    const { t } = useLanguage();
     const { toggleSidebar } = useSidebar();
 
     return (
         <button
             ref={ref}
             data-sidebar="rail"
-            aria-label="Toggle Sidebar"
+            aria-label={t('navigation.toggleSidebar')}
             tabIndex={-1}
             onClick={toggleSidebar}
-            title="Toggle Sidebar"
+            title={t('navigation.toggleSidebar')}
             className={cn(
                 'absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex',
                 'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
@@ -364,7 +368,7 @@ const SidebarGroupAction = React.forwardRef<HTMLButtonElement, React.ComponentPr
                 data-sidebar="group-action"
                 className={cn(
                     'absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-                    // Increases the hit area of the button on mobile.
+                    
                     'after:absolute after:-inset-2 md:after:hidden',
                     'group-data-[collapsible=icon]:hidden',
                     className,
@@ -469,7 +473,7 @@ const SidebarMenuAction = React.forwardRef<
             data-sidebar="menu-action"
             className={cn(
                 'absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0',
-                // Increases the hit area of the button on mobile.
+                
                 'after:absolute after:-inset-2 md:after:hidden',
                 'peer-data-[size=sm]/menu-button:top-1',
                 'peer-data-[size=default]/menu-button:top-1.5',
@@ -509,7 +513,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         showIcon?: boolean;
     }
 >(({ className, showIcon = false, ...props }, ref) => {
-    // Random width between 50 to 90%.
+    
     const width = React.useMemo(() => {
         return `${Math.floor(Math.random() * 40) + 50}%`;
     }, []);

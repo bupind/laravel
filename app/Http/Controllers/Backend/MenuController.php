@@ -18,7 +18,6 @@ class MenuController extends Controller
 {
     public function index(Request $request)
     {
-        $user  = $request->user();
         $menus = Menu::with([
             'children' => fn($q) => $q->orderBy('order')->with([
                 'children' => fn($q2) => $q2->orderBy('order'),

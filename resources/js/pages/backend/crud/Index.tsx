@@ -132,11 +132,12 @@ export interface Filters {
 export type AnyRecord = Record<string, unknown> & { id?: number | string };
 
 export interface CrudIndexProps {
-    [key: string]: unknown;
     filters?: Filters;
     datatable?: DatatableMeta;
     crud?: CrudMeta;
     form?: Record<string, AnyRecord | null | undefined>;
+
+    [key: string]: unknown;
 }
 function buildQueryString(query: Record<string, string | number | undefined>): string {
     const params = new URLSearchParams();
@@ -180,7 +181,7 @@ export function formatCellValue(value: unknown, type: FieldType): React.ReactNod
         case 'checkbox': {
             const active = Boolean(value);
             return (
-                <Badge variant={active ? 'default' : 'secondary'} className="text-xs rounded-sm">
+                <Badge variant={active ? 'default' : 'secondary'} className="rounded-sm text-xs">
                     {active ? 'Active' : 'Inactive'}
                 </Badge>
             );
@@ -320,6 +321,7 @@ function formatDetailValue(value: unknown, type: FieldType): React.ReactNode {
 }
 
 export function RecordDetails({ record, fields }: { record?: AnyRecord | null; fields: TableColumn[] }) {
+    const { t } = useLanguage();
     const detailFields =
         fields.length > 0
             ? fields
@@ -331,7 +333,7 @@ export function RecordDetails({ record, fields }: { record?: AnyRecord | null; f
               }));
 
     if (!record) {
-        return <p className="text-muted-foreground text-sm">No record selected.</p>;
+        return <p className="text-muted-foreground text-sm">{t('pages.crud.noRecordSelected')}</p>;
     }
 
     return (
@@ -403,6 +405,7 @@ export interface FormFieldRendererProps {
 }
 
 export function FormFieldRenderer({ field, value, error, onChange, disabled = false }: FormFieldRendererProps) {
+    const { t } = useLanguage();
     const inputId = `crud-field-${field.name}`;
     const [pickerOpen, setPickerOpen] = React.useState(false);
     const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -464,7 +467,7 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                             </Button>
                         )}
                         <Button type="button" variant="outline" disabled={disabled} onClick={() => setPickerOpen(true)}>
-                            Pilih / Upload
+                            {t('buttons.chooseOrUpload')}
                         </Button>
                     </div>
                 </div>
@@ -534,7 +537,6 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                 </Label>
 
                 <div className="rounded-md border">
-                    {/* Tab bar */}
                     <div className="bg-muted/30 flex border-b">
                         {locales.map((locale) => {
                             const hasValue = !!(values[locale.code] ?? '');
@@ -556,7 +558,6 @@ export function FormFieldRenderer({ field, value, error, onChange, disabled = fa
                         })}
                     </div>
 
-                    {/* Active locale input */}
                     <div className={field.wysiwyg ? '' : 'p-3'}>
                         {currentLocale &&
                             (field.wysiwyg ? (
@@ -702,7 +703,6 @@ export default function CrudIndex(props: CrudIndexProps) {
         clearErrors();
         const populated = buildFormData(formSchema, crud.mode === 'edit' ? formRecord : null);
         Object.entries(populated).forEach(([k, v]) => setData(k as never, v as never));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [crud?.modal, crud?.mode, formRecord?.id]);
 
     const handleModalClose = useCallback(() => {
@@ -773,7 +773,6 @@ export default function CrudIndex(props: CrudIndexProps) {
         [routes?.import],
     );
 
-    // Keyboard shortcuts saat modal terbuka
     useModalShortcuts({
         open: isModalOpen,
         onSubmit: submitForm,
@@ -890,14 +889,13 @@ export default function CrudIndex(props: CrudIndexProps) {
         };
 
         return [...schemaColumns, actionsCol];
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tableSchema, sortableSet, canView, canUpdate, canDelete, activeQueryString, processing, resource, routes]);
 
     if (!crud || !resource || !collection || !routes) {
         return (
             <BackendLayout breadcrumbs={[]}>
                 <div className="text-muted-foreground flex h-64 items-center justify-center text-sm">
-                    No resource metadata received. Check controller configuration.
+                    {t('pages.crud.noResourceMetadata')}
                 </div>
             </BackendLayout>
         );
@@ -907,7 +905,6 @@ export default function CrudIndex(props: CrudIndexProps) {
             <Head title={resource.title} />
 
             <div className="space-y-6 p-4 md:p-6">
-                {/* Page header */}
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t(`pages.${resource.name}.title`, { fallback: resource.title })}</h1>
                     <p className="text-muted-foreground text-sm">
@@ -946,7 +943,7 @@ export default function CrudIndex(props: CrudIndexProps) {
                                         onClick={() => window.open(routes.import_template ?? '', '_blank')}
                                     >
                                         <FileSpreadsheet className="h-4 w-4" />
-                                        Template CSV
+                                        {t('buttons.csvTemplate')}
                                     </Button>
                                 )}
                                 {routes.import && (
@@ -1016,24 +1013,33 @@ export default function CrudIndex(props: CrudIndexProps) {
                         {isView ? (
                             <div className="min-w-0">
                                 <RecordDetails record={formRecord} fields={viewSchema} />
-                                <DialogFooter className="pt-4">
-                                    {canUpdate && formRecord?.id && (
+                                <DialogFooter className="flex !flex-row justify-end pt-4 sm:space-x-0">
+                                    <div className="inline-flex overflow-hidden rounded-md">
+                                        {canUpdate && formRecord?.id && (
+                                            <Button
+                                                type="button"
+                                                className="rounded-r-none"
+                                                onClick={() =>
+                                                    router.get(
+                                                        `${routes.index}/${formRecord[resource.key] ?? formRecord.id}/edit${activeQueryString}`,
+                                                        {},
+                                                        { preserveScroll: true },
+                                                    )
+                                                }
+                                            >
+                                                {t('buttons.edit')}
+                                            </Button>
+                                        )}
+
                                         <Button
                                             type="button"
-                                            onClick={() =>
-                                                router.get(
-                                                    `${routes.index}/${formRecord[resource.key] ?? formRecord.id}/edit${activeQueryString}`,
-                                                    {},
-                                                    { preserveScroll: true },
-                                                )
-                                            }
+                                            variant="secondary"
+                                            className={canUpdate && formRecord?.id ? '-ml-px rounded-l-none' : ''}
+                                            onClick={() => handleModalOpenChange(false)}
                                         >
-                                            {t('buttons.edit')}
+                                            {t('buttons.close', { fallback: 'Close' })}
                                         </Button>
-                                    )}
-                                    <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)}>
-                                        {t('buttons.close', { fallback: 'Close' })}
-                                    </Button>
+                                    </div>
                                 </DialogFooter>
                             </div>
                         ) : (
@@ -1052,13 +1058,16 @@ export default function CrudIndex(props: CrudIndexProps) {
                                     />
                                 )}
 
-                                <DialogFooter className="pt-4">
-                                    <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)} disabled={processing}>
-                                        {t('buttons.cancel')}
-                                    </Button>
-                                    <Button type="submit" disabled={processing}>
-                                        {processing ? t('buttons.saving') : t('buttons.save')}
-                                    </Button>
+                                <DialogFooter className="flex !flex-row pt-4 sm:space-x-0">
+                                    <div className="flex w-full items-center justify-between">
+                                        <Button type="button" variant="secondary" onClick={() => handleModalOpenChange(false)} disabled={processing}>
+                                            {t('buttons.cancel')}
+                                        </Button>
+
+                                        <Button type="submit" disabled={processing}>
+                                            {processing ? t('buttons.saving') : t('buttons.save')}
+                                        </Button>
+                                    </div>
                                 </DialogFooter>
                             </form>
                         )}

@@ -70,6 +70,7 @@ export interface SharedData {
     auth: Auth;
     setting?: Setting;
     translation_scope?: 'global' | 'common' | 'backend' | 'frontend' | 'api' | 'mobile' | 'auth' | 'validation';
+    translation_version?: number;
     translations?: {
         [locale: string]: Record<string, string> | undefined;
     };

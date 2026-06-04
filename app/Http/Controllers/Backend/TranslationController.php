@@ -38,7 +38,7 @@ class TranslationController extends Controller
                 'status',
             ]);
         $rows         = $translations
-            ->groupBy(fn(Translation $translation) => "{$translation->namespace}|{$translation->key}")
+            ->groupBy(fn(Translation $translation) => "{$translation->scope}|{$translation->namespace}|{$translation->key}")
             ->map(function($items) {
                 $scopeRank = [
                     'global'     => 0,

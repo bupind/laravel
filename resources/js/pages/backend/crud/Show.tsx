@@ -9,9 +9,10 @@ import { useMemo } from 'react';
 import { type AnyRecord, type CrudMeta, RecordDetails } from './Index';
 
 interface CrudShowProps {
-    [key: string]: unknown;
     crud?: CrudMeta;
     form?: Record<string, AnyRecord | null | undefined>;
+
+    [key: string]: unknown;
 }
 
 export default function CrudShow(props: CrudShowProps) {
@@ -81,17 +82,29 @@ export default function CrudShow(props: CrudShowProps) {
                             <RecordDetails record={record} fields={fields} />
                         </CardContent>
 
-                        <CardFooter className="flex justify-between gap-3 border-t pt-6">
-                            <Button type="button" variant="outline" onClick={() => router.get(routes.index, {}, { preserveScroll: false })}>
-                                {t('buttons.back')}
-                            </Button>
-
-                            {crud.permissions.update && recordId && (
-                                <Button type="button" className="gap-2" onClick={() => router.get(`${routes.index}/${recordId}/edit`)}>
-                                    <Pencil className="h-4 w-4" />
-                                    {t('buttons.edit')}
+                        <CardFooter className="flex justify-end border-t pt-6">
+                            <div className="inline-flex overflow-hidden rounded-md border">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="rounded-none border-0"
+                                    onClick={() => router.get(routes.index, {}, { preserveScroll: false })}
+                                >
+                                    {t('buttons.back')}
                                 </Button>
-                            )}
+
+                                {crud.permissions.update && recordId && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="gap-2 rounded-none border-l"
+                                        onClick={() => router.get(`${routes.index}/${recordId}/edit`)}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                        {t('buttons.edit')}
+                                    </Button>
+                                )}
+                            </div>
                         </CardFooter>
                     </Card>
                 </div>

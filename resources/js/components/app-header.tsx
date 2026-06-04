@@ -12,7 +12,7 @@ import { useLanguage } from '@/hooks/use-language';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, type LucideIcon } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, type LucideIcon, Menu, Search } from 'lucide-react';
 import { memo } from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
@@ -87,7 +87,11 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                         {MAIN_NAV_ITEMS.map((item) => (
                                             <Link key={item.translationKey} href={item.url} className="flex items-center space-x-2 font-medium">
                                                 <Icon iconNode={item.icon} className="h-5 w-5" />
-                                                <span>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
+                                                <span>
+                                                    {t(item.translationKey, {
+                                                        fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined,
+                                                    })}
+                                                </span>
                                             </Link>
                                         ))}
                                     </div>
@@ -102,7 +106,11 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 className="flex items-center space-x-2 font-medium"
                                             >
                                                 <Icon iconNode={item.icon} className="h-5 w-5" />
-                                                <span>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
+                                                <span>
+                                                    {t(item.translationKey, {
+                                                        fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined,
+                                                    })}
+                                                </span>
                                             </a>
                                         ))}
                                     </div>
@@ -131,7 +139,9 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 )}
                                             >
                                                 <Icon iconNode={item.icon} className="mr-2 h-4 w-4" />
-                                                {t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}
+                                                {t(item.translationKey, {
+                                                    fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined,
+                                                })}
                                             </Link>
                                             {isActive && <div className="bg-foreground absolute bottom-0 left-0 h-0.5 w-full translate-y-px" />}
                                         </NavigationMenuItem>
@@ -158,12 +168,20 @@ export const AppHeader = memo(function AppHeader({ breadcrumbs = [] }: AppHeader
                                                 rel="noopener noreferrer"
                                                 className="group text-accent-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                                             >
-                                                <span className="sr-only">{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</span>
+                                                <span className="sr-only">
+                                                    {t(item.translationKey, {
+                                                        fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined,
+                                                    })}
+                                                </span>
                                                 <Icon iconNode={item.icon} className="size-5 opacity-80 group-hover:opacity-100" />
                                             </a>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>{t(item.translationKey, { fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined })}</p>
+                                            <p>
+                                                {t(item.translationKey, {
+                                                    fallback: item.translationKey === 'pages.dashboard.title' ? 'Dashboard' : undefined,
+                                                })}
+                                            </p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>

@@ -1,4 +1,5 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { useLanguage } from '@/hooks/use-language';
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 
@@ -11,6 +12,7 @@ interface AuthLayoutProps {
 
 export default function AuthSimpleLayout({ children, title, description }: AuthLayoutProps) {
     const { props } = usePage();
+    const { t } = useLanguage();
 
     const setting = props?.setting as {
         app_name: string;
@@ -58,7 +60,7 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
 
                 <div className="border-t border-gray-100 px-8 py-6 text-center dark:border-gray-700/50">
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        © {new Date().getFullYear()} {setting?.app_name}. All rights reserved.
+                        © {new Date().getFullYear()} {setting?.app_name}. {t('footer.rightsReserved')}
                     </p>
                 </div>
             </div>

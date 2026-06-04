@@ -1,14 +1,15 @@
+import { FormTextField } from '@/components/forms/form-fields';
+import { FormMultiSelect } from '@/components/forms/form-select';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useInertiaFormWithSchema } from '@/hooks/use-inertia-form';
 import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
+import { type UserFormData, userSchema } from '@/lib/validation-schemas';
 import { type BreadcrumbItem, type Role } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import React from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { z } from 'zod';
 
 interface UserData {
     id?: number;
@@ -23,26 +24,42 @@ interface Props {
     currentRoles?: string[];
 }
 
+const userUpdateSchema = userSchema.extend({
+    password: z.string().optional().default(''),
+});
+
 export default function UserForm({ user, roles, currentRoles }: Props) {
     const isEdit = !!user;
     const { t } = useLanguage();
 
-    const { data, setData, post, put, processing, errors } = useForm({
-        name: user?.name ?? '',
-        email: user?.email ?? '',
-        password: '',
-        roles: currentRoles ?? [],
+    const schema = isEdit ? userUpdateSchema : userSchema;
+
+    const form = useInertiaFormWithSchema<UserFormData>({
+        schema,
+        endpoint: isEdit ? `/backend/users/${user?.id}` : '/backend/users',
+        method: isEdit ? 'put' : 'post',
+        defaultValues: {
+            name: user?.name ?? '',
+            email: user?.email ?? '',
+            password: '',
+            roles: currentRoles ?? [],
+        },
+        onSuccess: () => {
+            router.visit('/backend/users', { preserveState: false });
+        },
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        isEdit ? put(`/backend/users/${user?.id}`) : post('/backend/users');
-    };
+    const handleSubmit = form.handleSubmit;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: t('pages.users.title', { fallback: 'User Management' }), href: '/backend/users' },
         { title: isEdit ? t('buttons.update') : t('buttons.create'), href: '#' },
     ];
+
+    const roleOptions = roles.map((role) => ({
+        value: role.name,
+        label: role.name,
+    }));
 
     return (
         <BackendLayout breadcrumbs={breadcrumbs}>
@@ -52,86 +69,55 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                 <Card className="mx-auto max-w-3xl">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-2xl font-bold tracking-tight">{isEdit ? t('buttons.update') : t('buttons.create')}</CardTitle>
-                        <p className="text-muted-foreground text-sm">{isEdit ? t('form.updateDescription') : t('form.createDescription')}</p>
+                        <CardDescription>{isEdit ? t('form.updateDescription') : t('form.createDescription')}</CardDescription>
                     </CardHeader>
 
                     <Separator />
 
                     <CardContent className="pt-5">
-                        <form onSubmit={handleSubmit} className="space-y-8">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-4">
-                                {/* Nama */}
                                 <div>
-                                    <Label htmlFor="name" className="mb-2 block">
-                                        {t('labels.name')}
-                                    </Label>
-                                    <Input
-                                        id="name"
-                                        placeholder={t('labels.name')}
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                        className={errors.name ? 'border-red-500' : ''}
-                                    />
-                                    {errors.name && <p className="mt-2 text-sm text-red-500">{errors.name}</p>}
+                                    <h3 className="text-lg font-semibold">{t('labels.personalInformation', { fallback: 'Personal Information' })}</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('labels.personalInformationDescription', { fallback: 'Update your basic information' })}
+                                    </p>
                                 </div>
 
-                                {/* Email */}
+                                <FormTextField form={form.form} name="name" label={t('labels.name')} placeholder={t('labels.name')} required />
+
+                                <FormTextField
+                                    form={form.form}
+                                    name="email"
+                                    type="email"
+                                    label={t('labels.email')}
+                                    placeholder={t('users.emailAddress')}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-4">
                                 <div>
-                                    <Label htmlFor="email" className="mb-2 block">
-                                        {t('labels.email')}
-                                    </Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder={t('users.emailAddress')}
-                                        value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
-                                        className={errors.email ? 'border-red-500' : ''}
-                                    />
-                                    {errors.email && <p className="mt-2 text-sm text-red-500">{errors.email}</p>}
+                                    <h3 className="text-lg font-semibold">{t('labels.security', { fallback: 'Security' })}</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        {isEdit
+                                            ? t('labels.passwordOptional', { fallback: 'Leave blank to keep current password' })
+                                            : t('labels.passwordRequired', { fallback: 'Set a secure password' })}
+                                    </p>
                                 </div>
 
-                                {/* Password */}
+                                <FormTextField form={form.form} name="password" type="password" label={t('labels.password')} required={!isEdit} />
+                            </div>
+
+                            <div className="space-y-4">
                                 <div>
-                                    <Label htmlFor="password" className="mb-2 block">
-                                        {t('labels.password')}
-                                        {isEdit ? ` (${t('users.optional')})` : ''}
-                                    </Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder=""
-                                        value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                        className={errors.password ? 'border-red-500' : ''}
-                                    />
-                                    {errors.password && <p className="mt-2 text-sm text-red-500">{errors.password}</p>}
+                                    <h3 className="text-lg font-semibold">{t('columns.role')}</h3>
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('labels.selectRoles', { fallback: 'Assign roles to this user' })}
+                                    </p>
                                 </div>
 
-                                {/* Roles */}
-                                <div>
-                                    <Label className="mb-3 block">{t('columns.role')}</Label>
-                                    <div className="space-y-3 rounded-lg border p-4">
-                                        {roles.map((role) => (
-                                            <div key={role.id} className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id={`role-${role.id}`}
-                                                    checked={data.roles.includes(role.name)}
-                                                    onCheckedChange={(checked) => {
-                                                        setData(
-                                                            'roles',
-                                                            checked === true ? [...data.roles, role.name] : data.roles.filter((r) => r !== role.name),
-                                                        );
-                                                    }}
-                                                />
-                                                <Label htmlFor={`role-${role.id}`} className="cursor-pointer text-sm font-normal">
-                                                    {role.name}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {errors.roles && <p className="mt-2 text-sm text-red-500">{errors.roles}</p>}
-                                </div>
+                                <FormMultiSelect form={form.form} name="roles" options={roleOptions} />
                             </div>
 
                             <Separator />
@@ -142,8 +128,16 @@ export default function UserForm({ user, roles, currentRoles }: Props) {
                                         {t('buttons.cancel')}
                                     </Button>
                                 </Link>
-                                <Button type="submit" disabled={processing} className="w-full sm:w-auto">
-                                    {processing ? t('buttons.saving') : isEdit ? t('buttons.save') : t('buttons.add')}
+                                <Button type="submit" disabled={form.isSubmitting} className="w-full sm:w-auto">
+                                    {form.isSubmitting ? (
+                                        <>
+                                            <span className="animate-spin">⟳</span> {t('buttons.saving')}
+                                        </>
+                                    ) : isEdit ? (
+                                        t('buttons.save')
+                                    ) : (
+                                        t('buttons.add')
+                                    )}
                                 </Button>
                             </div>
                         </form>

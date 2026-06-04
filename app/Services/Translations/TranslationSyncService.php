@@ -32,9 +32,12 @@ class TranslationSyncService
         'datatable',
         'dialog',
         'errors',
+        'fields',
         'filePicker',
+        'footer',
         'form',
         'hints',
+        'iconPicker',
         'labels',
         'language',
         'menus',
@@ -43,6 +46,7 @@ class TranslationSyncService
         'pages',
         'pagination',
         'placeholders',
+        'permissions',
         'settings',
         'theme',
     ];
@@ -51,9 +55,12 @@ class TranslationSyncService
         'columns',
         'datatable',
         'dialog',
+        'fields',
         'filePicker',
+        'footer',
         'form',
         'hints',
+        'iconPicker',
         'labels',
         'language',
         'navigation',
@@ -61,6 +68,7 @@ class TranslationSyncService
         'menus',
         'pagination',
         'placeholders',
+        'permissions',
         'theme',
     ];
 
@@ -76,8 +84,8 @@ class TranslationSyncService
                 'key',
                 'value',
             ]);
-        $fullKeys   = collect($sourceKeys)
-            ->map(fn(array $item) => $item['full_key'])
+        $sourceSignatures = collect($sourceKeys)
+            ->map(fn(array $item) => "{$item['scope']}|{$item['full_key']}")
             ->unique()
             ->values();
         $added      = 0;
@@ -110,16 +118,16 @@ class TranslationSyncService
             'key',
             'value'
         ]);
-        $unused   = $existing->filter(
-            fn(Translation $translation) => !$fullKeys->contains("{$translation->namespace}.{$translation->key}")
-        );
+        $unused   = $existing->filter(function(Translation $translation) use ($sourceSignatures): bool {
+            return !$sourceSignatures->contains("{$translation->scope}|{$translation->namespace}.{$translation->key}");
+        });
         $deleted  = $deleteUnused ? $unused->count() : 0;
         if($deleteUnused && !$dryRun && $unused->isNotEmpty()) {
             Translation::query()->whereIn('id', $unused->pluck('id')->all())->delete();
         }
         app(TranslationService::class)->flush();
         return [
-            'scanned'      => $fullKeys->count(),
+            'scanned'      => $sourceSignatures->count(),
             'added'        => $added,
             'deleted'      => $deleted + $consolidated['deleted'],
             'consolidated' => $consolidated['moved'],
@@ -143,7 +151,7 @@ class TranslationSyncService
             $items[] = $this->normalizeItem($menuTranslation['full_key'], $menuTranslation['scope']);
         }
         return collect($items)
-            ->unique(fn(array $item) => $item['full_key'])
+            ->unique(fn(array $item) => "{$item['scope']}|{$item['full_key']}")
             ->values()
             ->all();
     }
@@ -331,6 +339,9 @@ class TranslationSyncService
     private function consolidateDuplicateScopes(array $sourceKeys, bool $dryRun = false): array
     {
         $canonical = collect($sourceKeys)
+            ->groupBy('full_key')
+            ->filter(fn($items) => $items->pluck('scope')->unique()->count() === 1)
+            ->flatten(1)
             ->keyBy('full_key')
             ->map(fn(array $item) => $item['scope'])
             ->all();

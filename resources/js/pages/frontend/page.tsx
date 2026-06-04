@@ -42,7 +42,7 @@ function truncate(value: string, max = 160): string {
 
 export default function PageShow() {
     const { pageData, setting } = usePage<PageProps>().props;
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
     const titleText = localized(pageData.title, language);
     const excerpt = localized(pageData.excerpt, language);
     const content = localized(pageData.content, language);
@@ -51,14 +51,12 @@ export default function PageShow() {
 
     return (
         <>
-            <Head title={title}>
-                {description && <meta name="description" content={description} />}
-            </Head>
+            <Head title={title}>{description && <meta name="description" content={description} />}</Head>
 
             <section className="relative bg-gradient-to-br from-blue-800 via-blue-700 to-blue-500 px-6 py-20 md:px-12 md:py-28">
                 <div className="mx-auto max-w-4xl">
                     <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-white uppercase backdrop-blur-sm">
-                        Page
+                        {t('pages.public.badge')}
                     </div>
                     <h1 className="text-4xl leading-tight font-bold text-white md:text-5xl">{titleText}</h1>
                     {excerpt && <p className="mt-5 max-w-2xl text-base leading-relaxed font-medium text-blue-100">{excerpt}</p>}
@@ -74,12 +72,14 @@ export default function PageShow() {
                     )}
 
                     <article className="prose prose-neutral dark:prose-invert mx-auto max-w-3xl leading-7 text-gray-600">
-                        {content ? <div dangerouslySetInnerHTML={{ __html: content }} /> : <p className="text-muted-foreground">Content is not available yet.</p>}
+                        {content ? (
+                            <div dangerouslySetInnerHTML={{ __html: content }} />
+                        ) : (
+                            <p className="text-muted-foreground">{t('pages.public.emptyContent')}</p>
+                        )}
                     </article>
                 </div>
             </section>
         </>
     );
 }
-
-

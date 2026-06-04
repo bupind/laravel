@@ -12,8 +12,6 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, LogOut, Plus, QrCode, Send, Trash2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type SettingRow = {
     key: string;
     value: string;
@@ -49,7 +47,6 @@ type ServiceFeature = { enabled: boolean; label: string };
 type TranslationLocale = { code: string; label: string };
 type TranslationConfig = { default_locale?: string; locales?: TranslationLocale[] };
 
-// ─── Task 3: Tab definition dari backend ─────────────────────────────────────
 type TabDef = {
     key: string;
     label: string;
@@ -57,7 +54,6 @@ type TabDef = {
     translatable?: boolean;
 };
 
-// ─── Task 4: Available locales dari backend ───────────────────────────────────
 type AvailableLocale = { code: string; label: string };
 
 interface Props {
@@ -67,25 +63,31 @@ interface Props {
     availableLocales?: AvailableLocale[];
 }
 
-type ServiceResult = { loading: boolean; message?: string; image?: string; text?: string; status?: string; connected?: boolean; lastCheckedAt?: string };
-
-// ─── Constants ───────────────────────────────────────────────────────────────
+type ServiceResult = {
+    loading: boolean;
+    message?: string;
+    image?: string;
+    text?: string;
+    status?: string;
+    connected?: boolean;
+    lastCheckedAt?: string;
+};
 
 const whatsappProviderOptions = [
-    { value: 'wwebjs', label: 'wwebjs (Whatsapp Web.js)' },
-    { value: 'qontak', label: 'Qontak' },
-    { value: 'custom', label: 'Custom API' },
+    { value: 'wwebjs', labelKey: 'pages.settingapp.whatsapp.provider.wwebjs' },
+    { value: 'qontak', labelKey: 'pages.settingapp.whatsapp.provider.qontak' },
+    { value: 'custom', labelKey: 'pages.settingapp.whatsapp.provider.custom' },
 ];
 
 const emailDriverOptions = [
-    { value: 'gmail', label: 'Gmail (SMTP)' },
-    { value: 'smtp', label: 'SMTP Lainnya' },
+    { value: 'gmail', labelKey: 'pages.settingapp.email.driver.gmail' },
+    { value: 'smtp', labelKey: 'pages.settingapp.email.driver.smtp' },
 ];
 
 const encryptionOptions = [
-    { value: 'tls', label: 'TLS (port 587)' },
-    { value: 'ssl', label: 'SSL (port 465)' },
-    { value: 'none', label: 'Tanpa enkripsi' },
+    { value: 'tls', labelKey: 'pages.settingapp.email.encryption.tls' },
+    { value: 'ssl', labelKey: 'pages.settingapp.email.encryption.ssl' },
+    { value: 'none', labelKey: 'pages.settingapp.email.encryption.none' },
 ];
 
 const defaultWhatsappConfig: Required<WhatsAppConfig> = {
@@ -112,18 +114,19 @@ const defaultEmailConfig: Required<EmailConfig> = {
     test_recipient: '',
 };
 
-// ─── Fallback tabs jika backend tidak mengirim tabs prop ──────────────────────
 const fallbackTabs: TabDef[] = [
-    { key: 'general', label: 'General', keys: ['app_name', 'description', 'logo', 'favicon', 'color', 'seo'] },
-    { key: 'translations', label: 'Translate', keys: ['translations'], translatable: true },
-    { key: 'custom', label: 'Custom', keys: [] },
+    { key: 'general', label: 'pages.settingapp.tabs.general', keys: ['app_name', 'description', 'logo', 'favicon', 'color', 'seo'] },
+    { key: 'translations', label: 'pages.settingapp.tabs.translations', keys: ['translations'], translatable: true },
+    { key: 'custom', label: 'pages.settingapp.tabs.custom', keys: [] },
 ];
-
-// ─── Config parsers ──────────────────────────────────────────────────────────
 
 function parseWhatsappConfig(value: string): Required<WhatsAppConfig> {
     let parsed: WhatsAppConfig = {};
-    try { parsed = value.trim() ? (JSON.parse(value) as WhatsAppConfig) : {}; } catch { parsed = {}; }
+    try {
+        parsed = value.trim() ? (JSON.parse(value) as WhatsAppConfig) : {};
+    } catch {
+        parsed = {};
+    }
     const provider = String(parsed.provider || defaultWhatsappConfig.provider);
     return { ...defaultWhatsappConfig, ...parsed, provider };
 }
@@ -134,7 +137,11 @@ function stringifyWhatsappConfig(config: Required<WhatsAppConfig>): string {
 
 function parseEmailConfig(value: string): Required<EmailConfig> {
     let parsed: EmailConfig = {};
-    try { parsed = value.trim() ? (JSON.parse(value) as EmailConfig) : {}; } catch { parsed = {}; }
+    try {
+        parsed = value.trim() ? (JSON.parse(value) as EmailConfig) : {};
+    } catch {
+        parsed = {};
+    }
     return { ...defaultEmailConfig, ...parsed };
 }
 
@@ -144,19 +151,29 @@ function stringifyEmailConfig(config: Required<EmailConfig>): string {
 
 function parseTranslationConfig(value: string): Required<TranslationConfig> {
     let parsed: TranslationConfig = {};
-    try { parsed = value.trim() ? (JSON.parse(value) as TranslationConfig) : {}; } catch { parsed = {}; }
+    try {
+        parsed = value.trim() ? (JSON.parse(value) as TranslationConfig) : {};
+    } catch {
+        parsed = {};
+    }
     const locales = (parsed.locales ?? [])
         .map((locale) => ({
-            code: String(locale.code ?? '').trim().toLowerCase().replaceAll('_', '-'),
+            code: String(locale.code ?? '')
+                .trim()
+                .toLowerCase()
+                .replaceAll('_', '-'),
             label: String(locale.label ?? '').trim(),
         }))
         .filter((locale) => /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/.test(locale.code))
         .filter((locale, index, all) => all.findIndex((item) => item.code === locale.code) === index)
         .map((locale) => ({ ...locale, label: locale.label || locale.code.toUpperCase() }));
-    const normalizedLocales = locales.length > 0 ? locales : [
-        { code: 'id', label: 'Bahasa Indonesia' },
-        { code: 'en', label: 'English' },
-    ];
+    const normalizedLocales =
+        locales.length > 0
+            ? locales
+            : [
+            { code: 'id', label: 'Bahasa Indonesia' },
+                  { code: 'en', label: 'English' },
+              ];
     const defaultLocale = normalizedLocales.some((locale) => locale.code === parsed.default_locale)
         ? String(parsed.default_locale)
         : normalizedLocales[0].code;
@@ -167,19 +184,16 @@ function stringifyTranslationConfig(config: Required<TranslationConfig>): string
     return JSON.stringify(config, null, 2);
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function labelFor(key: string): string {
-    return key.replaceAll('_', ' ').replaceAll('.', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    return key
+        .replaceAll('_', ' ')
+        .replaceAll('.', ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 function storageUrl(path?: string | null): string | null {
     return path ? `/storage/${path}` : null;
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
-
-// ─── TranslationsField — proper component so hooks are called unconditionally ─
 
 interface TranslationsFieldProps {
     row: SettingRow;
@@ -189,6 +203,7 @@ interface TranslationsFieldProps {
 }
 
 function TranslationsField({ row, index, availableLocales, updateTranslationRow }: TranslationsFieldProps) {
+    const { t } = useLanguage();
     const config = parseTranslationConfig(row.value);
     const activeCodes = new Set(config.locales.map((l) => l.code));
 
@@ -204,9 +219,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
             } else {
                 if (current.locales.length <= 1) return current;
                 const locales = current.locales.filter((l) => l.code !== locale.code);
-                const default_locale = locales.some((l) => l.code === current.default_locale)
-                    ? current.default_locale
-                    : locales[0]?.code ?? 'id';
+                const default_locale = locales.some((l) => l.code === current.default_locale) ? current.default_locale : (locales[0]?.code ?? 'id');
                 return { default_locale, locales };
             }
         });
@@ -222,26 +235,33 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
 
     return (
         <div className="bg-muted/20 space-y-5 rounded-md border p-4">
-            {/* ── Default Language ── */}
             <div className="space-y-1">
-                <Label>Default Language</Label>
-                <Select value={config.default_locale} onValueChange={(value) => updateTranslationRow(index, (current) => ({ ...current, default_locale: value }))}>
-                    <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+                <Label>{t('pages.settingapp.translations.defaultLanguage')}</Label>
+                <Select
+                    value={config.default_locale}
+                    onValueChange={(value) => updateTranslationRow(index, (current) => ({ ...current, default_locale: value }))}
+                >
+                    <SelectTrigger className="w-64">
+                        <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                        {config.locales.filter((l) => l.code).map((locale) => (
-                            <SelectItem key={locale.code} value={locale.code}>{locale.label || locale.code.toUpperCase()}</SelectItem>
-                        ))}
+                        {config.locales
+                            .filter((l) => l.code)
+                            .map((locale) => (
+                                <SelectItem key={locale.code} value={locale.code}>
+                                    {locale.label || locale.code.toUpperCase()}
+                                </SelectItem>
+                            ))}
                     </SelectContent>
                 </Select>
             </div>
 
             <Separator />
 
-            {/* ── Pilih bahasa aktif dari AVAILABLE_LOCALES ── */}
             {availableLocales.length > 0 && (
                 <div className="space-y-3">
-                    <p className="text-sm font-semibold">Bahasa yang Diaktifkan</p>
-                    <p className="text-muted-foreground text-xs">Pilih bahasa yang akan tersedia di sistem terjemahan.</p>
+                    <p className="text-sm font-semibold">{t('pages.settingapp.translations.enabledLanguages')}</p>
+                    <p className="text-muted-foreground text-xs">{t('pages.settingapp.translations.enabledLanguagesHelp')}</p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                         {availableLocales.map((locale) => {
                             const isActive = activeCodes.has(locale.code);
@@ -258,7 +278,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
                                     />
                                     <span className="flex-1 truncate">{locale.label}</span>
                                     <code className="text-muted-foreground font-mono text-xs">{locale.code}</code>
-                                    {isDefault && <span className="text-primary text-xs">default</span>}
+                                    {isDefault && <span className="text-primary text-xs">{t('labels.default')}</span>}
                                 </label>
                             );
                         })}
@@ -268,10 +288,9 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
 
             <Separator />
 
-            {/* ── Tab per bahasa aktif untuk edit label ── */}
             <div className="space-y-3">
-                <p className="text-sm font-semibold">Label Bahasa</p>
-                <p className="text-muted-foreground text-xs">Sesuaikan nama tampilan tiap bahasa.</p>
+                <p className="text-sm font-semibold">{t('pages.settingapp.translations.languageLabels')}</p>
+                <p className="text-muted-foreground text-xs">{t('pages.settingapp.translations.languageLabelsHelp')}</p>
 
                 <div className="flex flex-wrap gap-1 border-b">
                     {config.locales.map((locale) => (
@@ -282,7 +301,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
                             className={`border-b-2 px-3 py-1.5 text-xs font-medium transition-colors ${
                                 activeLangTab === locale.code
                                     ? 'border-primary text-foreground'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                                    : 'text-muted-foreground hover:text-foreground border-transparent'
                             }`}
                         >
                             {locale.code}
@@ -294,7 +313,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
                 {currentLocale && (
                     <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
-                            <Label>Code</Label>
+                            <Label>{t('labels.code')}</Label>
                             <Input
                                 value={currentLocale.code}
                                 onChange={(e) => updateCurrentLocale({ code: e.target.value.trim().toLowerCase() })}
@@ -303,7 +322,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
                             />
                         </div>
                         <div className="space-y-1">
-                            <Label>Label</Label>
+                            <Label>{t('labels.label')}</Label>
                             <Input
                                 value={currentLocale.label}
                                 onChange={(e) => updateCurrentLocale({ label: e.target.value })}
@@ -317,12 +336,7 @@ function TranslationsField({ row, index, availableLocales, updateTranslationRow 
     );
 }
 
-export default function SettingForm({
-    settings = [],
-    serviceFeatures = {},
-    tabs: tabsFromBackend,
-    availableLocales = [],
-}: Props) {
+export default function SettingForm({ settings = [], serviceFeatures = {}, tabs: tabsFromBackend, availableLocales = [] }: Props) {
     const { t } = useLanguage();
     const initialRows = useMemo(() => settings.map((row) => ({ ...row, value: row.value ?? '' })), [settings]);
     const { data, setData, post, processing, errors } = useForm<{
@@ -330,20 +344,19 @@ export default function SettingForm({
         files: Record<string, File | null>;
     }>({ settings: initialRows, files: {} });
 
-    // ── Tab state — gunakan tabs dari backend, fallback ke default ────────────
     const tabs: TabDef[] = useMemo(() => {
         if (tabsFromBackend && tabsFromBackend.length > 0) return tabsFromBackend;
-        // fallback: bangun manual dari keys yang ada
+
         const allSystemKeys = ['app_name', 'description', 'logo', 'favicon', 'color', 'seo', 'translations', 'whatsapp', 'email', 'payment_gateway'];
         const customKeys = settings.filter((r) => !allSystemKeys.includes(r.key)).map((r) => r.key);
         const builtTabs: TabDef[] = [
-            { key: 'general', label: 'General', keys: ['app_name', 'description', 'logo', 'favicon', 'color', 'seo'] },
-            { key: 'translations', label: 'Translate', keys: ['translations'], translatable: true },
+            { key: 'general', label: 'pages.settingapp.tabs.general', keys: ['app_name', 'description', 'logo', 'favicon', 'color', 'seo'] },
+            { key: 'translations', label: 'pages.settingapp.tabs.translations', keys: ['translations'], translatable: true },
         ];
         Object.entries(serviceFeatures).forEach(([key, feat]) => {
             if (feat.enabled) builtTabs.push({ key, label: feat.label, keys: [key] });
         });
-        if (customKeys.length > 0) builtTabs.push({ key: 'custom', label: 'Custom', keys: customKeys });
+        if (customKeys.length > 0) builtTabs.push({ key: 'custom', label: 'pages.settingapp.tabs.custom', keys: customKeys });
         return builtTabs;
     }, [tabsFromBackend, settings, serviceFeatures]);
 
@@ -358,19 +371,12 @@ export default function SettingForm({
     const [emailTestResult, setEmailTestResult] = useState<ServiceResult>({ loading: false });
     const [showPassword, setShowPassword] = useState(false);
     const statusPollingRef = useRef(false);
-    const whatsappRow = useMemo(
-        () => data.settings.find((row) => row.key === 'whatsapp' && row.type === 'whatsapp'),
-        [data.settings],
-    );
-
-    // ── Submit ──────────────────────────────────────────────────────────────
+    const whatsappRow = useMemo(() => data.settings.find((row) => row.key === 'whatsapp' && row.type === 'whatsapp'), [data.settings]);
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
         post(route('setting.update'), { forceFormData: true, preserveScroll: true });
     };
-
-    // ── Row helpers ─────────────────────────────────────────────────────────
 
     const updateRow = (index: number, patch: Partial<SettingRow>) => {
         const next = [...data.settings];
@@ -382,7 +388,10 @@ export default function SettingForm({
 
     const removeRow = (index: number) => {
         const row = data.settings[index];
-        setData('settings', data.settings.filter((_, i) => i !== index));
+        setData(
+            'settings',
+            data.settings.filter((_, i) => i !== index),
+        );
         if (row?.type === 'file') {
             const f = { ...data.files };
             delete f[row.key];
@@ -416,8 +425,6 @@ export default function SettingForm({
         const current = parseTranslationConfig(data.settings[index]?.value ?? '');
         updateRow(index, { value: stringifyTranslationConfig(updater(current)) });
     };
-
-    // ── Service HTTP actions ─────────────────────────────────────────────────
 
     const postServiceAction = async (url: string, payload: Record<string, unknown>) => {
         const csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
@@ -485,9 +492,25 @@ export default function SettingForm({
             const state = extractQrResult((result.data ?? {}) as Record<string, unknown>);
             setQrResult((current) => {
                 if (state.connected) {
-                    return { ...current, loading: false, connected: true, status: state.status, image: undefined, text: undefined, message: state.message || 'WhatsApp sudah terhubung.', lastCheckedAt: new Date().toLocaleTimeString() };
+                    return {
+                        ...current,
+                        loading: false,
+                        connected: true,
+                        status: state.status,
+                        image: undefined,
+                        text: undefined,
+                        message: state.message || 'WhatsApp sudah terhubung.',
+                        lastCheckedAt: new Date().toLocaleTimeString(),
+                    };
                 }
-                return { ...current, loading: false, connected: false, status: state.status, message: current.image ? current.message : state.message, lastCheckedAt: new Date().toLocaleTimeString() };
+                return {
+                    ...current,
+                    loading: false,
+                    connected: false,
+                    status: state.status,
+                    message: current.image ? current.message : state.message,
+                    lastCheckedAt: new Date().toLocaleTimeString(),
+                };
             });
         } catch (err) {
             if (!silent) setQrResult({ loading: false, message: err instanceof Error ? err.message : 'Gagal cek status WhatsApp.' });
@@ -502,11 +525,18 @@ export default function SettingForm({
         const tick = async () => {
             if (cancelled || statusPollingRef.current) return;
             statusPollingRef.current = true;
-            try { await checkWhatsappStatus(whatsappRow, true); } finally { statusPollingRef.current = false; }
+            try {
+                await checkWhatsappStatus(whatsappRow, true);
+            } finally {
+                statusPollingRef.current = false;
+            }
         };
         tick();
         const timer = window.setInterval(tick, 3000);
-        return () => { cancelled = true; window.clearInterval(timer); };
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
     }, [whatsappRow?.value]);
 
     const testWhatsapp = async (row: SettingRow) => {
@@ -514,7 +544,11 @@ export default function SettingForm({
         setTestWaResult({ loading: true });
         try {
             const result = await postServiceAction(route('setting.services.whatsapp.test'), { config: row.value, to: config.test_recipient });
-            setTestWaResult({ loading: false, message: result.ok === false ? `Test gagal. HTTP ${result.status ?? ''}` : 'Test WhatsApp berhasil dikirim.', text: JSON.stringify(result.data ?? {}, null, 2) });
+            setTestWaResult({
+                loading: false,
+                message: result.ok === false ? `Test gagal. HTTP ${result.status ?? ''}` : 'Test WhatsApp berhasil dikirim.',
+                text: JSON.stringify(result.data ?? {}, null, 2),
+            });
         } catch (err) {
             setTestWaResult({ loading: false, message: err instanceof Error ? err.message : 'Test WhatsApp gagal.' });
         }
@@ -524,14 +558,20 @@ export default function SettingForm({
         setEmailTestResult({ loading: true });
         const config = parseEmailConfig(row.value);
         try {
-            const result = await postServiceAction(route('setting.services.email.test'), { config: row.value, to: config.test_recipient, subject: 'Test Email dari Setting' });
-            setEmailTestResult({ loading: false, message: result.ok === false ? `Test gagal. HTTP ${result.status ?? ''}` : 'Test email berhasil dikirim.', text: JSON.stringify(result.data ?? {}, null, 2) });
+            const result = await postServiceAction(route('setting.services.email.test'), {
+                config: row.value,
+                to: config.test_recipient,
+                subject: 'Test Email dari Setting',
+            });
+            setEmailTestResult({
+                loading: false,
+                message: result.ok === false ? `Test gagal. HTTP ${result.status ?? ''}` : 'Test email berhasil dikirim.',
+                text: JSON.stringify(result.data ?? {}, null, 2),
+            });
         } catch (err) {
             setEmailTestResult({ loading: false, message: err instanceof Error ? err.message : 'Test email gagal.' });
         }
     };
-
-    // ── Field renderers ──────────────────────────────────────────────────────
 
     const renderWhatsappField = (row: SettingRow, index: number) => {
         const config = parseWhatsappConfig(row.value);
@@ -550,42 +590,75 @@ export default function SettingForm({
                 <div className="bg-muted/20 space-y-4 rounded-md border p-4">
                     <div className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
-                            <Label>Provider</Label>
+                            <Label>{t('pages.settingapp.service.provider')}</Label>
                             <Select value={provider} onValueChange={(v) => setStr('provider', v)}>
-                                <SelectTrigger><SelectValue placeholder="Provider" /></SelectTrigger>
-                                <SelectContent>{providerOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t('pages.settingapp.service.provider')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {providerOptions.map((o) => (
+                                        <SelectItem key={o.value} value={o.value}>
+                                            {'label' in o ? o.label : t(o.labelKey)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-1">
-                            <Label>Endpoint</Label>
-                            <Input value={config.endpoint ?? ''} onChange={(e) => setStr('endpoint', e.target.value)} placeholder="http://localhost:3000/api/send" />
-                            <p className="text-muted-foreground text-xs">URL endpoint wwebjs server Anda.</p>
+                            <Label>{t('pages.settingapp.service.endpoint')}</Label>
+                            <Input
+                                value={config.endpoint ?? ''}
+                                onChange={(e) => setStr('endpoint', e.target.value)}
+                                placeholder="http://localhost:3000/api/send"
+                            />
+                            <p className="text-muted-foreground text-xs">{t('pages.settingapp.whatsapp.endpointHelp')}</p>
                         </div>
                         <div className="space-y-1">
-                            <Label>Nomor Test (opsional)</Label>
-                            <Input value={config.test_recipient ?? ''} onChange={(e) => setStr('test_recipient', e.target.value)} placeholder="628123456789" />
+                            <Label>{t('pages.settingapp.whatsapp.testNumber')}</Label>
+                            <Input
+                                value={config.test_recipient ?? ''}
+                                onChange={(e) => setStr('test_recipient', e.target.value)}
+                                placeholder="628123456789"
+                            />
                         </div>
                     </div>
                     <Separator />
                     <div className="grid gap-4 lg:grid-cols-2">
                         <div className="space-y-3">
-                            <p className="text-sm font-medium">Status Login WhatsApp</p>
-                            <Button type="button" variant={qrResult.connected ? 'destructive' : 'secondary'} onClick={() => (qrResult.connected ? disconnectWhatsapp(row) : fetchWhatsappQr(row))} disabled={qrResult.loading}>
-                                {qrResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : qrResult.connected ? <LogOut className="h-4 w-4" /> : <QrCode className="h-4 w-4" />}
-                                {qrResult.connected ? 'Disconnect / Hapus Session' : 'Tampilkan QR Login'}
+                            <p className="text-sm font-medium">{t('pages.settingapp.whatsapp.loginStatus')}</p>
+                            <Button
+                                type="button"
+                                variant={qrResult.connected ? 'destructive' : 'secondary'}
+                                onClick={() => (qrResult.connected ? disconnectWhatsapp(row) : fetchWhatsappQr(row))}
+                                disabled={qrResult.loading}
+                            >
+                                {qrResult.loading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : qrResult.connected ? (
+                                    <LogOut className="h-4 w-4" />
+                                ) : (
+                                    <QrCode className="h-4 w-4" />
+                                )}
+                                {qrResult.connected ? t('pages.settingapp.whatsapp.disconnect') : t('pages.settingapp.whatsapp.showQr')}
                             </Button>
                             <Button type="button" variant="outline" onClick={() => checkWhatsappStatus(row, false)} disabled={qrResult.loading}>
-                                {qrResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Cek Status
+                                {qrResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t('pages.settingapp.whatsapp.checkStatus')}
                             </Button>
                             {qrResult.message && <p className="text-muted-foreground text-sm">{qrResult.message}</p>}
-                            {qrResult.lastCheckedAt && <p className="text-muted-foreground text-xs">Auto check terakhir: {qrResult.lastCheckedAt}</p>}
-                            {qrResult.image && <img src={qrResult.image} alt="WhatsApp QR" className="h-52 w-52 rounded-md border bg-white object-contain p-2" />}
+                            {qrResult.lastCheckedAt && (
+                                <p className="text-muted-foreground text-xs">
+                                    {t('pages.settingapp.whatsapp.lastAutoCheck')}: {qrResult.lastCheckedAt}
+                                </p>
+                            )}
+                            {qrResult.image && (
+                                <img src={qrResult.image} alt={t('pages.settingapp.whatsapp.qrAlt')} className="h-52 w-52 rounded-md border bg-white object-contain p-2" />
+                            )}
                             {qrResult.text && <Textarea readOnly value={qrResult.text} className="min-h-28 font-mono text-xs" />}
                         </div>
                         <div className="space-y-3">
-                            <p className="text-sm font-medium">Test kirim pesan</p>
+                            <p className="text-sm font-medium">{t('pages.settingapp.whatsapp.testMessage')}</p>
                             <Button type="button" variant="secondary" onClick={() => testWhatsapp(row)} disabled={testWaResult.loading}>
-                                {testWaResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Test Send
+                                {testWaResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {t('buttons.testSend')}
                             </Button>
                             {testWaResult.message && <p className="text-muted-foreground text-sm">{testWaResult.message}</p>}
                             {testWaResult.text && <Textarea readOnly value={testWaResult.text} className="min-h-28 font-mono text-xs" />}
@@ -598,36 +671,82 @@ export default function SettingForm({
         return (
             <div className="bg-muted/20 space-y-4 rounded-md border p-4">
                 <div className="grid gap-3 md:grid-cols-2">
-                    <div className="space-y-1"><Label>Provider</Label>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.service.provider')}</Label>
                         <Select value={provider} onValueChange={(v) => setStr('provider', v)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>{providerOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {providerOptions.map((o) => (
+                                    <SelectItem key={o.value} value={o.value}>
+                                        {'label' in o ? o.label : t(o.labelKey)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-1"><Label>Endpoint (Send)</Label><Input value={config.endpoint ?? ''} onChange={(e) => setStr('endpoint', e.target.value)} placeholder="https://api.example.com/whatsapp/send" /></div>
-                    <div className="space-y-1"><Label>Token / API Key</Label><Input type="password" autoComplete="new-password" value={config.token ?? ''} onChange={(e) => setStr('token', e.target.value)} /></div>
-                    <div className="space-y-1"><Label>QR Login Endpoint</Label><Input value={config.qr_endpoint ?? ''} onChange={(e) => setStr('qr_endpoint', e.target.value)} /></div>
-                    <div className="space-y-1"><Label>Status Endpoint</Label><Input value={config.status_endpoint ?? ''} onChange={(e) => setStr('status_endpoint', e.target.value)} /></div>
-                    <div className="space-y-1"><Label>Test Recipient</Label><Input value={config.test_recipient ?? ''} onChange={(e) => setStr('test_recipient', e.target.value)} placeholder="628123456789" /></div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.whatsapp.sendEndpoint')}</Label>
+                        <Input
+                            value={config.endpoint ?? ''}
+                            onChange={(e) => setStr('endpoint', e.target.value)}
+                            placeholder="https://api.example.com/whatsapp/send"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.service.token')}</Label>
+                        <Input
+                            type="password"
+                            autoComplete="new-password"
+                            value={config.token ?? ''}
+                            onChange={(e) => setStr('token', e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.whatsapp.qrEndpoint')}</Label>
+                        <Input value={config.qr_endpoint ?? ''} onChange={(e) => setStr('qr_endpoint', e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.whatsapp.statusEndpoint')}</Label>
+                        <Input value={config.status_endpoint ?? ''} onChange={(e) => setStr('status_endpoint', e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.service.testRecipient')}</Label>
+                        <Input
+                            value={config.test_recipient ?? ''}
+                            onChange={(e) => setStr('test_recipient', e.target.value)}
+                            placeholder="628123456789"
+                        />
+                    </div>
                     <div className="col-span-full grid grid-cols-3 gap-3">
-                        <div className="space-y-1"><Label>Timeout (s)</Label><Input type="number" min={1} value={config.timeout} onChange={(e) => setNum('timeout', e.target.value)} /></div>
-                        <div className="space-y-1"><Label>Retry</Label><Input type="number" min={0} value={config.retry} onChange={(e) => setNum('retry', e.target.value)} /></div>
-                        <div className="space-y-1"><Label>Retry Delay (ms)</Label><Input type="number" min={0} value={config.retry_sleep_ms} onChange={(e) => setNum('retry_sleep_ms', e.target.value)} /></div>
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.timeoutSeconds')}</Label>
+                            <Input type="number" min={1} value={config.timeout} onChange={(e) => setNum('timeout', e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.retry')}</Label>
+                            <Input type="number" min={0} value={config.retry} onChange={(e) => setNum('retry', e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.retryDelayMs')}</Label>
+                            <Input type="number" min={0} value={config.retry_sleep_ms} onChange={(e) => setNum('retry_sleep_ms', e.target.value)} />
+                        </div>
                     </div>
                 </div>
                 <Separator />
                 <div className="grid gap-4 lg:grid-cols-2">
                     <div className="space-y-3">
                         <Button type="button" variant="secondary" onClick={() => fetchWhatsappQr(row)} disabled={qrResult.loading}>
-                            {qrResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />} QR Login
+                            {qrResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />} {t('pages.settingapp.whatsapp.qrLogin')}
                         </Button>
                         {qrResult.message && <p className="text-muted-foreground text-sm">{qrResult.message}</p>}
-                        {qrResult.image && <img src={qrResult.image} alt="QR" className="h-52 w-52 rounded-md border bg-white object-contain p-2" />}
+                        {qrResult.image && <img src={qrResult.image} alt={t('pages.settingapp.whatsapp.qrAlt')} className="h-52 w-52 rounded-md border bg-white object-contain p-2" />}
                         {qrResult.text && <Textarea readOnly value={qrResult.text} className="min-h-28 font-mono text-xs" />}
                     </div>
                     <div className="space-y-3">
                         <Button type="button" variant="secondary" onClick={() => testWhatsapp(row)} disabled={testWaResult.loading}>
-                            {testWaResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Test Send
+                            {testWaResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {t('buttons.testSend')}
                         </Button>
                         {testWaResult.message && <p className="text-muted-foreground text-sm">{testWaResult.message}</p>}
                         {testWaResult.text && <Textarea readOnly value={testWaResult.text} className="min-h-28 font-mono text-xs" />}
@@ -640,68 +759,144 @@ export default function SettingForm({
     const renderEmailField = (row: SettingRow, index: number) => {
         const config = parseEmailConfig(row.value);
         const setStr = (field: keyof EmailConfig, val: string) => updateEmailRow(index, (c) => ({ ...c, [field]: val }));
-        const setPort = (val: string) => { const n = Number(val); updateEmailRow(index, (c) => ({ ...c, port: Number.isFinite(n) && n > 0 ? n : 587 })); };
-        const handleDriverChange = (driver: string) => updateEmailRow(index, (c) => ({ ...c, driver, host: driver === 'gmail' ? 'smtp.gmail.com' : c.host ?? '', port: driver === 'gmail' ? 587 : c.port, encryption: driver === 'gmail' ? 'tls' : c.encryption }));
-        const handleEncryptionChange = (enc: string) => { const encryption = enc === 'none' ? '' : enc; updateEmailRow(index, (c) => ({ ...c, encryption, port: encryption === 'ssl' ? 465 : encryption === 'tls' ? 587 : c.port })); };
+        const setPort = (val: string) => {
+            const n = Number(val);
+            updateEmailRow(index, (c) => ({ ...c, port: Number.isFinite(n) && n > 0 ? n : 587 }));
+        };
+        const handleDriverChange = (driver: string) =>
+            updateEmailRow(index, (c) => ({
+                ...c,
+                driver,
+                host: driver === 'gmail' ? 'smtp.gmail.com' : (c.host ?? ''),
+                port: driver === 'gmail' ? 587 : c.port,
+                encryption: driver === 'gmail' ? 'tls' : c.encryption,
+            }));
+        const handleEncryptionChange = (enc: string) => {
+            const encryption = enc === 'none' ? '' : enc;
+            updateEmailRow(index, (c) => ({ ...c, encryption, port: encryption === 'ssl' ? 465 : encryption === 'tls' ? 587 : c.port }));
+        };
 
         return (
             <div className="bg-muted/20 space-y-4 rounded-md border p-4">
                 <div className="grid gap-3 md:grid-cols-2">
-                    <div className="space-y-1"><Label>Provider Email</Label>
-                        <Select value={config.driver ?? 'gmail'} onValueChange={handleDriverChange}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>{emailDriverOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-1"><Label>Enkripsi</Label>
-                        <Select value={config.encryption || 'none'} onValueChange={handleEncryptionChange}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>{encryptionOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-1"><Label>SMTP Host</Label><Input value={config.host ?? ''} onChange={(e) => setStr('host', e.target.value)} placeholder="smtp.gmail.com" /></div>
-                    <div className="space-y-1"><Label>SMTP Port</Label><Input type="number" value={config.port} onChange={(e) => setPort(e.target.value)} placeholder="587" /></div>
                     <div className="space-y-1">
-                        <Label>Username / Gmail</Label>
-                        <Input type="email" value={config.username ?? ''} onChange={(e) => setStr('username', e.target.value)} placeholder="nama@gmail.com" autoComplete="username" />
+                        <Label>{t('pages.settingapp.email.provider')}</Label>
+                        <Select value={config.driver ?? 'gmail'} onValueChange={handleDriverChange}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {emailDriverOptions.map((o) => (
+                                    <SelectItem key={o.value} value={o.value}>
+                                        {t(o.labelKey)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.encryption.label')}</Label>
+                        <Select value={config.encryption || 'none'} onValueChange={handleEncryptionChange}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {encryptionOptions.map((o) => (
+                                    <SelectItem key={o.value} value={o.value}>
+                                        {t(o.labelKey)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.smtpHost')}</Label>
+                        <Input value={config.host ?? ''} onChange={(e) => setStr('host', e.target.value)} placeholder="smtp.gmail.com" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.smtpPort')}</Label>
+                        <Input type="number" value={config.port} onChange={(e) => setPort(e.target.value)} placeholder="587" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.username')}</Label>
+                        <Input
+                            type="email"
+                            value={config.username ?? ''}
+                            onChange={(e) => setStr('username', e.target.value)}
+                            placeholder="nama@gmail.com"
+                            autoComplete="username"
+                        />
                         {config.driver === 'gmail' && (
-                            <p className="text-muted-foreground text-xs">Gunakan App Password Google, bukan password akun biasa. <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline">Buat App Password</a></p>
+                            <p className="text-muted-foreground text-xs">
+                                {t('pages.settingapp.email.appPasswordHelp')}{' '}
+                                <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline">
+                                    {t('pages.settingapp.email.createAppPassword')}
+                                </a>
+                            </p>
                         )}
                     </div>
                     <div className="space-y-1">
-                        <Label>Password / App Password</Label>
+                        <Label>{t('pages.settingapp.email.password')}</Label>
                         <div className="relative">
-                            <Input type={showPassword ? 'text' : 'password'} value={config.password ?? ''} onChange={(e) => setStr('password', e.target.value)} placeholder={config.driver === 'gmail' ? 'xxxx xxxx xxxx xxxx' : 'SMTP password'} autoComplete="new-password" className="pr-10" />
-                            <button type="button" onClick={() => setShowPassword((s) => !s)} className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2" tabIndex={-1}>
+                            <Input
+                                type={showPassword ? 'text' : 'password'}
+                                value={config.password ?? ''}
+                                onChange={(e) => setStr('password', e.target.value)}
+                                placeholder={config.driver === 'gmail' ? 'xxxx xxxx xxxx xxxx' : 'SMTP password'}
+                                autoComplete="new-password"
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((s) => !s)}
+                                className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                                tabIndex={-1}
+                            >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
                     </div>
-                    <div className="space-y-1"><Label>From Name</Label><Input value={config.from_name ?? ''} onChange={(e) => setStr('from_name', e.target.value)} placeholder="Nama Pengirim" /></div>
-                    <div className="space-y-1"><Label>From Address</Label><Input type="email" value={config.from_address ?? ''} onChange={(e) => setStr('from_address', e.target.value)} placeholder="noreply@gmail.com" /></div>
-                    <div className="space-y-1"><Label>Test Recipient</Label><Input type="email" value={config.test_recipient ?? ''} onChange={(e) => setStr('test_recipient', e.target.value)} placeholder="test@example.com" /></div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.fromName')}</Label>
+                        <Input value={config.from_name ?? ''} onChange={(e) => setStr('from_name', e.target.value)} placeholder={t('pages.settingapp.email.fromNamePlaceholder')} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.email.fromAddress')}</Label>
+                        <Input
+                            type="email"
+                            value={config.from_address ?? ''}
+                            onChange={(e) => setStr('from_address', e.target.value)}
+                            placeholder="noreply@gmail.com"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.service.testRecipient')}</Label>
+                        <Input
+                            type="email"
+                            value={config.test_recipient ?? ''}
+                            onChange={(e) => setStr('test_recipient', e.target.value)}
+                            placeholder="test@example.com"
+                        />
+                    </div>
                 </div>
                 <Separator />
                 <div className="space-y-3">
                     <Button type="button" variant="secondary" onClick={() => testEmail(row)} disabled={emailTestResult.loading}>
-                        {emailTestResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Test Kirim Email
+                        {emailTestResult.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {t('pages.settingapp.email.testSend')}
                     </Button>
-                    {emailTestResult.message && <p className={`text-sm ${emailTestResult.message.toLowerCase().includes('gagal') ? 'text-red-500' : 'text-green-600'}`}>{emailTestResult.message}</p>}
+                    {emailTestResult.message && (
+                        <p className={`text-sm ${emailTestResult.message.toLowerCase().includes('gagal') ? 'text-red-500' : 'text-green-600'}`}>
+                            {emailTestResult.message}
+                        </p>
+                    )}
                     {emailTestResult.text && <Textarea readOnly value={emailTestResult.text} className="min-h-20 font-mono text-xs" />}
                 </div>
             </div>
         );
     };
 
-    // ── Task 3 + 4: Translations field — delegated to proper component below ──
-
     const renderTranslationsField = (row: SettingRow, index: number) => (
-        <TranslationsField
-            row={row}
-            index={index}
-            availableLocales={availableLocales}
-            updateTranslationRow={updateTranslationRow}
-        />
+        <TranslationsField row={row} index={index} availableLocales={availableLocales} updateTranslationRow={updateTranslationRow} />
     );
 
     const renderValueField = (row: SettingRow, index: number) => {
@@ -709,12 +904,23 @@ export default function SettingForm({
         if (row.type === 'email_service') return renderEmailField(row, index);
         if (row.type === 'translations') return renderTranslationsField(row, index);
         if (row.type === 'textarea' || row.type === 'json') {
-            return <Textarea value={row.value} onChange={(e) => updateRow(index, { value: e.target.value })} className={row.type === 'json' ? 'min-h-28 font-mono text-xs' : undefined} />;
+            return (
+                <Textarea
+                    value={row.value}
+                    onChange={(e) => updateRow(index, { value: e.target.value })}
+                    className={row.type === 'json' ? 'min-h-28 font-mono text-xs' : undefined}
+                />
+            );
         }
         if (row.type === 'color') {
             return (
                 <div className="flex items-center gap-3">
-                    <Input type="color" value={row.value || '#0ea5e9'} onChange={(e) => updateRow(index, { value: e.target.value })} className="h-10 w-16 p-1" />
+                    <Input
+                        type="color"
+                        value={row.value || '#0ea5e9'}
+                        onChange={(e) => updateRow(index, { value: e.target.value })}
+                        className="h-10 w-16 p-1"
+                    />
                     <Input value={row.value} onChange={(e) => updateRow(index, { value: e.target.value })} className="font-mono" />
                 </div>
             );
@@ -722,32 +928,32 @@ export default function SettingForm({
         if (row.type === 'file') {
             return (
                 <div className="space-y-2">
-                    <Input type="file" accept="image/jpg,image/jpeg,image/png,image/webp,image/svg+xml,image/x-icon" onChange={(e) => handleFileChange(row, e.target.files?.[0] ?? null)} />
-                    {previews[row.key] && <img src={previews[row.key] ?? ''} alt={labelFor(row.key)} className="h-14 max-w-48 rounded border object-contain p-1" />}
-                    <Input value={row.value} onChange={(e) => updateRow(index, { value: e.target.value })} placeholder="path/in/storage" />
+                    <Input
+                        type="file"
+                        accept="image/jpg,image/jpeg,image/png,image/webp,image/svg+xml,image/x-icon"
+                        onChange={(e) => handleFileChange(row, e.target.files?.[0] ?? null)}
+                    />
+                    {previews[row.key] && (
+                        <img src={previews[row.key] ?? ''} alt={labelFor(row.key)} className="h-14 max-w-48 rounded border object-contain p-1" />
+                    )}
                 </div>
             );
         }
         return <Input value={row.value} onChange={(e) => updateRow(index, { value: e.target.value })} />;
     };
 
-    // ── Rows untuk tab aktif ─────────────────────────────────────────────────
-
     const indexedRows = data.settings.map((row, index) => ({ row, index }));
 
     const rowsForActiveTab = useMemo(() => {
         if (!activeTab) return indexedRows;
 
-        // Tab "custom" = semua non-system key yang tidak ada di tab lain
         if (activeTab.key === 'custom' && (!activeTab.keys || activeTab.keys.length === 0)) {
             const allTabKeys = tabs.flatMap((tab) => tab.keys ?? []);
             return indexedRows.filter(({ row }) => !row.is_system && !allTabKeys.includes(row.key));
         }
 
         const tabKeys = activeTab.keys ?? [];
-        return tabKeys.length > 0
-            ? indexedRows.filter(({ row }) => tabKeys.includes(row.key))
-            : indexedRows.filter(({ row }) => !row.is_system);
+        return tabKeys.length > 0 ? indexedRows.filter(({ row }) => tabKeys.includes(row.key)) : indexedRows.filter(({ row }) => !row.is_system);
     }, [activeTab, indexedRows, tabs]);
 
     const isCustomTab = activeTab?.key === 'custom';
@@ -756,7 +962,7 @@ export default function SettingForm({
         if (rowsForActiveTab.length === 0) {
             return (
                 <p className="text-muted-foreground rounded-md border border-dashed px-3 py-6 text-center text-sm">
-                    {isCustomTab ? t('pages.settingapp.noCustomSettings') : 'Tidak ada pengaturan di tab ini.'}
+                    {isCustomTab ? t('pages.settingapp.noCustomSettings') : t('pages.settingapp.emptyTab')}
                 </p>
             );
         }
@@ -791,23 +997,21 @@ export default function SettingForm({
         ));
     };
 
-    // ── Render ───────────────────────────────────────────────────────────────
-
     return (
         <BackendLayout
-            breadcrumbs={[{ title: t('pages.settingapp.title', { fallback: 'Application Settings' }), href: '/backend/settingsapp' }]}
-            title={t('pages.settingapp.title', { fallback: 'Application Settings' })}
+            breadcrumbs={[{ title: t('pages.settingapp.title'), href: '/backend/settingsapp' }]}
+            title={t('pages.settingapp.title')}
         >
-            <Head title={t('pages.settingapp.title', { fallback: 'Application Settings' })} />
+            <Head title={t('pages.settingapp.title')} />
             <div className="flex-1 p-4 md:p-6">
                 <Card className="mx-auto">
                     <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <CardTitle className="text-2xl font-bold tracking-tight">
-                                {t('pages.settingapp.title', { fallback: 'Application Settings' })}
+                                {t('pages.settingapp.title')}
                             </CardTitle>
                             <p className="text-muted-foreground mt-1 text-sm">
-                                {t('pages.settingapp.description', { fallback: 'Configure application identity, theme, logo, services, and SEO metadata.' })}
+                                {t('pages.settingapp.description')}
                             </p>
                         </div>
                         {isCustomTab && (
@@ -822,7 +1026,6 @@ export default function SettingForm({
 
                     <CardContent className="pt-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* ── Tab Navigation ── */}
                             <div className="flex flex-wrap gap-0 border-b">
                                 {tabs.map((tab) => (
                                     <button
@@ -835,7 +1038,7 @@ export default function SettingForm({
                                                 : 'text-muted-foreground hover:text-foreground border-transparent'
                                         }`}
                                     >
-                                        {tab.label}
+                                        {tab.label.includes('.') ? t(tab.label) : tab.label}
                                     </button>
                                 ))}
                             </div>

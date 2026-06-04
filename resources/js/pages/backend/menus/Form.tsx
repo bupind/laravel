@@ -141,8 +141,11 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
 
                                 {data.scope === 'frontend' && (
                                     <div className="space-y-2">
-                                        <Label htmlFor="location">Area Frontend</Label>
-                                        <div id="location" className={`inline-flex rounded-lg border bg-muted/30 p-1 ${errors.location ? 'border-red-500' : ''}`}>
+                                        <Label htmlFor="location">{t('pages.menus.frontendArea')}</Label>
+                                        <div
+                                            id="location"
+                                            className={`bg-muted/30 inline-flex rounded-lg border p-1 ${errors.location ? 'border-red-500' : ''}`}
+                                        >
                                             {(['header', 'footer'] as const).map((location) => (
                                                 <button
                                                     key={location}
@@ -154,7 +157,7 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
                                                             : 'text-muted-foreground hover:text-foreground'
                                                     }`}
                                                 >
-                                                    {location}
+                                                    {location === 'header' ? t('pages.menus.location.header') : t('pages.menus.location.footer')}
                                                 </button>
                                             ))}
                                         </div>
@@ -186,14 +189,12 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
                                     {errors.translation_key && <p className="text-sm text-red-500">{errors.translation_key}</p>}
                                 </div>
 
-                                {/* Icon */}
                                 <div className="space-y-2">
                                     <Label htmlFor="icon">{t('pages.menus.iconLabel')}</Label>
                                     <IconPicker value={data.icon} onChange={(val) => setData('icon', val)} />
                                     {errors.icon && <p className="text-sm text-red-500">{errors.icon}</p>}
                                 </div>
 
-                                {/* Parent Menu — menggunakan Shadcn Select */}
                                 <div className="space-y-2">
                                     <Label htmlFor="parent_id">{t('pages.menus.parentMenu')}</Label>
                                     <Select
@@ -214,7 +215,6 @@ export default function MenuForm({ menu, parentMenus, permissions, initialScope 
                                     </Select>
                                 </div>
 
-                                {/* Permission */}
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="permission_name">{t('pages.menus.permission')}</Label>
                                     <ComboboxPermission

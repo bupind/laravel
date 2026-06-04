@@ -59,12 +59,14 @@ export const FrontendFooter = memo(function FrontendFooter({ appName, setting, m
                 </Link>
 
                 {menus.length > 0 && (
-                    <nav className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-xs" aria-label="Footer navigation">
+                    <nav className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-2 text-xs" aria-label={t('navigation.footer')}>
                         <FooterMenuLinks menus={menus} t={t} />
                     </nav>
                 )}
 
-                <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} All rights reserved.</p>
+                <p className="text-muted-foreground text-xs">
+                    © {new Date().getFullYear()} {t('footer.rightsReserved')}
+                </p>
             </div>
         </footer>
     );

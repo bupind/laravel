@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useLanguage } from '@/hooks/use-language';
 import { icons } from '@/lib/icon-list';
 
 interface IconPickerProps {
@@ -11,6 +12,7 @@ interface IconPickerProps {
 
 export default function IconPicker({ value, onChange }: IconPickerProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   const customFilter = (input: string, value: string): number => {
     const i = input.toLowerCase();
@@ -32,16 +34,16 @@ export default function IconPicker({ value, onChange }: IconPickerProps) {
               value={value}
               onClick={() => setOpen(true)}
               readOnly
-              placeholder="Pilih icon (Lucide)"
+              placeholder={t('iconPicker.placeholder')}
               className="cursor-pointer"
             />
           </div>
         </PopoverTrigger>
         <PopoverContent className="p-0 w-[300px]">
           <Command filter={customFilter}>
-            <CommandInput placeholder="Cari icon..." />
+            <CommandInput placeholder={t('iconPicker.search')} />
             <CommandList>
-              <CommandEmpty>Icon tidak ditemukan</CommandEmpty>
+              <CommandEmpty>{t('iconPicker.empty')}</CommandEmpty>
               <CommandGroup>
                 {icons.map(({ name, icon: Icon }) => (
                   <CommandItem

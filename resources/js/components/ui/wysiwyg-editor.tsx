@@ -1,14 +1,30 @@
-import { useEditor, EditorContent } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
-    Bold, Italic, UnderlineIcon, Strikethrough,
-    List, ListOrdered, Quote, Minus, Undo, Redo,
-    Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-    Heading1, Heading2, Heading3, Code, RemoveFormatting,
+    AlignCenter,
+    AlignJustify,
+    AlignLeft,
+    AlignRight,
+    Bold,
+    Code,
+    Heading1,
+    Heading2,
+    Heading3,
+    Italic,
+    Link as LinkIcon,
+    List,
+    ListOrdered,
+    Minus,
+    Quote,
+    Redo,
+    RemoveFormatting,
+    Strikethrough,
+    UnderlineIcon,
+    Undo
 } from 'lucide-react';
 import React, { useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -82,7 +98,7 @@ export default function WysiwygEditor({
         },
     });
 
-    // Sync external value changes (e.g. form reset)
+    
     useEffect(() => {
         if (!editor) return;
         const current = editor.getHTML();
@@ -91,7 +107,7 @@ export default function WysiwygEditor({
         }
     }, [value]);
 
-    // Sync disabled state
+    
     useEffect(() => {
         editor?.setEditable(!disabled);
     }, [disabled, editor]);
@@ -118,9 +134,9 @@ export default function WysiwygEditor({
                 className,
             )}
         >
-            {/* ── Toolbar ── */}
+            
             <div className="border-border flex flex-wrap items-center gap-0.5 border-b px-2 py-1.5">
-                {/* History */}
+                
                 <ToolbarButton title="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
                     <Undo className="size-3.5" />
                 </ToolbarButton>
@@ -130,7 +146,7 @@ export default function WysiwygEditor({
 
                 <ToolbarDivider />
 
-                {/* Headings */}
+                
                 <ToolbarButton title="Heading 1" active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
                     <Heading1 className="size-3.5" />
                 </ToolbarButton>
@@ -143,7 +159,7 @@ export default function WysiwygEditor({
 
                 <ToolbarDivider />
 
-                {/* Marks */}
+                
                 <ToolbarButton title="Bold" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
                     <Bold className="size-3.5" />
                 </ToolbarButton>
@@ -162,7 +178,7 @@ export default function WysiwygEditor({
 
                 <ToolbarDivider />
 
-                {/* Alignment */}
+                
                 <ToolbarButton title="Align Left" active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()}>
                     <AlignLeft className="size-3.5" />
                 </ToolbarButton>
@@ -178,7 +194,7 @@ export default function WysiwygEditor({
 
                 <ToolbarDivider />
 
-                {/* Lists & blocks */}
+                
                 <ToolbarButton title="Bullet List" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}>
                     <List className="size-3.5" />
                 </ToolbarButton>
@@ -194,20 +210,20 @@ export default function WysiwygEditor({
 
                 <ToolbarDivider />
 
-                {/* Link */}
+                
                 <ToolbarButton title="Link" active={editor.isActive('link')} onClick={setLink}>
                     <LinkIcon className="size-3.5" />
                 </ToolbarButton>
 
                 <ToolbarDivider />
 
-                {/* Clear formatting */}
+                
                 <ToolbarButton title="Clear Formatting" onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}>
                     <RemoveFormatting className="size-3.5" />
                 </ToolbarButton>
             </div>
 
-            {/* ── Editor area ── */}
+            
             <EditorContent
                 editor={editor}
                 className={cn(
@@ -219,7 +235,7 @@ export default function WysiwygEditor({
                     '[&_.tiptap_p.is-editor-empty:first-child::before]:h-0',
                     '[&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none',
                     '[&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
-                    // Prose styling
+                    
                     '[&_.tiptap_h1]:text-2xl [&_.tiptap_h1]:font-bold [&_.tiptap_h1]:mb-3',
                     '[&_.tiptap_h2]:text-xl [&_.tiptap_h2]:font-semibold [&_.tiptap_h2]:mb-2',
                     '[&_.tiptap_h3]:text-lg [&_.tiptap_h3]:font-semibold [&_.tiptap_h3]:mb-2',

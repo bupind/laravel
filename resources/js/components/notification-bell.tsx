@@ -7,6 +7,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useLanguage } from '@/hooks/use-language';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Bell, Inbox } from 'lucide-react';
@@ -27,6 +28,7 @@ function formatDate(value?: string | null): string {
 }
 
 export function NotificationBell() {
+    const { t } = useLanguage();
     const { auth } = usePage<SharedData>().props;
     const notifications = auth.notifications;
     const items = notifications?.items ?? [];
@@ -37,7 +39,7 @@ export function NotificationBell() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
+                <Button type="button" variant="ghost" size="icon" className="relative h-9 w-9" aria-label={t('notifications.title')}>
                     <Bell className="h-4 w-4" />
                     {unreadCount > 0 && (
                         <span className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-none font-semibold">
@@ -48,17 +50,17 @@ export function NotificationBell() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
                 <div className="flex items-center justify-between px-2 py-1.5">
-                    <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                    <DropdownMenuLabel className="p-0">{t('notifications.title')}</DropdownMenuLabel>
                     <Button type="button" variant="ghost" size="sm" className="h-7 px-2" asChild>
                         <Link href="/backend/notifications">
                             <Inbox className="h-3.5 w-3.5" />
-                            Inbox
+                            {t('notifications.inbox')}
                         </Link>
                     </Button>
                 </div>
                 <DropdownMenuSeparator />
                 {items.length === 0 ? (
-                    <div className="text-muted-foreground px-2 py-6 text-center text-sm">Belum ada notifikasi.</div>
+                    <div className="text-muted-foreground px-2 py-6 text-center text-sm">{t('notifications.empty')}</div>
                 ) : (
                     items.map((item) => {
                         const status = item.data.status ?? 'info';
@@ -75,7 +77,7 @@ export function NotificationBell() {
                                 />
                                 <span className="min-w-0 flex-1">
                                     <span className={isUnread ? 'block text-sm font-semibold' : 'block text-sm font-medium'}>
-                                        {item.data.title ?? 'Notification'}
+                                        {item.data.title ?? t('notifications.itemFallback')}
                                     </span>
                                     <span className="text-muted-foreground mt-0.5 block text-xs leading-relaxed">{item.data.message ?? ''}</span>
                                     {Array.isArray(item.data.meta?.errors) && item.data.meta.errors.length > 0 && (

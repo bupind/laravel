@@ -39,17 +39,14 @@ export default function Contact() {
 
     return (
         <>
-            <Head title={t('pages.contact.title', { fallback: 'Contact Us' })} />
+            <Head title={t('pages.contact.title')} />
             <main className="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-[0.9fr_1.1fr] md:px-6 lg:py-14">
                 <section className="space-y-5">
                     <div>
-                        <p className="text-primary text-sm font-semibold">{t('pages.contact.badge', { fallback: 'Contact' })}</p>
-                        <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{t('pages.contact.title', { fallback: 'Contact Us' })}</h1>
+                        <p className="text-primary text-sm font-semibold">{t('pages.contact.badge')}</p>
+                        <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{t('pages.contact.title')}</h1>
                         <p className="text-muted-foreground mt-3 max-w-xl text-sm leading-6">
-                            {t('pages.contact.description', {
-                                fallback:
-                                    'Kirim pertanyaan, masukan, atau kebutuhan kerja sama melalui form ini. Pesan akan masuk ke dashboard admin dan dapat dibalas melalui email.',
-                            })}
+                            {t('pages.contact.description')}
                         </p>
                     </div>
 
@@ -58,9 +55,9 @@ export default function Contact() {
                             <CardContent className="flex items-start gap-3 p-4">
                                 <Mail className="text-primary mt-0.5 h-5 w-5" />
                                 <div>
-                                    <p className="font-medium">Email</p>
+                                    <p className="font-medium">{t('labels.email')}</p>
                                     <p className="text-muted-foreground">
-                                        {t('pages.contact.emailHelp', { fallback: 'Balasan admin akan dikirim ke alamat email yang Anda masukkan.' })}
+                                        {t('pages.contact.emailHelp')}
                                     </p>
                                 </div>
                             </CardContent>
@@ -69,11 +66,9 @@ export default function Contact() {
                             <CardContent className="flex items-start gap-3 p-4">
                                 <MessageSquare className="text-primary mt-0.5 h-5 w-5" />
                                 <div>
-                                    <p className="font-medium">Dashboard Message</p>
+                                    <p className="font-medium">{t('pages.contact.dashboardMessage')}</p>
                                     <p className="text-muted-foreground">
-                                        {t('pages.contact.dashboardHelp', {
-                                            fallback: 'Semua pesan tersimpan di dashboard agar mudah dipantau dan ditindaklanjuti.',
-                                        })}
+                                        {t('pages.contact.dashboardHelp')}
                                     </p>
                                 </div>
                             </CardContent>
@@ -83,10 +78,8 @@ export default function Contact() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{t('pages.contact.formTitle', { fallback: 'Send Message' })}</CardTitle>
-                        <CardDescription>
-                            {t('pages.contact.formDescription', { fallback: 'Isi data dengan benar agar admin dapat membalas pesan Anda.' })}
-                        </CardDescription>
+                        <CardTitle>{t('pages.contact.formTitle')}</CardTitle>
+                        <CardDescription>{t('pages.contact.formDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={submit} className="space-y-4">
@@ -99,13 +92,13 @@ export default function Contact() {
                                 autoComplete="off"
                             />
                             <div className="grid gap-2">
-                                <Label htmlFor="name">{t('fields.name', { fallback: 'Name' })}</Label>
+                                <Label htmlFor="name">{t('fields.name')}</Label>
                                 <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} disabled={processing} />
                                 <InputError message={errors.name} />
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">{t('labels.email')}</Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -116,18 +109,18 @@ export default function Contact() {
                                     <InputError message={errors.email} />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="phone">{t('fields.phone', { fallback: 'Phone' })}</Label>
+                                    <Label htmlFor="phone">{t('fields.phone')}</Label>
                                     <Input id="phone" value={data.phone} onChange={(e) => setData('phone', e.target.value)} disabled={processing} />
                                     <InputError message={errors.phone} />
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="subject">{t('fields.subject', { fallback: 'Subject' })}</Label>
+                                <Label htmlFor="subject">{t('fields.subject')}</Label>
                                 <Input id="subject" value={data.subject} onChange={(e) => setData('subject', e.target.value)} disabled={processing} />
                                 <InputError message={errors.subject} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="message">{t('fields.message', { fallback: 'Message' })}</Label>
+                                <Label htmlFor="message">{t('fields.message')}</Label>
                                 <Textarea
                                     id="message"
                                     rows={7}
@@ -138,13 +131,13 @@ export default function Contact() {
                                 <InputError message={errors.message} />
                             </div>
                             {recentlySuccessful && (
-                                <p className="text-sm text-green-600">{t('pages.contact.sent', { fallback: 'Pesan berhasil dikirim.' })}</p>
+                                <p className="text-sm text-green-600">{t('pages.contact.sent')}</p>
                             )}
                             <Button type="submit" disabled={processing} className="gap-2">
                                 <Send className="h-4 w-4" />
                                 {processing
-                                    ? t('buttons.sending', { fallback: 'Sending...' })
-                                    : t('buttons.sendMessage', { fallback: 'Send Message' })}
+                                    ? t('buttons.sending')
+                                    : t('buttons.sendMessage')}
                             </Button>
                         </form>
                     </CardContent>

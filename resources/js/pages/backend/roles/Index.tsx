@@ -1,4 +1,4 @@
-import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
+import { type DataTableColumn, type PaginatedResponse, ServerDataTable } from '@/components/datatable/server-data-table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -166,7 +166,9 @@ export default function RoleIndex({ roles, filters = {}, datatable }: Props) {
             <div className="space-y-6 p-4 md:p-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('pages.roles.title', { fallback: 'Role Management' })}</h1>
-                    <p className="text-muted-foreground">{t('pages.roles.description', { fallback: 'Manage user roles and assigned permissions.' })}</p>
+                    <p className="text-muted-foreground">
+                        {t('pages.roles.description', { fallback: 'Manage user roles and assigned permissions.' })}
+                    </p>
                 </div>
 
                 <ServerDataTable<RoleRow>

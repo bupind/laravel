@@ -1,7 +1,9 @@
 import { usePage } from '@inertiajs/react';
+import { useLanguage } from '@/hooks/use-language';
 import AppLogoIcon from './app-logo-icon';
 
 export default function AppLogo() {
+    const { t } = useLanguage();
     const props = usePage().props as {
         name?: string;
         setting?: {
@@ -22,7 +24,7 @@ export default function AppLogo() {
     return (
         <div className="flex items-center gap-2">
             {logo ? (
-                <img src={`/storage/${logo}`} alt="Logo" className="h-8 w-8 rounded-md object-contain" />
+                <img src={`/storage/${logo}`} alt={appName || t('labels.logo')} className="h-8 w-8 rounded-md object-contain" />
             ) : (
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-md">
                     <AppLogoIcon className="size-[1.375rem] fill-current" />

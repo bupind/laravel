@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type NotificationItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -27,13 +28,14 @@ function formatDate(value?: string | null): string {
 }
 
 export default function NotificationDetail({ notification }: Props) {
+    const { t } = useLanguage();
     const errors = Array.isArray(notification.data.meta?.errors) ? notification.data.meta.errors : [];
     const isError = notification.data.status === 'error';
-    const title = notification.data.title ?? 'Notification';
+    const title = notification.data.title ?? t('notifications.itemFallback');
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Notifications',
+            title: t('notifications.title'),
             href: '/backend/notifications',
         },
         {
@@ -54,7 +56,7 @@ export default function NotificationDetail({ notification }: Props) {
                     </div>
                     <Button type="button" variant="outline" onClick={() => router.get('/backend/notifications')}>
                         <ArrowLeft className="h-4 w-4" />
-                        Kembali
+                        {t('buttons.back')}
                     </Button>
                 </div>
 
@@ -62,7 +64,9 @@ export default function NotificationDetail({ notification }: Props) {
                     <CardHeader className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                             <CardTitle className="text-base">{title}</CardTitle>
-                            <Badge variant={isError ? 'destructive' : 'default'}>{isError ? 'Error' : 'Success'}</Badge>
+                            <Badge variant={isError ? 'destructive' : 'default'}>
+                                {isError ? t('notifications.status.error') : t('notifications.status.success')}
+                            </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">{notification.data.message}</p>
                     </CardHeader>
@@ -70,8 +74,8 @@ export default function NotificationDetail({ notification }: Props) {
                         {errors.length > 0 ? (
                             <div className="border-destructive/20 bg-destructive/5 rounded-md border p-4">
                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                    <h2 className="text-sm font-semibold">Detail Error</h2>
-                                    <Badge variant="outline">{errors.length} error</Badge>
+                                    <h2 className="text-sm font-semibold">{t('notifications.errorDetails')}</h2>
+                                    <Badge variant="outline">{t('notifications.errorCount', { count: errors.length })}</Badge>
                                 </div>
                                 <ol className="space-y-2 pl-5 text-sm">
                                     {errors.map((error, index) => (
@@ -82,7 +86,7 @@ export default function NotificationDetail({ notification }: Props) {
                                 </ol>
                             </div>
                         ) : (
-                            <div className="text-muted-foreground rounded-md border p-4 text-sm">Tidak ada detail error.</div>
+                            <div className="text-muted-foreground rounded-md border p-4 text-sm">{t('notifications.noErrorDetails')}</div>
                         )}
                     </CardContent>
                 </Card>

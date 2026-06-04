@@ -70,7 +70,10 @@ export default function Products({ products, filters }: ProductsPageProps) {
     const summary = useMemo(() => {
         if (products.total === 0) return t('pages.products.empty', { fallback: { id: 'Tidak ada product aktif', en: 'No active products' } });
         return t('pages.products.summary', {
-            fallback: { id: `${products.total.toLocaleString('id-ID')} product aktif`, en: `${products.total.toLocaleString('en-US')} active products` },
+            fallback: {
+                id: `${products.total.toLocaleString('id-ID')} product aktif`,
+                en: `${products.total.toLocaleString('en-US')} active products`,
+            },
             total: products.total.toLocaleString('id-ID'),
         });
     }, [products.total, t]);
@@ -91,28 +94,28 @@ export default function Products({ products, filters }: ProductsPageProps) {
 
             <main className="bg-background text-foreground">
                 <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
-                    {/* Header row */}
                     <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
                             <div className="text-muted-foreground mb-2 inline-flex items-center gap-2 text-sm font-medium">
                                 <Boxes className="h-4 w-4" />
                                 {t('pages.products.category', { fallback: { id: 'Katalog Produk', en: 'Product Catalog' } })}
                             </div>
-                            <h1 className="text-3xl font-semibold tracking-tight">{t('pages.products.title', { fallback: { id: 'Produk', en: 'Products' } })}</h1>
+                            <h1 className="text-3xl font-semibold tracking-tight">
+                                {t('pages.products.title', { fallback: { id: 'Produk', en: 'Products' } })}
+                            </h1>
                         </div>
 
                         <Badge variant="outline" className="w-fit">
                             {summary}
                         </Badge>
 
-                        {/* Search — same inline style as translations module */}
                         <form onSubmit={submitSearch} className="relative flex w-full items-center gap-2 md:w-[360px]">
                             <div className="relative flex-1">
                                 <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                                 <Input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    placeholder={t('pages.products.search', { fallback: { id: 'Cari nama, SKU...', en: 'Search name, SKU...' } })}
+                                    placeholder={t('pages.products.search')}
                                     className="h-9 pr-8 pl-8"
                                 />
                                 {search && (
@@ -120,22 +123,23 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                         type="button"
                                         onClick={clearSearch}
                                         className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
-                                        aria-label="Clear search"
+                                        aria-label={t('buttons.clearSearch')}
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
                                 )}
                             </div>
                             <Button type="submit" size="sm">
-                                {t('buttons.search', { fallback: { id: 'Cari', en: 'Search' } })}
+                                {t('buttons.search')}
                             </Button>
                         </form>
                     </div>
 
-                    {/* Active filter chip */}
                     {filters.search && (
                         <div className="mb-4 flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground">{t('pages.products.filterActive', { fallback: { id: 'Filter:', en: 'Filter:' } })}</span>
+                            <span className="text-muted-foreground">
+                                {t('pages.products.filterActive')}
+                            </span>
                             <Badge variant="secondary" className="gap-1">
                                 {filters.search}
                                 <button type="button" onClick={clearSearch} className="ml-1 hover:opacity-70">
@@ -143,27 +147,32 @@ export default function Products({ products, filters }: ProductsPageProps) {
                                 </button>
                             </Badge>
                             <span className="text-muted-foreground">
-                                — {products.total.toLocaleString('id-ID')} {t('pages.products.results', { fallback: { id: 'hasil', en: 'results' } })}
+                                — {products.total.toLocaleString('id-ID')} {t('pages.products.results')}
                             </span>
                         </div>
                     )}
 
-                    {/* Table */}
                     {products.data.length === 0 ? (
                         <div className="text-muted-foreground rounded-lg border p-8 text-center text-sm">
                             {filters.search
-                                ? t('pages.products.notFound', { fallback: { id: 'Tidak ada product yang cocok.', en: 'No matching products.' } })
-                                : t('pages.products.empty', { fallback: { id: 'Product aktif belum tersedia.', en: 'No active products available.' } })}
+                                ? t('pages.products.notFound')
+                                : t('pages.products.empty')}
                         </div>
                     ) : (
                         <div className="overflow-hidden rounded-lg border">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/60 text-left">
                                     <tr>
-                                        <th className="px-4 py-3 font-medium">{t('columns.product', { fallback: { id: 'Produk', en: 'Product' } })}</th>
-                                        <th className="px-4 py-3 font-medium">SKU</th>
-                                        <th className="px-4 py-3 text-right font-medium">{t('columns.price', { fallback: { id: 'Harga', en: 'Price' } })}</th>
-                                        <th className="px-4 py-3 text-right font-medium">{t('columns.stock', { fallback: { id: 'Stok', en: 'Stock' } })}</th>
+                                        <th className="px-4 py-3 font-medium">
+                                            {t('columns.product')}
+                                        </th>
+                                        <th className="px-4 py-3 font-medium">{t('columns.sku')}</th>
+                                        <th className="px-4 py-3 text-right font-medium">
+                                            {t('columns.price')}
+                                        </th>
+                                        <th className="px-4 py-3 text-right font-medium">
+                                            {t('columns.stock')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -192,7 +201,6 @@ export default function Products({ products, filters }: ProductsPageProps) {
                         </div>
                     )}
 
-                    {/* Pagination */}
                     <div className="mt-5 flex items-center justify-between gap-3 text-sm">
                         <span className="text-muted-foreground">
                             {t('pagination.summary', {

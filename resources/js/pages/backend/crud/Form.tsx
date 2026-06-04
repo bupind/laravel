@@ -28,9 +28,10 @@ export type {
 } from './Index';
 
 interface CrudFormProps {
-    [key: string]: unknown;
     crud?: CrudMeta;
     form?: Record<string, AnyRecord | null | undefined>;
+
+    [key: string]: unknown;
 }
 
 export default function CrudForm(props: CrudFormProps) {

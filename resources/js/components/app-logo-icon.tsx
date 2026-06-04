@@ -1,8 +1,11 @@
 import { usePage } from '@inertiajs/react';
+import { useLanguage } from '@/hooks/use-language';
 import type { SVGAttributes } from 'react';
 
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
+    const { t } = useLanguage();
     const setting = usePage().props.setting as {
+        app_name?: string;
         logo?: string;
     } | null;
 
@@ -18,5 +21,5 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
         );
     }
 
-    return <img src={`/storage/${setting.logo}`} alt="App Logo" className="h-8 w-8 object-contain" />;
+    return <img src={`/storage/${setting.logo}`} alt={setting.app_name || t('labels.appLogo')} className="h-8 w-8 object-contain" />;
 }

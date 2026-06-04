@@ -1,4 +1,14 @@
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +18,7 @@ import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Eye, Mail, Search, Trash2 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type ContactMessage = {
     id: string;
@@ -44,7 +54,10 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status && filters.status !== '' ? filters.status : 'all');
 
-    const breadcrumbs = useMemo(() => [{ title: t('pages.contactMessages.title', { fallback: 'Contact Messages' }), href: '/backend/contact-messages' }], [t]);
+    const breadcrumbs = useMemo(
+        () => [{ title: t('pages.contactMessages.title'), href: '/backend/contact-messages' }],
+        [t],
+    );
 
     const applyFilter = () => {
         router.get(
@@ -59,30 +72,30 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
 
     return (
         <BackendLayout breadcrumbs={breadcrumbs}>
-            <Head title={t('pages.contactMessages.title', { fallback: 'Contact Messages' })} />
+            <Head title={t('pages.contactMessages.title')} />
             <div className="space-y-5 p-4 md:p-6">
                 <div className="grid gap-2 md:grid-cols-4">
                     <Card>
                         <CardContent className="p-4">
-                            <p className="text-muted-foreground text-xs">New Messages</p>
+                            <p className="text-muted-foreground text-xs">{t('pages.contactMessages.stats.new')}</p>
                             <p className="text-2xl font-bold">{stats.new}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4">
-                            <p className="text-muted-foreground text-xs">Read</p>
+                            <p className="text-muted-foreground text-xs">{t('pages.contactMessages.stats.read')}</p>
                             <p className="text-2xl font-bold">{stats.read}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4">
-                            <p className="text-muted-foreground text-xs">Replied</p>
+                            <p className="text-muted-foreground text-xs">{t('pages.contactMessages.stats.replied')}</p>
                             <p className="text-2xl font-bold">{stats.replied}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4">
-                            <p className="text-muted-foreground text-xs">Total</p>
+                            <p className="text-muted-foreground text-xs">{t('pages.contactMessages.stats.total')}</p>
                             <p className="text-2xl font-bold">{stats.total}</p>
                         </CardContent>
                     </Card>
@@ -91,18 +104,14 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
                 <Card>
                     <CardHeader className="gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <CardTitle>{t('pages.contactMessages.title', { fallback: 'Contact Messages' })}</CardTitle>
-                            <CardDescription>
-                                {t('pages.contactMessages.description', {
-                                    fallback: 'Pesan dari form contact frontend. Admin dapat membaca dan membalas melalui email.',
-                                })}
-                            </CardDescription>
+                            <CardTitle>{t('pages.contactMessages.title')}</CardTitle>
+                            <CardDescription>{t('pages.contactMessages.description')}</CardDescription>
                         </div>
                         <div className="flex flex-col gap-1 sm:flex-row">
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search message..."
+                                placeholder={t('pages.contactMessages.search')}
                                 className="w-full sm:w-64"
                             />
                             <Select value={status} onValueChange={setStatus}>
@@ -110,22 +119,22 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="new">New</SelectItem>
-                                    <SelectItem value="read">Read</SelectItem>
-                                    <SelectItem value="replied">Replied</SelectItem>
-                                    <SelectItem value="archived">Archived</SelectItem>
+                                    <SelectItem value="all">{t('labels.all')}</SelectItem>
+                                    <SelectItem value="new">{t('pages.contactMessages.status.new')}</SelectItem>
+                                    <SelectItem value="read">{t('pages.contactMessages.status.read')}</SelectItem>
+                                    <SelectItem value="replied">{t('pages.contactMessages.status.replied')}</SelectItem>
+                                    <SelectItem value="archived">{t('pages.contactMessages.status.archived')}</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Button type="button" onClick={applyFilter} className="gap-1">
                                 <Search className="h-4 w-4" />
-                                Search
+                                {t('buttons.search')}
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {messages.data.length === 0 ? (
-                            <p className="text-muted-foreground rounded-md border p-6 text-center text-sm">No messages found.</p>
+                            <p className="text-muted-foreground rounded-md border p-6 text-center text-sm">{t('pages.contactMessages.empty')}</p>
                         ) : (
                             messages.data.map((message) => (
                                 <div key={message.id} className="rounded-lg border p-4">
@@ -148,14 +157,14 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
                                             <Button asChild size="sm" variant="outline" className="gap-1.5">
                                                 <Link href={`/backend/contact-messages/${message.id}`}>
                                                     <Eye className="h-4 w-4" />
-                                                    View
+                                                    {t('buttons.view')}
                                                 </Link>
                                             </Button>
                                             {can.reply && (
                                                 <Button asChild size="sm" className="gap-1.5">
                                                     <Link href={`/backend/contact-messages/${message.id}`}>
                                                         <Mail className="h-4 w-4" />
-                                                        Reply
+                                                        {t('buttons.reply')}
                                                     </Link>
                                                 </Button>
                                             )}
@@ -168,15 +177,15 @@ export default function ContactMessagesIndex({ messages, filters, stats, can }: 
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete message?</AlertDialogTitle>
-                                                            <AlertDialogDescription>This message will be permanently deleted.</AlertDialogDescription>
+                                                            <AlertDialogTitle>{t('pages.contactMessages.delete.title')}</AlertDialogTitle>
+                                                            <AlertDialogDescription>{t('pages.contactMessages.delete.description')}</AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogCancel>{t('buttons.cancel')}</AlertDialogCancel>
                                                             <AlertDialogAction
                                                                 onClick={() => router.delete(`/backend/contact-messages/${message.id}`)}
                                                             >
-                                                                Delete
+                                                                {t('buttons.delete')}
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>

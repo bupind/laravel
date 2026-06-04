@@ -30,46 +30,46 @@ interface ErrorConfig {
 
 const ERROR_CONFIG: Record<ErrorStatus, ErrorConfig> = {
     400: {
-        title: 'Bad Request',
-        message: 'Request tidak dapat diproses karena format atau parameter tidak valid.',
+        title: 'errors.badRequest.title',
+        message: 'errors.badRequest.message',
         Icon: AlertTriangle,
     },
     401: {
-        title: 'Authorization Required',
-        message: 'Anda perlu login atau mengirim credential yang valid untuk mengakses halaman ini.',
+        title: 'errors.unauthorized.title',
+        message: 'errors.unauthorized.message',
         Icon: LogIn,
         action: {
-            label: 'Login',
+            label: 'buttons.login',
             href: '/login',
             icon: LogIn,
         },
     },
     403: {
-        title: 'Forbidden',
-        message: 'Anda tidak memiliki izin untuk mengakses halaman ini.',
+        title: 'errors.forbidden.title',
+        message: 'errors.forbidden.message',
         Icon: ShieldAlert,
         action: {
-            label: 'Ke Beranda',
+            label: 'buttons.backHome',
             href: '/',
             icon: Home,
         },
     },
     404: {
-        title: 'Halaman Tidak Ditemukan',
-        message: 'Halaman yang Anda cari tidak ditemukan atau sudah dipindahkan.',
+        title: 'errors.notFound.title',
+        message: 'errors.notFound.message',
         Icon: AlertTriangle,
         action: {
-            label: 'Ke Beranda',
+            label: 'buttons.backHome',
             href: '/',
             icon: Home,
         },
     },
     500: {
-        title: 'Internal Server Error',
-        message: 'Server mengalami kendala saat memproses request ini. Silakan coba beberapa saat lagi.',
+        title: 'errors.serverError.title',
+        message: 'errors.serverError.message',
         Icon: RefreshCw,
         action: {
-            label: 'Coba Lagi',
+            label: 'buttons.retry',
             onClick: () => window.location.reload(),
             icon: RefreshCw,
         },
@@ -81,18 +81,13 @@ export default function ErrorPage({ status, context = 'frontend', title, message
     const config = ERROR_CONFIG[status];
     const { Icon } = config;
 
-    const pageTitle = title ?? config.title;
-    const pageMessage = message ?? config.message;
+    const pageTitle = title ?? t(config.title);
+    const pageMessage = message ?? t(config.message);
     const extraAction = config.action
         ? {
               ...config.action,
               href: context === 'backend' && config.action.href === '/' ? '/backend/dashboard' : config.action.href,
-              label:
-                  context === 'backend' && config.action.href === '/'
-                      ? t('pages.dashboard.title')
-                      : config.action.label === 'Login'
-                        ? t('buttons.login')
-                        : config.action.label,
+              label: t(config.action.label),
           }
         : undefined;
 
@@ -106,7 +101,9 @@ export default function ErrorPage({ status, context = 'frontend', title, message
                         <Icon className="text-muted-foreground h-7 w-7" aria-hidden="true" />
                     </div>
 
-                    <p className="text-muted-foreground text-sm font-medium tracking-widest uppercase">Error {status}</p>
+                    <p className="text-muted-foreground text-sm font-medium tracking-widest uppercase">
+                        {t('errors.label')} {status}
+                    </p>
 
                     <h1 className="mt-2 text-3xl font-semibold tracking-tight">{pageTitle}</h1>
 

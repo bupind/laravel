@@ -25,6 +25,7 @@ interface InitialPageProps {
     translation_locales?: LocaleOption[];
     translation_default_locale?: string;
     translation_scope?: string;
+    translation_version?: number;
     setting?: Setting;
 }
 
@@ -77,10 +78,11 @@ createInertiaApp({
         const locales = pageProps.translation_locales ?? [];
         const defaultLocale = pageProps.translation_default_locale ?? locales[0]?.code ?? 'id';
         const scope = pageProps.translation_scope ?? 'backend';
+        const version = pageProps.translation_version ?? 1;
 
         createRoot(el).render(
             <StrictMode>
-                <LanguageProvider messages={messages} locales={locales} defaultLocale={defaultLocale} scope={scope}>
+                <LanguageProvider messages={messages} locales={locales} defaultLocale={defaultLocale} scope={scope} version={version}>
                     <App {...props} />
                 </LanguageProvider>
             </StrictMode>,

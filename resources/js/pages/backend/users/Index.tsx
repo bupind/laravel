@@ -4,7 +4,7 @@ import 'dayjs/locale/id';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useEffect, useMemo } from 'react';
 
-import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
+import { type DataTableColumn, type PaginatedResponse, ServerDataTable } from '@/components/datatable/server-data-table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -218,7 +218,7 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                         <span className="text-muted-foreground text-xs">{t('users.noRole')}</span>
                     ) : (
                         user.roles.map((role) => (
-                            <Badge key={role.id} variant="secondary" className="text-xs font-normal rounded-sm">
+                            <Badge key={role.id} variant="secondary" className="rounded-sm text-xs font-normal">
                                 {role.name}
                             </Badge>
                         ))
@@ -362,7 +362,6 @@ export default function UserIndex({ users, roles, filters = {}, datatable, crud,
                 />
             </div>
 
-            {/* Modal Create/Edit */}
             <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>

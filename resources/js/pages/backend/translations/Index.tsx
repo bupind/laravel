@@ -1,11 +1,10 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 type TranslationValues = {
     [locale: string]: string | undefined;
@@ -146,8 +145,12 @@ export default function TranslationIndex({
     const fromRow = filteredRows.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
     const toRow = Math.min(currentPage * PAGE_SIZE, filteredRows.length);
 
-    useEffect(() => { setCurrentPage(1); }, [keyword, scopeFilter]);
-    useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [keyword, scopeFilter]);
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+    }, [currentPage, totalPages]);
 
     const updateRow = (index: number, patch: Partial<TranslationRow>) => {
         const nextRows = [...data.rows];
@@ -178,11 +181,14 @@ export default function TranslationIndex({
 
     const deleteKey = (row: TranslationRow, realIndex: number) => {
         const label = `${row.namespace}.${row.key}`;
-        if (!window.confirm(`Hapus key "${label}" beserta semua terjemahannya?\n\nAksi ini tidak bisa dibatalkan.`)) return;
+        if (!window.confirm(t('settings.translations.deleteConfirm', { key: label }))) return;
 
         const hasValues = Object.values(row.values).some((v) => v && v.trim() !== '');
         if (!hasValues) {
-            setData('rows', data.rows.filter((_, i) => i !== realIndex));
+            setData(
+                'rows',
+                data.rows.filter((_, i) => i !== realIndex),
+            );
             return;
         }
 
@@ -191,12 +197,15 @@ export default function TranslationIndex({
             data: { namespace: row.namespace, key: row.key, scope: row.scope },
             preserveScroll: true,
             onSuccess: () => {
-                setData('rows', data.rows.filter((_, i) => i !== realIndex));
+                setData(
+                    'rows',
+                    data.rows.filter((_, i) => i !== realIndex),
+                );
                 setDeletingKey(null);
             },
             onError: () => {
                 setDeletingKey(null);
-                alert(`Gagal menghapus key "${label}". Silakan coba lagi.`);
+                alert(t('settings.translations.deleteError', { key: label }));
             },
         });
     };
@@ -205,7 +214,9 @@ export default function TranslationIndex({
         if (!canUpdate || processing) return;
         put(updateRoute, {
             preserveScroll: true,
-            onSuccess: () => { updateOverrides(buildDictionary(data.rows, editableLocales)); },
+            onSuccess: () => {
+                updateOverrides(buildDictionary(data.rows, editableLocales));
+            },
         });
     };
 
@@ -215,14 +226,15 @@ export default function TranslationIndex({
     };
 
     return (
-        <BackendLayout breadcrumbs={[{ title: t('settings.translations.title'), href: '/backend/translations' }]}>
-            <Head title={t('settings.translations.title')} />
-
+        <BackendLayout breadcrumbs={[{ title: t('settings.translations.title', { fallback: 'Translations' }), href: '/backend/translations' }]}>
+            <Head title={t('settings.translations.title', { fallback: 'Translations' })} />
             <div className="space-y-6 p-4 md:p-6">
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{t('settings.translations.title')}</h1>
-                        <p className="text-muted-foreground">{t('settings.translations.description')}</p>
+                        <h1 className="text-2xl font-bold tracking-tight">{t('settings.translations.title', { fallback: 'Translations' })}</h1>
+                        <p className="text-muted-foreground">
+                            {t('settings.translations.description', { fallback: 'Manage translation values for every active locale..' })}
+                        </p>
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -233,7 +245,9 @@ export default function TranslationIndex({
                         >
                             <option value="all">{t('settings.translations.allScopes')}</option>
                             {scopes.map((scope) => (
-                                <option key={scope} value={scope}>{scope}</option>
+                                <option key={scope} value={scope}>
+                                    {scope}
+                                </option>
                             ))}
                         </select>
                         <Input
@@ -268,19 +282,22 @@ export default function TranslationIndex({
                                             <div className="flex items-center gap-2">
                                                 <span>{locale.label}</span>
                                                 <span className="text-muted-foreground font-mono text-xs">{locale.code}</span>
-                                                {locale.code === defaultLocale && <span className="text-muted-foreground text-xs">default</span>}
+                                                {locale.code === defaultLocale && (
+                                                    <span className="text-muted-foreground text-xs">{t('labels.default')}</span>
+                                                )}
                                             </div>
                                         </th>
                                     ))}
-                                    {canDelete && (
-                                        <th className="w-[52px] px-2 py-3 text-center font-semibold"></th>
-                                    )}
+                                    {canDelete && <th className="w-[52px] px-2 py-3 text-center font-semibold"></th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredRows.length === 0 ? (
                                     <tr>
-                                        <td colSpan={3 + editableLocales.length + (canDelete ? 1 : 0)} className="text-muted-foreground px-4 py-8 text-center">
+                                        <td
+                                            colSpan={3 + editableLocales.length + (canDelete ? 1 : 0)}
+                                            className="text-muted-foreground px-4 py-8 text-center"
+                                        >
                                             {t('settings.translations.noKeys')}
                                         </td>
                                     </tr>
@@ -329,7 +346,7 @@ export default function TranslationIndex({
                                                             size="icon"
                                                             onClick={() => deleteKey(row, realIndex)}
                                                             disabled={isDeleting || processing}
-                                                            title={`Hapus key ${row.namespace}.${row.key}`}
+                                                            title={t('settings.translations.deleteKey', { key: `${row.namespace}.${row.key}` })}
                                                             className="h-9 w-9 hover:bg-red-50 hover:text-red-600"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -355,9 +372,7 @@ export default function TranslationIndex({
                         <ChevronLeft className="h-4 w-4" />
                         {t('buttons.previous')}
                     </Button>
-                    <div className="text-muted-foreground text-sm">
-                        {t('pagination.summary', { current: currentPage, total: totalPages })}
-                    </div>
+                    <div className="text-muted-foreground text-sm">{t('pagination.summary', { current: currentPage, total: totalPages })}</div>
                     <Button
                         type="button"
                         variant="outline"

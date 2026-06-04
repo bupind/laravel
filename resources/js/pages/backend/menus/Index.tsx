@@ -28,10 +28,11 @@ type MenuScope = 'backend' | 'frontend';
 type MenuLocation = 'sidebar' | 'header' | 'footer';
 
 interface MenuOrderPayload {
-    [key: string]: string | number | MenuOrderPayload[];
     id: string;
     order: number;
     children: MenuOrderPayload[];
+
+    [key: string]: string | number | MenuOrderPayload[];
 }
 
 interface Props {
@@ -160,7 +161,6 @@ export default function MenuIndex({ menuItems }: Props) {
         return scoped.filter((menu) => (menu.location ?? 'header') === activeLocation);
     }, [menusByScope, activeScope, activeLocation]);
 
-    // Filter menus by keyword (title match)
     const activeMenus = useMemo(() => {
         if (!keyword.trim()) return activeBaseMenus;
         const q = keyword.toLowerCase();
@@ -226,22 +226,28 @@ export default function MenuIndex({ menuItems }: Props) {
 
     return (
         <BackendLayout breadcrumbs={[{ title: t('pages.menus.breadcrumb'), href: '/backend/menus' }]}>
-            <Head title={t('pages.menus.title', { fallback: 'Menu Management' })} />
+            <Head title={t('pages.menus.title')} />
 
             <div className="flex-1 p-4 md:p-6">
                 <Card className="w-full">
                     <CardHeader className="pb-3">
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <CardTitle className="text-2xl font-bold tracking-tight">{t('pages.menus.title', { fallback: 'Menu Management' })}</CardTitle>
-                                <p className="text-muted-foreground text-sm">{t('pages.menus.description', { fallback: 'Arrange backend and frontend navigation menus.' })}</p>
+                                <CardTitle className="text-2xl font-bold tracking-tight">
+                                    {t('pages.menus.title')}
+                                </CardTitle>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('pages.menus.description')}
+                                </p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Button onClick={handleSave} disabled={isSaving}>
                                     <Save className="mr-2 h-4 w-4" />
                                     {isSaving ? t('buttons.saving') : t('buttons.save')}
                                 </Button>
-                                <Link href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}>
+                                <Link
+                                    href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}
+                                >
                                     <Button>
                                         <Plus className="mr-2 h-4 w-4" />
                                         {t('buttons.add')}
@@ -254,7 +260,6 @@ export default function MenuIndex({ menuItems }: Props) {
                     <Separator />
 
                     <CardContent className="pt-6">
-                        {/* Scope selector */}
                         <div className="mb-6 grid gap-3 md:grid-cols-2">
                             {(['backend', 'frontend'] as MenuScope[]).map((scope) => (
                                 <button
@@ -281,7 +286,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                                     {scope === 'backend' ? t('pages.menus.scopeBackend') : t('pages.menus.scopeFrontend')}
                                                 </p>
                                                 <p className="text-muted-foreground text-sm">
-                                                    {scope === 'backend' ? 'Menu sidebar area admin' : 'Menu navigasi halaman publik'}
+                                                    {scope === 'backend' ? t('pages.menus.backendHint') : t('pages.menus.frontendHint')}
                                                 </p>
                                             </div>
                                         </div>
@@ -292,7 +297,7 @@ export default function MenuIndex({ menuItems }: Props) {
                         </div>
 
                         {activeScope === 'frontend' && (
-                            <div className="mb-6 inline-flex rounded-lg border bg-muted/30 p-1">
+                            <div className="bg-muted/30 mb-6 inline-flex rounded-lg border p-1">
                                 {(['header', 'footer'] as MenuLocation[]).map((location) => (
                                     <button
                                         key={location}
@@ -302,10 +307,12 @@ export default function MenuIndex({ menuItems }: Props) {
                                             setKeyword('');
                                         }}
                                         className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                                            activeLocation === location ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                            activeLocation === location
+                                                ? 'bg-background text-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                     >
-                                        {location}
+                                        {location === 'header' ? t('pages.menus.location.header') : t('pages.menus.location.footer')}
                                         <Badge variant={activeLocation === location ? 'default' : 'secondary'} className="rounded-md">
                                             {menusByScope.frontend.filter((menu) => (menu.location ?? 'header') === location).length}
                                         </Badge>
@@ -314,7 +321,6 @@ export default function MenuIndex({ menuItems }: Props) {
                             </div>
                         )}
 
-                        {/* Search bar — same pattern as translations module */}
                         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h2 className="font-semibold">
@@ -322,10 +328,10 @@ export default function MenuIndex({ menuItems }: Props) {
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
                                     {activeScope === 'backend'
-                                        ? 'Sedang mengelola menu backend.'
+                                        ? t('pages.menus.managing.backend')
                                         : activeLocation === 'header'
-                                          ? 'Sedang mengelola menu header frontend.'
-                                          : 'Sedang mengelola menu footer frontend.'}
+                                          ? t('pages.menus.managing.header')
+                                          : t('pages.menus.managing.footer')}
                                 </p>
                             </div>
 
@@ -335,7 +341,7 @@ export default function MenuIndex({ menuItems }: Props) {
                                     <Input
                                         value={keyword}
                                         onChange={(e) => setKeyword(e.target.value)}
-                                        placeholder={t('pages.menus.search', { fallback: 'Cari menu...' })}
+                                        placeholder={t('pages.menus.search')}
                                         className="h-9 w-[220px] pl-8"
                                     />
                                 </div>
@@ -345,14 +351,15 @@ export default function MenuIndex({ menuItems }: Props) {
                             </div>
                         </div>
 
-                        {/* Menu list */}
                         {activeMenus.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <p className="text-muted-foreground mb-4">
-                                    {keyword ? t('pages.menus.noResults', { fallback: 'Menu tidak ditemukan.' }) : t('pages.menus.empty')}
+                                    {keyword ? t('pages.menus.noResults') : t('pages.menus.empty')}
                                 </p>
                                 {!keyword && (
-                                    <Link href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}>
+                                    <Link
+                                        href={`/backend/menus/create?scope=${activeScope}&location=${activeScope === 'frontend' ? activeLocation : 'sidebar'}`}
+                                    >
                                         <Button>
                                             <Plus className="mr-2 h-4 w-4" />
                                             {t('buttons.add')}

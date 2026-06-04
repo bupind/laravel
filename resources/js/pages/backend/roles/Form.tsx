@@ -138,7 +138,6 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
 
                     <CardContent className="pt-5">
                         <form onSubmit={handleSubmit} className="space-y-8">
-                            {/* {t('pages.roles.nameLabel')} */}
                             <div>
                                 <Label htmlFor="name" className="mb-2 block">
                                     {t('pages.roles.nameLabel')}
@@ -155,7 +154,6 @@ export default function RoleForm({ role, groupedPermissions }: Props) {
 
                             <Separator />
 
-                            {/* Permissions */}
                             <div className="space-y-6">
                                 <div>
                                     <h2 className="text-lg font-semibold">{t('pages.roles.permissions')}</h2>

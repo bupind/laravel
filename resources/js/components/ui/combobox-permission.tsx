@@ -1,6 +1,7 @@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/use-language';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
@@ -13,6 +14,7 @@ interface ComboboxPermissionProps {
 
   export default function ComboboxPermission({ value, onChange, options }: ComboboxPermissionProps) {
     const [open, setOpen] = useState(false);
+    const { t } = useLanguage();
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -23,14 +25,14 @@ interface ComboboxPermissionProps {
             aria-expanded={open}
             className="w-full justify-between"
           >
-            {value || 'Pilih permission'}
+            {value || t('permissions.select.placeholder')}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0 max-h-60 overflow-y-auto">
           <Command>
-            <CommandInput placeholder="Cari permission..." />
-            <CommandEmpty>Permission tidak ditemukan.</CommandEmpty>
+            <CommandInput placeholder={t('permissions.select.search')} />
+            <CommandEmpty>{t('permissions.select.empty')}</CommandEmpty>
             <CommandGroup>
               {options.map((item) => (
                 <CommandItem

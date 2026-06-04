@@ -79,8 +79,7 @@ class HandleInertiaRequests extends Middleware
             'translation_scope'          => $translationScope,
             'translation_default_locale' => fn() => $service->defaultLocale(),
             'translation_locales'        => fn() => $service->localeOptions(),
-            // Ringan: jangan kirim dictionary besar lewat Inertia.
-            // Frontend mengambil key yang dibutuhkan saja via /api/translations/resolve.
+            'translation_version'        => fn() => (int)Cache::get('translations:version', 1),
             'translations'               => fn() => [],
         ]);
     }

@@ -224,7 +224,6 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
         <BackendLayout breadcrumbs={[{ title: t('pages.files.title', { fallback: 'File Library' }), href: '/backend/files' }]}>
             <Head title={t('pages.files.title', { fallback: 'File Library' })} />
             <div className="grid flex-1 grid-cols-1 gap-6 p-4 md:grid-cols-4 md:p-6">
-                {/* Sidebar Folder Tree */}
                 <div className="rounded-lg border p-4 md:col-span-1">
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-sm font-semibold">{t('pages.files.folderStructure')}</h2>
@@ -246,7 +245,6 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                     </div>
                 </div>
 
-                {/* Main Panel File View */}
                 <div className="space-y-4 md:col-span-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -343,7 +341,6 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                 </div>
             </div>
 
-            {/* Create Folder Dialog */}
             <Dialog open={isCreatingFolder} onOpenChange={setIsCreatingFolder}>
                 <DialogContent>
                     <DialogHeader>
@@ -368,7 +365,6 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                 </DialogContent>
             </Dialog>
 
-            {/* File Preview Dialog */}
             <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
                 <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col">
                     {previewFile && (
@@ -383,7 +379,7 @@ export default function FileManager({ folders, currentFolderId, currentFolder, f
                                     <iframe src={previewFile.url} className="h-[70vh] w-full rounded border" title={previewFile.name} />
                                 ) : previewFile.mime_type.startsWith('text/') ? (
                                     <div className="h-[70vh] overflow-auto rounded bg-gray-100 p-4">
-                                        <pre className="whitespace-pre-wrap">{/* Content would be loaded here */}</pre>
+                                        <pre className="whitespace-pre-wrap"> </pre>
                                     </div>
                                 ) : (
                                     <div className="flex h-64 flex-col items-center justify-center text-gray-500">

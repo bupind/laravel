@@ -159,7 +159,7 @@ export default function PermissionIndex({ permissions, groups, standardActions =
             render: (permission) => (
                 <div className="flex flex-wrap gap-1">
                     {permission.children.map((child) => (
-                        <Badge key={child.id} variant="secondary" className="font-normal rounded-sm">
+                        <Badge key={child.id} variant="secondary" className="rounded-sm font-normal">
                             {child.label}
                         </Badge>
                     ))}

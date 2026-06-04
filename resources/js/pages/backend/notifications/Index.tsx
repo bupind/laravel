@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/hooks/use-language';
 import BackendLayout from '@/layouts/backend-layout';
 import { type BreadcrumbItem, type NotificationItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -41,9 +42,10 @@ function cleanLabel(label: string): string {
 }
 
 export default function NotificationInbox({ notifications }: Props) {
+    const { t } = useLanguage();
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Notifications',
+            title: t('notifications.title'),
             href: '/backend/notifications',
         },
     ];
@@ -60,18 +62,18 @@ export default function NotificationInbox({ notifications }: Props) {
 
     return (
         <BackendLayout breadcrumbs={breadcrumbs}>
-            <Head title="Notifications" />
+            <Head title={t('notifications.title')} />
 
             <div className="space-y-6 p-4 md:p-6">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-                    <p className="text-muted-foreground text-sm">Inbox hasil proses background seperti import produk.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('notifications.title')}</h1>
+                    <p className="text-muted-foreground text-sm">{t('notifications.description')}</p>
                 </div>
 
                 <div className="space-y-3">
                     {notifications.data.length === 0 ? (
                         <Card>
-                            <CardContent className="text-muted-foreground py-10 text-center text-sm">Belum ada notifikasi.</CardContent>
+                            <CardContent className="text-muted-foreground py-10 text-center text-sm">{t('notifications.empty')}</CardContent>
                         </Card>
                     ) : (
                         notifications.data.map((item) => {
@@ -87,22 +89,24 @@ export default function NotificationInbox({ notifications }: Props) {
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <CardTitle className="text-base">
                                                         <Link href={`/backend/notifications/${item.id}`} className="hover:underline">
-                                                            {item.data.title ?? 'Notification'}
+                                                            {item.data.title ?? t('notifications.itemFallback')}
                                                         </Link>
                                                     </CardTitle>
-                                                    <Badge variant={isError ? 'destructive' : 'default'}>{isError ? 'Error' : 'Success'}</Badge>
-                                                    {isUnread && <Badge variant="secondary">Unread</Badge>}
+                                                    <Badge variant={isError ? 'destructive' : 'default'}>
+                                                        {isError ? t('notifications.status.error') : t('notifications.status.success')}
+                                                    </Badge>
+                                                    {isUnread && <Badge variant="secondary">{t('notifications.status.unread')}</Badge>}
                                                 </div>
                                                 <p className="text-muted-foreground text-sm">{item.data.message}</p>
                                                 <p className="text-muted-foreground text-xs">{formatDate(item.created_at)}</p>
                                             </div>
                                             {isUnread && (
                                                 <Button type="button" variant="outline" size="sm" onClick={() => markAsRead(item.id)}>
-                                                    Tandai dibaca
+                                                    {t('notifications.markAsRead')}
                                                 </Button>
                                             )}
                                             <Button type="button" variant="secondary" size="sm" asChild>
-                                                <Link href={`/backend/notifications/${item.id}`}>Detail</Link>
+                                                <Link href={`/backend/notifications/${item.id}`}>{t('buttons.detail')}</Link>
                                             </Button>
                                         </div>
                                     </CardHeader>

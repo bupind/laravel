@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 export type LocaleOption = {
@@ -29,12 +30,19 @@ type LanguageProviderProps = {
     locales?: LocaleOption[];
     defaultLocale?: string;
     scope?: string;
+    version?: number;
 };
 
 type ResolvePayload = {
     locale?: string;
     messages?: Dictionary;
     sources?: Record<string, { scope?: string; locale?: string }>;
+};
+
+type TranslationPageProps = {
+    translations?: Partial<Dictionaries>;
+    translation_scope?: string;
+    translation_version?: number;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -78,7 +86,6 @@ function normalizeTranslationKeys(keys: string | string[]): string[] {
         .filter((key, index, all) => key.includes('.') && key !== '' && all.indexOf(key) === index);
 }
 
-
 function humanizeTranslationKey(key: string): string {
     const lastSegment = key.split('.').pop() ?? key;
     const spaced = lastSegment
@@ -89,7 +96,6 @@ function humanizeTranslationKey(key: string): string {
     if (!spaced) return key;
     return spaced.replace(/\b\w/g, (char) => char.toUpperCase());
 }
-
 
 function resolveExactFallbackValue(fallback: FallbackValue | undefined, language: string): string | undefined {
     if (fallback === undefined || fallback === null || typeof fallback === 'string' || typeof fallback === 'number') {
@@ -140,10 +146,13 @@ async function resolveTranslations(locale: string, scope: string, keys: string[]
     return (await response.json()) as ResolvePayload;
 }
 
-export function LanguageProvider({ children, messages, overrides, locales, defaultLocale = 'id', scope = 'backend' }: LanguageProviderProps) {
+export function LanguageProvider({ children, messages, overrides, locales, defaultLocale = 'id', scope = 'backend', version = 1 }: LanguageProviderProps) {
     const normalizedDefaultLocale = normalizeLocaleCode(defaultLocale) || 'id';
     const initialMessages = useMemo(() => normalizeMessages(messages ?? overrides), [messages, overrides]);
-    const localeOptions = useMemo(() => normalizeLocales(initialMessages, locales, normalizedDefaultLocale), [initialMessages, locales, normalizedDefaultLocale]);
+    const localeOptions = useMemo(
+        () => normalizeLocales(initialMessages, locales, normalizedDefaultLocale),
+        [initialMessages, locales, normalizedDefaultLocale],
+    );
     const [language, setLanguageState] = useState<Language>(normalizedDefaultLocale);
     const [activeMessages, setActiveMessages] = useState<Dictionaries>(initialMessages);
     const [loading, setLoading] = useState(false);
@@ -155,6 +164,7 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
     const timerRef = useRef<number | null>(null);
     const languageRef = useRef(language);
     const scopeRef = useRef(scope);
+    const versionRef = useRef(version);
 
     useEffect(() => {
         languageRef.current = language;
@@ -192,9 +202,6 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
                 const messages = payload.messages ?? {};
                 const sources = payload.sources ?? {};
 
-                // Penting: jangan simpan fallback default-locale ke dictionary locale aktif.
-                // Contoh: saat user pilih EN tapi key EN belum ada, backend boleh mengembalikan fallback ID.
-                // Jika fallback ID disimpan ke dictionary EN, dropdown terlihat tidak berubah dan key EN tidak akan pernah diminta lagi.
                 setActiveMessages((current) => {
                     const next: Dictionaries = { ...current };
 
@@ -249,6 +256,23 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
         [activeMessages, flushPendingKeys],
     );
 
+    const refreshRequestedKeys = useCallback(() => {
+        const locale = languageRef.current;
+
+        requestedKeys.current.forEach((key) => {
+            const cacheKey = `${locale}:${key}`;
+            loadedMissingKeys.current.delete(cacheKey);
+
+            if (!inFlightKeys.current.has(cacheKey)) {
+                pendingKeys.current.add(key);
+            }
+        });
+
+        if (typeof window !== 'undefined' && pendingKeys.current.size > 0 && timerRef.current === null) {
+            timerRef.current = window.setTimeout(flushPendingKeys, 40);
+        }
+    }, [flushPendingKeys]);
+
     useEffect(() => {
         return () => {
             if (timerRef.current !== null) {
@@ -256,6 +280,34 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
             }
         };
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = router.on('success', (event) => {
+            const props = ((event.detail.page.props ?? {}) as TranslationPageProps) || {};
+            const nextScope = props.translation_scope ?? scopeRef.current;
+            const nextVersion = Number(props.translation_version ?? versionRef.current);
+            const scopeChanged = nextScope !== scopeRef.current;
+            const versionChanged = nextVersion !== versionRef.current;
+
+            scopeRef.current = nextScope;
+            versionRef.current = nextVersion;
+
+            if (props.translations) {
+                setActiveMessages((current) => ({
+                    ...current,
+                    ...normalizeMessages(props.translations),
+                }));
+            }
+
+            if (scopeChanged || versionChanged) {
+                refreshRequestedKeys();
+            }
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, [refreshRequestedKeys]);
 
     useEffect(() => {
         const saved = localStorage.getItem('language');
@@ -288,9 +340,6 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
 
         languageRef.current = selectedLanguage;
 
-        // Tidak preload semua key yang pernah dipakai lintas halaman.
-        // Saat bahasa diganti, halaman aktif akan render ulang; t() pada halaman itu saja yang mendaftarkan key,
-        // lalu hanya key halaman aktif tersebut yang di-resolve untuk bahasa terpilih.
         pendingKeys.current.clear();
         if (timerRef.current !== null) {
             window.clearTimeout(timerRef.current);
@@ -317,15 +366,14 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
 
     const dictionaries = useMemo<Dictionaries>(() => normalizeMessages(activeMessages), [activeMessages]);
 
-    const activeLocaleOptions = useMemo(() => normalizeLocales(dictionaries, localeOptions, normalizedDefaultLocale), [dictionaries, localeOptions, normalizedDefaultLocale]);
-
+    const activeLocaleOptions = useMemo(
+        () => normalizeLocales(dictionaries, localeOptions, normalizedDefaultLocale),
+        [dictionaries, localeOptions, normalizedDefaultLocale],
+    );
     const keys = useMemo(
         () => Array.from(new Set(Object.values(dictionaries).flatMap((dictionary) => Object.keys(dictionary)))).sort(),
         [dictionaries],
     );
-
-    // Tidak ada effect global yang me-resolve semua key lama saat bahasa berubah.
-    // Pengambilan translate sengaja dipicu oleh t()/preload() dari halaman yang sedang aktif saja.
 
     const value = useMemo<LanguageContextValue>(
         () => ({
@@ -343,15 +391,13 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
                 const translated = dictionaries[language]?.[key];
                 const dictionaryFallback =
                     language === normalizedDefaultLocale
-                        ? dictionaries[normalizedDefaultLocale]?.[key] ?? Object.values(dictionaries).find((dictionary) => dictionary[key])?.[key]
+                        ? (dictionaries[normalizedDefaultLocale]?.[key] ?? Object.values(dictionaries).find((dictionary) => dictionary[key])?.[key])
                         : undefined;
                 const fallbackValue = replacements.fallback as FallbackValue | undefined;
                 const explicitFallback = resolveFallbackValue(fallbackValue, language, normalizedDefaultLocale);
                 const selectedLocaleFallback = resolveExactFallbackValue(fallbackValue, language);
                 const defaultLocaleFallback = resolveExactFallbackValue(fallbackValue, normalizedDefaultLocale);
 
-                // Jika DB masih punya value stale dari default locale pada locale aktif,
-                // pakai fallback eksplisit bahasa aktif agar page langsung berubah tanpa reload/trigger lain.
                 const isStaleDefaultValue =
                     language !== normalizedDefaultLocale &&
                     translated !== undefined &&
@@ -360,9 +406,6 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
                     selectedLocaleFallback !== defaultLocaleFallback &&
                     translated === defaultLocaleFallback;
 
-                // Pernah terjadi hasil translations:sync membuat value generik seperti "Title" dan "Description"
-                // untuk banyak key halaman, misalnya pages.permissions.title. Jika komponen sudah memberi fallback
-                // yang lebih spesifik, jangan pakai value generik tersebut.
                 const isGenericTitleDescription =
                     translated !== undefined &&
                     explicitFallback !== undefined &&
@@ -375,8 +418,6 @@ export function LanguageProvider({ children, messages, overrides, locales, defau
                         ? translated
                         : (explicitFallback ?? dictionaryFallback ?? humanizeTranslationKey(key));
 
-                // Tetap request key untuk locale aktif meskipun ada fallback dari default locale.
-                // Sebelumnya, dropdown bahasa berubah tetapi teks tetap fallback lama karena queue berhenti saat dictionaryFallback ada.
                 if (translated === undefined) {
                     queueKeys(key);
                 }

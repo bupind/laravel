@@ -1,4 +1,4 @@
-import { ServerDataTable, type DataTableColumn, type PaginatedResponse } from '@/components/datatable/server-data-table';
+import { type DataTableColumn, type PaginatedResponse, ServerDataTable } from '@/components/datatable/server-data-table';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -155,7 +155,12 @@ export default function AuditLogIndex({ logs, filters = {}, datatable, crud }: P
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">{t('pages.auditLogs.title', { fallback: 'Activity Logs' })}</h1>
-                        <p className="text-muted-foreground text-sm">{t('pages.auditLogs.description', { total: logs.total.toLocaleString(), fallback: 'Review :total system activities and audit events.' })}</p>
+                        <p className="text-muted-foreground text-sm">
+                            {t('pages.auditLogs.description', {
+                                total: logs.total.toLocaleString(),
+                                fallback: 'Review :total system activities and audit events.',
+                            })}
+                        </p>
                     </div>
 
                     <div className="flex gap-2">

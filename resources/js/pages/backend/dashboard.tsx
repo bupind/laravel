@@ -90,7 +90,7 @@ export default function Dashboard({ stats }: Props) {
                     {metricCards.map((card) => {
                         const Icon = card.icon;
                         const content = (
-                            <Card className="h-full transition hover:border-primary/40 hover:shadow-sm">
+                            <Card className="hover:border-primary/40 h-full transition hover:shadow-sm">
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
@@ -116,7 +116,9 @@ export default function Dashboard({ stats }: Props) {
                     <Card>
                         <CardHeader className="px-4 py-3">
                             <CardTitle className="text-base">{t('pages.dashboard.userRegistrations', { fallback: 'User Registrations' })}</CardTitle>
-                            <CardDescription>{t('pages.dashboard.userRegistrationsDescription', { fallback: 'New user registrations over the last 6 months.' })}</CardDescription>
+                            <CardDescription>
+                                {t('pages.dashboard.userRegistrationsDescription', { fallback: 'New user registrations over the last 6 months.' })}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="h-[240px] pb-4">
                             <ResponsiveContainer width="100%" height="100%">
@@ -132,22 +134,30 @@ export default function Dashboard({ stats }: Props) {
                     <Card>
                         <CardHeader className="px-4 py-3">
                             <CardTitle className="text-base">{t('pages.dashboard.recentActivity', { fallback: 'Recent Activity' })}</CardTitle>
-                            <CardDescription>{t('pages.dashboard.recentActivityDescription', { fallback: 'Latest create, update, and delete events.' })}</CardDescription>
+                            <CardDescription>
+                                {t('pages.dashboard.recentActivityDescription', { fallback: 'Latest create, update, and delete events.' })}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2 pb-4">
                             {(stats?.recentActivity ?? []).length === 0 ? (
-                                <p className="text-muted-foreground text-sm">{t('pages.dashboard.noRecentActivity', { fallback: 'No recent activity.' })}</p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('pages.dashboard.noRecentActivity', { fallback: 'No recent activity.' })}
+                                </p>
                             ) : (
                                 (stats?.recentActivity ?? []).map((log) => (
                                     <div key={log.id} className="flex items-start justify-between gap-3 text-sm">
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_COLOR[log.event] ?? 'bg-gray-100 text-gray-600'}`}>
+                                                <span
+                                                    className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_COLOR[log.event] ?? 'bg-gray-100 text-gray-600'}`}
+                                                >
                                                     {log.event}
                                                 </span>
                                                 <span className="text-muted-foreground truncate">{log.description}</span>
                                             </div>
-                                            <div className="text-muted-foreground mt-0.5 text-xs">{t('pages.dashboard.byUser', { user: log.causer, fallback: `by ${log.causer}` })}</div>
+                                            <div className="text-muted-foreground mt-0.5 text-xs">
+                                                {t('pages.dashboard.byUser', { user: log.causer, fallback: `by ${log.causer}` })}
+                                            </div>
                                         </div>
                                         <span className="text-muted-foreground shrink-0 text-xs">{log.created_at}</span>
                                     </div>

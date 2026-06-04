@@ -210,11 +210,7 @@ export function ServerDataTable<T>({
         return (
             <div className="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm">
                 <p className="text-muted-foreground">
-                    Showing{' '}
-                    <span className="text-foreground font-semibold tabular-nums">
-                        {from}-{to}
-                    </span>{' '}
-                    of <span className="text-foreground font-semibold tabular-nums">{rowCount}</span> items.
+                    {t('datatable.showingRange', { from, to, total: rowCount })}
                 </p>
 
                 <div className="border-border bg-background inline-flex shrink-0 items-center overflow-hidden rounded-md border shadow-sm">

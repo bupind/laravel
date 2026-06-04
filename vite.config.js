@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { brotliCompress, constants, gzip } from 'node:zlib';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 const gzipAsync = promisify(gzip);
 const brotliAsync = promisify(brotliCompress);
@@ -68,7 +69,14 @@ export default defineConfig(({ command }) => ({
         react(),
         tailwindcss(),
         compressBuildAssets(),
-    ],
+        // Bundle analyzer - enable with ANALYZE=true env
+        process.env.ANALYZE && visualizer({
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+            filename: 'dist/stats.html',
+        }),
+    ].filter(Boolean),
 
     esbuild: {
         jsx: 'automatic',

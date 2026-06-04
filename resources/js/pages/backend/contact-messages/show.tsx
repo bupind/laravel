@@ -31,7 +31,7 @@ export default function ContactMessageShow({ message, can }: Props) {
     const { t } = useLanguage();
     const breadcrumbs = useMemo(
         () => [
-            { title: t('pages.contactMessages.title', { fallback: 'Contact Messages' }), href: '/backend/contact-messages' },
+            { title: t('pages.contactMessages.title'), href: '/backend/contact-messages' },
             { title: message.subject, href: '#' },
         ],
         [t, message.subject],
@@ -53,7 +53,7 @@ export default function ContactMessageShow({ message, can }: Props) {
                 <Button asChild variant="ghost" size="sm" className="gap-1.5 pl-0">
                     <Link href="/backend/contact-messages">
                         <ArrowLeft className="h-4 w-4" />
-                        Back
+                        {t('buttons.back')}
                     </Link>
                 </Button>
                 <Card>
@@ -72,9 +72,9 @@ export default function ContactMessageShow({ message, can }: Props) {
                     <CardContent className="space-y-4">
                         <div className="bg-muted/50 rounded-lg p-4 text-sm leading-6 whitespace-pre-wrap">{message.message}</div>
                         <div className="text-muted-foreground grid gap-1 text-xs sm:grid-cols-3">
-                            <span>Created: {message.created_at ?? '-'}</span>
-                            <span>Read: {message.read_at ?? '-'}</span>
-                            <span>Replied: {message.replied_at ?? '-'}</span>
+                            <span>{t('labels.created')}: {message.created_at ?? '-'}</span>
+                            <span>{t('pages.contactMessages.status.read')}: {message.read_at ?? '-'}</span>
+                            <span>{t('pages.contactMessages.status.replied')}: {message.replied_at ?? '-'}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -84,7 +84,7 @@ export default function ContactMessageShow({ message, can }: Props) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <Mail className="h-4 w-4" />
-                                Last Reply
+                                {t('pages.contactMessages.lastReply')}
                             </CardTitle>
                             <CardDescription>{message.reply_subject}</CardDescription>
                         </CardHeader>
@@ -97,13 +97,13 @@ export default function ContactMessageShow({ message, can }: Props) {
                 {can.reply && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Reply by Email</CardTitle>
-                            <CardDescription>Balasan akan dikirim melalui email service dan disimpan sebagai riwayat pesan.</CardDescription>
+                            <CardTitle>{t('pages.contactMessages.reply.title')}</CardTitle>
+                            <CardDescription>{t('pages.contactMessages.reply.description')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submit} className="space-y-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="reply-subject">Subject</Label>
+                                    <Label htmlFor="reply-subject">{t('fields.subject')}</Label>
                                     <input
                                         id="reply-subject"
                                         className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
@@ -114,7 +114,7 @@ export default function ContactMessageShow({ message, can }: Props) {
                                     <InputError message={errors.subject} />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="reply-message">Message</Label>
+                                    <Label htmlFor="reply-message">{t('fields.message')}</Label>
                                     <Textarea
                                         id="reply-message"
                                         rows={8}
@@ -127,7 +127,7 @@ export default function ContactMessageShow({ message, can }: Props) {
                                 <div className="text-end">
                                     <Button type="submit" disabled={processing} className="gap-2">
                                         <Send className="h-4 w-4" />
-                                        Send Reply
+                                        {t('pages.contactMessages.reply.send')}
                                     </Button>
                                 </div>
                             </form>

@@ -8,13 +8,13 @@ import { Link, usePage } from '@inertiajs/react';
 
 const sidebarNavItems: Array<NavItem & { translationKey: string }> = [
     {
-        title: 'Profile',
+        title: 'settings.profile.title',
         translationKey: 'settings.profile.title',
         url: '/backend/settings/profile',
         icon: null,
     },
     {
-        title: 'Password',
+        title: 'settings.password.title',
         translationKey: 'settings.password.title',
         url: '/backend/settings/password',
         icon: null,

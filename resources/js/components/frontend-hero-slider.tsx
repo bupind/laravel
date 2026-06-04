@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/use-language';
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -24,6 +25,7 @@ function isExternalUrl(url: string): boolean {
 }
 
 export function FrontendHeroSlider({ appDesc, primaryColor, slides: databaseSlides = [] }: FrontendHeroSliderProps) {
+    const { t } = useLanguage();
     const [activeIndex, setActiveIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
 
@@ -79,7 +81,7 @@ export function FrontendHeroSlider({ appDesc, primaryColor, slides: databaseSlid
             className="relative isolate overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            aria-label="Home slider"
+            aria-label={t('pages.home.slider')}
         >
             <div
                 className="min-h-[420px] bg-cover bg-center transition-[background-image] duration-500 md:min-h-[480px]"

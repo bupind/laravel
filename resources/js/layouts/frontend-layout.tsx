@@ -2,7 +2,7 @@ import { FrontendFooter } from '@/components/frontend-footer';
 import { FrontendHeader } from '@/components/frontend-header';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef } from 'react';
 
 interface FrontendLayoutProps {
     children: ReactNode;
@@ -33,13 +33,7 @@ export default function FrontendLayout({ children }: FrontendLayoutProps) {
 
     return (
         <div className="bg-background text-foreground flex min-h-screen flex-col">
-            <FrontendHeader
-                appName={shell.appName}
-                setting={shell.setting}
-                auth={auth}
-                menus={shell.headerMenus}
-                currentPath={currentPath}
-            />
+            <FrontendHeader appName={shell.appName} setting={shell.setting} auth={auth} menus={shell.headerMenus} currentPath={currentPath} />
             <div className="flex-1">{children}</div>
             <FrontendFooter appName={shell.appName} setting={shell.setting} menus={shell.footerMenus} />
         </div>
