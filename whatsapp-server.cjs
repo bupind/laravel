@@ -17,9 +17,8 @@ const path = require('path');
 const fs = require('fs/promises');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const qrcodeterm = require('qrcode-terminal');
 
-const PORT = Number(process.env.WWEBJS_PORT || 3001);
+const PORT = Number(process.env.WWEBJS_PORT || process.env.PORT || 3001);
 const SECRET = process.env.WWEBJS_SECRET || ''; // opsional, Bearer token
 const CLIENT_ID = process.env.WWEBJS_CLIENT_ID || 'default';
 const RUNTIME_PATH = process.env.WWEBJS_RUNTIME_PATH || path.join(process.cwd(), 'storage', 'app', 'wwebjs');
@@ -133,8 +132,6 @@ function bindClientEvents(instance) {
             lastReason = null;
             qrAt = new Date().toISOString();
 
-            console.log('[wwebjs] QR baru tersedia. Scan via Setting App.');
-            qrcodeterm.generate(qr, { small: true });
         } catch (error) {
             status = 'AUTH_FAILURE';
             lastError = `Gagal membuat QR image: ${error.message}`;
@@ -296,12 +293,6 @@ async function ensureClientStarted() {
     }
 }
 
-// Start otomatis saat server menyala.
-startClient('server_start').catch((error) => {
-    lastError = error?.message || String(error);
-    console.error('[wwebjs] Boot error:', error);
-});
-
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.get('/', (_req, res) => {
@@ -370,7 +361,7 @@ app.post('/api/send', handleSend);
 app.post('/api/sendText', handleSend);
 
 // ─── Start HTTP Server ───────────────────────────────────────────────────────
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`[wwebjs] Runtime path: ${RUNTIME_PATH}`);
     console.log(`[wwebjs] Auth path: ${DATA_PATH}`);
     console.log(`[wwebjs] Cache path: ${CACHE_PATH}`);
@@ -380,4 +371,20 @@ app.listen(PORT, () => {
     console.log(`         GET  http://localhost:${PORT}/api/status`);
     console.log(`         POST http://localhost:${PORT}/api/restart`);
     console.log(`         POST http://localhost:${PORT}/api/send`);
+
+    setTimeout(() => {
+        startClient('server_start').catch((error) => {
+            lastError = error?.message || String(error);
+            console.error('[wwebjs] Boot error:', error);
+        });
+    }, 0);
+});
+
+server.on('error', (error) => {
+    if (error?.code === 'EADDRINUSE') {
+        console.error(`[wwebjs] Port ${PORT} sudah dipakai. Stop proses whatsapp-server lama atau gunakan WWEBJS_PORT berbeda.`);
+        process.exit(1);
+    }
+
+    throw error;
 });

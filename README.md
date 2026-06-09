@@ -44,6 +44,16 @@ Build production:
 npm run build
 ```
 
+WhatsApp server production berjalan sebagai proses Node terpisah:
+
+```bash
+npm run start:whatsapp
+```
+
+Untuk VPS/cPanel, lihat `DEPLOY_PRODUCTION.md`.
+
+Payment gateway memakai Xendit sebagai base provider. Lihat `SETUP_XENDIT.md`.
+
 ## API Client
 
 Endpoint product API dilindungi middleware `api.client`. Request wajib mengirim header:

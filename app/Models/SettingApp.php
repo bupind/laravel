@@ -39,10 +39,21 @@ class SettingApp extends Model
         'test_recipient' => null,
     ];
     public const PAYMENT_GATEWAY_DEFAULTS = [
-        'provider' => null,
-        'endpoint' => null,
-        'token'    => null,
-        'mode'     => 'sandbox',
+        'provider'             => 'xendit',
+        'mode'                 => 'sandbox',
+        'base_url'             => 'https://api.xendit.co',
+        'invoice_endpoint'     => '/v2/invoices',
+        'secret_key'           => null,
+        'public_key'           => null,
+        'webhook_token'        => null,
+        'success_redirect_url' => null,
+        'failure_redirect_url' => null,
+        'currency'             => 'IDR',
+        'invoice_duration'     => 86400,
+        'should_send_email'    => false,
+        'timeout'              => 20,
+        'retry'                => 3,
+        'retry_sleep_ms'       => 300,
     ];
     public const AVAILABLE_LOCALES = [
         ['code' => 'id', 'label' => 'Bahasa Indonesia'],
@@ -114,7 +125,7 @@ class SettingApp extends Model
         'seo'             => 'json',
         'whatsapp'        => 'whatsapp',
         'email'           => 'email_service',
-        'payment_gateway' => 'json',
+        'payment_gateway' => 'payment_gateway',
         'translations'    => 'translations',
     ];
     protected $table    = 'settingapp';
@@ -135,10 +146,7 @@ class SettingApp extends Model
         $merged                    = array_replace_recursive($defaults, $settings);
         $merged['whatsapp']        = static::normalizeWhatsappConfig($merged['whatsapp'] ?? []);
         $merged['email']           = static::normalizeEmailConfig($merged['email'] ?? []);
-        $merged['payment_gateway'] = array_replace_recursive(
-            self::PAYMENT_GATEWAY_DEFAULTS,
-            is_array($merged['payment_gateway'] ?? null) ? $merged['payment_gateway'] : []
-        );
+        $merged['payment_gateway'] = static::normalizePaymentGatewayConfig($merged['payment_gateway'] ?? []);
         $merged['translations']    = static::normalizeTranslationsConfig($merged['translations'] ?? []);
         return $merged;
     }
@@ -188,6 +196,7 @@ class SettingApp extends Model
         $config['timeout']         = max(1, (int)($config['timeout'] ?? self::WHATSAPP_DEFAULTS['timeout']));
         $config['retry']           = max(0, (int)($config['retry'] ?? self::WHATSAPP_DEFAULTS['retry']));
         $config['retry_sleep_ms']  = max(0, (int)($config['retry_sleep_ms'] ?? self::WHATSAPP_DEFAULTS['retry_sleep_ms']));
+        unset($config['templates']);
         return $config;
     }
 
@@ -219,6 +228,45 @@ class SettingApp extends Model
         $config['from_name']      = static::nullableString($config['from_name'] ?? null);
         $config['from_address']   = static::nullableString($config['from_address'] ?? null);
         $config['test_recipient'] = static::nullableString($config['test_recipient'] ?? null);
+        unset($config['templates']);
+        return $config;
+    }
+
+    public static function normalizePaymentGatewayConfig(mixed $value): array
+    {
+        if(is_string($value)) {
+            $value = static::decodeValue($value);
+        }
+        if(!is_array($value)) {
+            $value = [];
+        }
+
+        if(isset($value['token']) && !isset($value['secret_key'])) {
+            $value['secret_key'] = $value['token'];
+        }
+        if(isset($value['endpoint']) && !isset($value['base_url'])) {
+            $value['base_url'] = $value['endpoint'];
+        }
+
+        $config                          = array_replace_recursive(self::PAYMENT_GATEWAY_DEFAULTS, $value);
+        $config['provider']              = 'xendit';
+        $mode                            = strtolower(trim((string)($config['mode'] ?? 'sandbox')));
+        $config['mode']                  = in_array($mode, ['sandbox', 'production'], true) ? $mode : 'sandbox';
+        $config['base_url']              = rtrim(static::nullableString($config['base_url'] ?? null) ?? self::PAYMENT_GATEWAY_DEFAULTS['base_url'], '/');
+        $config['invoice_endpoint']      = '/' . ltrim(static::nullableString($config['invoice_endpoint'] ?? null) ?? self::PAYMENT_GATEWAY_DEFAULTS['invoice_endpoint'], '/');
+        $config['secret_key']            = static::nullableString($config['secret_key'] ?? null);
+        $config['public_key']            = static::nullableString($config['public_key'] ?? null);
+        $config['webhook_token']         = static::nullableString($config['webhook_token'] ?? null);
+        $config['success_redirect_url']  = static::nullableString($config['success_redirect_url'] ?? null);
+        $config['failure_redirect_url']  = static::nullableString($config['failure_redirect_url'] ?? null);
+        $config['currency']              = strtoupper(static::nullableString($config['currency'] ?? null) ?? 'IDR');
+        $config['invoice_duration']      = max(60, (int)($config['invoice_duration'] ?? self::PAYMENT_GATEWAY_DEFAULTS['invoice_duration']));
+        $config['should_send_email']     = filter_var($config['should_send_email'] ?? false, FILTER_VALIDATE_BOOL);
+        $config['timeout']               = max(1, (int)($config['timeout'] ?? self::PAYMENT_GATEWAY_DEFAULTS['timeout']));
+        $config['retry']                 = max(0, (int)($config['retry'] ?? self::PAYMENT_GATEWAY_DEFAULTS['retry']));
+        $config['retry_sleep_ms']        = max(0, (int)($config['retry_sleep_ms'] ?? self::PAYMENT_GATEWAY_DEFAULTS['retry_sleep_ms']));
+        unset($config['endpoint'], $config['token'], $config['templates']);
+
         return $config;
     }
 
@@ -323,6 +371,8 @@ class SettingApp extends Model
             $value = static::normalizeWhatsappConfig($value);
         } elseif($key === 'email') {
             $value = static::normalizeEmailConfig($value);
+        } elseif($key === 'payment_gateway') {
+            $value = static::normalizePaymentGatewayConfig($value);
         } elseif($key === 'translations') {
             $value = static::normalizeTranslationsConfig($value);
         }

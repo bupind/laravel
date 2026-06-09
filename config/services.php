@@ -38,11 +38,22 @@ return [
     ],
 
     'payment_gateway' => [
-        'enabled'  => env('PAYMENT_GATEWAY_ENABLED', false),
-        'provider' => env('PAYMENT_GATEWAY_PROVIDER'),
-        'endpoint' => env('PAYMENT_GATEWAY_ENDPOINT'),
-        'token'    => env('PAYMENT_GATEWAY_TOKEN'),
-        'mode'     => env('PAYMENT_GATEWAY_MODE', 'sandbox'),
+        'enabled'              => env('PAYMENT_GATEWAY_ENABLED', false),
+        'provider'             => 'xendit',
+        'mode'                 => env('PAYMENT_GATEWAY_MODE', 'sandbox'),
+        'base_url'             => env('XENDIT_BASE_URL', 'https://api.xendit.co'),
+        'invoice_endpoint'     => env('XENDIT_INVOICE_ENDPOINT', '/v2/invoices'),
+        'secret_key'           => env('XENDIT_SECRET_KEY', env('PAYMENT_GATEWAY_TOKEN')),
+        'public_key'           => env('XENDIT_PUBLIC_KEY'),
+        'webhook_token'        => env('XENDIT_WEBHOOK_TOKEN'),
+        'success_redirect_url' => env('XENDIT_SUCCESS_REDIRECT_URL'),
+        'failure_redirect_url' => env('XENDIT_FAILURE_REDIRECT_URL'),
+        'currency'             => env('XENDIT_CURRENCY', 'IDR'),
+        'invoice_duration'     => env('XENDIT_INVOICE_DURATION', 86400),
+        'should_send_email'    => env('XENDIT_SHOULD_SEND_EMAIL', false),
+        'timeout'              => env('PAYMENT_GATEWAY_TIMEOUT', 20),
+        'retry'                => env('PAYMENT_GATEWAY_RETRY', 3),
+        'retry_sleep_ms'       => env('PAYMENT_GATEWAY_RETRY_SLEEP_MS', 300),
     ],
 
     'slack' => [

@@ -220,6 +220,16 @@ class MenuSeeder extends Seeder
             'permission_name' => 'api-clients-view',
             'parent_id'       => $settings->id,
         ]);
+        $this->menu([
+            'title'           => 'Notification Templates',
+            'translation_key' => 'menus.notification_templates',
+            'scope'           => 'backend',
+            'icon'            => 'Bell',
+            'route'           => '/notification-templates',
+            'order'           => 5,
+            'permission_name' => 'notification-templates-view',
+            'parent_id'       => $settings->id,
+        ]);
         $utilities = $this->menu([
             'title'           => 'Utilities',
             'translation_key' => 'menus.utilities',

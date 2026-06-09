@@ -15,7 +15,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 type SettingRow = {
     key: string;
     value: string;
-    type?: 'text' | 'textarea' | 'color' | 'file' | 'json' | 'whatsapp' | 'email_service' | 'translations';
+    type?: 'text' | 'textarea' | 'color' | 'file' | 'json' | 'whatsapp' | 'email_service' | 'payment_gateway' | 'translations';
     is_system?: boolean;
 };
 
@@ -41,6 +41,24 @@ type EmailConfig = {
     from_name?: string | null;
     from_address?: string | null;
     test_recipient?: string | null;
+};
+
+type PaymentGatewayConfig = {
+    provider?: string;
+    mode?: string;
+    base_url?: string | null;
+    invoice_endpoint?: string | null;
+    secret_key?: string | null;
+    public_key?: string | null;
+    webhook_token?: string | null;
+    success_redirect_url?: string | null;
+    failure_redirect_url?: string | null;
+    currency?: string | null;
+    invoice_duration?: number | string;
+    should_send_email?: boolean;
+    timeout?: number | string;
+    retry?: number | string;
+    retry_sleep_ms?: number | string;
 };
 
 type ServiceFeature = { enabled: boolean; label: string };
@@ -114,6 +132,24 @@ const defaultEmailConfig: Required<EmailConfig> = {
     test_recipient: '',
 };
 
+const defaultPaymentGatewayConfig: Required<PaymentGatewayConfig> = {
+    provider: 'xendit',
+    mode: 'sandbox',
+    base_url: 'https://api.xendit.co',
+    invoice_endpoint: '/v2/invoices',
+    secret_key: '',
+    public_key: '',
+    webhook_token: '',
+    success_redirect_url: '',
+    failure_redirect_url: '',
+    currency: 'IDR',
+    invoice_duration: 86400,
+    should_send_email: false,
+    timeout: 20,
+    retry: 3,
+    retry_sleep_ms: 300,
+};
+
 const fallbackTabs: TabDef[] = [
     { key: 'general', label: 'pages.settingapp.tabs.general', keys: ['app_name', 'description', 'logo', 'favicon', 'color', 'seo'] },
     { key: 'translations', label: 'pages.settingapp.tabs.translations', keys: ['translations'], translatable: true },
@@ -121,14 +157,15 @@ const fallbackTabs: TabDef[] = [
 ];
 
 function parseWhatsappConfig(value: string): Required<WhatsAppConfig> {
-    let parsed: WhatsAppConfig = {};
+    let parsed: WhatsAppConfig & { templates?: unknown } = {};
     try {
         parsed = value.trim() ? (JSON.parse(value) as WhatsAppConfig) : {};
     } catch {
         parsed = {};
     }
     const provider = String(parsed.provider || defaultWhatsappConfig.provider);
-    return { ...defaultWhatsappConfig, ...parsed, provider };
+    const { templates: _legacyTemplates, ...cleanParsed } = parsed;
+    return { ...defaultWhatsappConfig, ...cleanParsed, provider };
 }
 
 function stringifyWhatsappConfig(config: Required<WhatsAppConfig>): string {
@@ -136,17 +173,45 @@ function stringifyWhatsappConfig(config: Required<WhatsAppConfig>): string {
 }
 
 function parseEmailConfig(value: string): Required<EmailConfig> {
-    let parsed: EmailConfig = {};
+    let parsed: EmailConfig & { templates?: unknown } = {};
     try {
         parsed = value.trim() ? (JSON.parse(value) as EmailConfig) : {};
     } catch {
         parsed = {};
     }
-    return { ...defaultEmailConfig, ...parsed };
+    const { templates: _legacyTemplates, ...cleanParsed } = parsed;
+    return { ...defaultEmailConfig, ...cleanParsed };
 }
 
 function stringifyEmailConfig(config: Required<EmailConfig>): string {
     return JSON.stringify(config, null, 2);
+}
+
+function parsePaymentGatewayConfig(value: string): Required<PaymentGatewayConfig> {
+    let parsed: PaymentGatewayConfig & { endpoint?: string; token?: string; templates?: unknown } = {};
+    try {
+        parsed = value.trim() ? (JSON.parse(value) as PaymentGatewayConfig) : {};
+    } catch {
+        parsed = {};
+    }
+
+    const { templates: _legacyTemplates, ...cleanParsed } = parsed;
+    const migrated = {
+        ...cleanParsed,
+        provider: 'xendit',
+        base_url: cleanParsed.base_url ?? cleanParsed.endpoint ?? defaultPaymentGatewayConfig.base_url,
+        secret_key: cleanParsed.secret_key ?? cleanParsed.token ?? '',
+    };
+
+    return {
+        ...defaultPaymentGatewayConfig,
+        ...migrated,
+        provider: 'xendit',
+    };
+}
+
+function stringifyPaymentGatewayConfig(config: Required<PaymentGatewayConfig>): string {
+    return JSON.stringify({ ...config, provider: 'xendit' }, null, 2);
 }
 
 function parseTranslationConfig(value: string): Required<TranslationConfig> {
@@ -421,6 +486,11 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
         updateRow(index, { value: stringifyEmailConfig(updater(current)) });
     };
 
+    const updatePaymentGatewayRow = (index: number, updater: (c: Required<PaymentGatewayConfig>) => Required<PaymentGatewayConfig>) => {
+        const current = parsePaymentGatewayConfig(data.settings[index]?.value ?? '');
+        updateRow(index, { value: stringifyPaymentGatewayConfig(updater(current)) });
+    };
+
     const updateTranslationRow = (index: number, updater: (c: Required<TranslationConfig>) => Required<TranslationConfig>) => {
         const current = parseTranslationConfig(data.settings[index]?.value ?? '');
         updateRow(index, { value: stringifyTranslationConfig(updater(current)) });
@@ -561,7 +631,6 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
             const result = await postServiceAction(route('setting.services.email.test'), {
                 config: row.value,
                 to: config.test_recipient,
-                subject: 'Test Email dari Setting',
             });
             setEmailTestResult({
                 loading: false,
@@ -609,7 +678,7 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
                             <Input
                                 value={config.endpoint ?? ''}
                                 onChange={(e) => setStr('endpoint', e.target.value)}
-                                placeholder="http://localhost:3000/api/send"
+                                placeholder="http://localhost:3001/api/send"
                             />
                             <p className="text-muted-foreground text-xs">{t('pages.settingapp.whatsapp.endpointHelp')}</p>
                         </div>
@@ -691,7 +760,7 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
                         <Input
                             value={config.endpoint ?? ''}
                             onChange={(e) => setStr('endpoint', e.target.value)}
-                            placeholder="https://api.example.com/whatsapp/send"
+                            placeholder="http://localhost:3001/api/send"
                         />
                     </div>
                     <div className="space-y-1">
@@ -895,6 +964,116 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
         );
     };
 
+    const renderPaymentGatewayField = (row: SettingRow, index: number) => {
+        const config = parsePaymentGatewayConfig(row.value);
+        const setStr = (field: keyof PaymentGatewayConfig, val: string) => updatePaymentGatewayRow(index, (c) => ({ ...c, [field]: val }));
+        const setNum = (field: 'invoice_duration' | 'timeout' | 'retry' | 'retry_sleep_ms', val: string) => {
+            const n = Number(val);
+            updatePaymentGatewayRow(index, (c) => ({ ...c, [field]: Number.isFinite(n) ? n : Number(defaultPaymentGatewayConfig[field]) }));
+        };
+        const setBool = (field: 'should_send_email', val: boolean) => updatePaymentGatewayRow(index, (c) => ({ ...c, [field]: val }));
+
+        return (
+            <div className="bg-muted/20 space-y-4 rounded-md border p-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.provider')}</Label>
+                        <Input value="xendit" disabled className="font-mono" />
+                        <p className="text-muted-foreground text-xs">{t('pages.settingapp.payment.xenditOnly')}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.mode')}</Label>
+                        <Select value={config.mode || 'sandbox'} onValueChange={(v) => setStr('mode', v)}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="sandbox">{t('pages.settingapp.payment.modeSandbox')}</SelectItem>
+                                <SelectItem value="production">{t('pages.settingapp.payment.modeProduction')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.baseUrl')}</Label>
+                        <Input value={config.base_url ?? ''} onChange={(e) => setStr('base_url', e.target.value)} placeholder="https://api.xendit.co" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.invoiceEndpoint')}</Label>
+                        <Input value={config.invoice_endpoint ?? ''} onChange={(e) => setStr('invoice_endpoint', e.target.value)} placeholder="/v2/invoices" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.secretKey')}</Label>
+                        <div className="relative">
+                            <Input
+                                type={showPassword ? 'text' : 'password'}
+                                value={config.secret_key ?? ''}
+                                onChange={(e) => setStr('secret_key', e.target.value)}
+                                placeholder="xnd_development_..."
+                                autoComplete="new-password"
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((s) => !s)}
+                                className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.publicKey')}</Label>
+                        <Input value={config.public_key ?? ''} onChange={(e) => setStr('public_key', e.target.value)} placeholder="xnd_public_..." />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.webhookToken')}</Label>
+                        <Input
+                            type={showPassword ? 'text' : 'password'}
+                            value={config.webhook_token ?? ''}
+                            onChange={(e) => setStr('webhook_token', e.target.value)}
+                            autoComplete="new-password"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.currency')}</Label>
+                        <Input value={config.currency ?? 'IDR'} onChange={(e) => setStr('currency', e.target.value.toUpperCase())} placeholder="IDR" className="font-mono" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.successRedirectUrl')}</Label>
+                        <Input value={config.success_redirect_url ?? ''} onChange={(e) => setStr('success_redirect_url', e.target.value)} placeholder="https://example.com/payment/success" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.failureRedirectUrl')}</Label>
+                        <Input value={config.failure_redirect_url ?? ''} onChange={(e) => setStr('failure_redirect_url', e.target.value)} placeholder="https://example.com/payment/failed" />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>{t('pages.settingapp.payment.invoiceDuration')}</Label>
+                        <Input type="number" min={60} value={config.invoice_duration} onChange={(e) => setNum('invoice_duration', e.target.value)} placeholder="86400" />
+                    </div>
+                    <label className="flex items-center gap-2 rounded-md border px-3 py-2">
+                        <Checkbox checked={Boolean(config.should_send_email)} onCheckedChange={(checked) => setBool('should_send_email', !!checked)} />
+                        <span className="text-sm">{t('pages.settingapp.payment.shouldSendEmail')}</span>
+                    </label>
+                    <div className="col-span-full grid gap-3 md:grid-cols-3">
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.timeoutSeconds')}</Label>
+                            <Input type="number" min={1} value={config.timeout} onChange={(e) => setNum('timeout', e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.retry')}</Label>
+                            <Input type="number" min={0} value={config.retry} onChange={(e) => setNum('retry', e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                            <Label>{t('pages.settingapp.service.retryDelayMs')}</Label>
+                            <Input type="number" min={0} value={config.retry_sleep_ms} onChange={(e) => setNum('retry_sleep_ms', e.target.value)} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderTranslationsField = (row: SettingRow, index: number) => (
         <TranslationsField row={row} index={index} availableLocales={availableLocales} updateTranslationRow={updateTranslationRow} />
     );
@@ -902,6 +1081,7 @@ export default function SettingForm({ settings = [], serviceFeatures = {}, tabs:
     const renderValueField = (row: SettingRow, index: number) => {
         if (row.type === 'whatsapp') return renderWhatsappField(row, index);
         if (row.type === 'email_service') return renderEmailField(row, index);
+        if (row.type === 'payment_gateway') return renderPaymentGatewayField(row, index);
         if (row.type === 'translations') return renderTranslationsField(row, index);
         if (row.type === 'textarea' || row.type === 'json') {
             return (

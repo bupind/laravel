@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             SettingAppSeeder::class,
+            NotificationTemplateSeeder::class,
             TranslationSeeder::class,
             PageSeeder::class,
         ]);

@@ -23,6 +23,7 @@ use App\Http\Controllers\Backend\MediaFolderController;
 use App\Http\Controllers\Backend\MenuController;
 use App\Http\Controllers\Backend\PageController;
 use App\Http\Controllers\Backend\NotificationController;
+use App\Http\Controllers\Backend\NotificationTemplateController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\RoleController;
@@ -72,6 +73,7 @@ Route::prefix('backend')->group(function() {
         ])->name('menus.reorder');
         Route::resource('menus', MenuController::class);
         Route::resource('api-clients', ApiClientController::class);
+        Route::resource('notification-templates', NotificationTemplateController::class);
         Route::resource('sliders', SliderController::class);
         Route::resource('services', ServiceController::class);
         Route::resource('pages', PageController::class);

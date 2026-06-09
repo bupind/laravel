@@ -1,24 +1,41 @@
 const { execSync, spawn } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const root   = path.resolve(__dirname, '..');
 const isWin  = process.platform === 'win32';
 
 function findPhp() {
+    const laragonRoots = isWin
+        ? [path.join(path.parse(root).root, 'laragon'), 'C:\\laragon', 'D:\\laragon']
+        : [];
+    const laragonCandidates = laragonRoots.flatMap((laragonRoot) => {
+        const phpDir = path.join(laragonRoot, 'bin', 'php');
+        if (!fs.existsSync(phpDir)) {
+            return [];
+        }
+
+        return fs.readdirSync(phpDir)
+            .filter((name) => name.startsWith('php-'))
+            .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
+            .map((name) => path.join(phpDir, name, 'php.exe'));
+    });
+
     const candidates = isWin
         ? [
-            'php',
-            'C:\\laragon\\bin\\php\\php8.2.x64\\php.exe',
-            'C:\\laragon\\bin\\php\\php8.1.x64\\php.exe',
-            'C:\\laragon\\bin\\php\\php8.3.x64\\php.exe',
+            ...laragonCandidates,
             'C:\\xampp\\php\\php.exe',
+            'php',
           ]
         : ['php', 'php8.2', 'php8.1'];
 
     for (const p of candidates) {
         try {
-            execSync(`"${p}" --version`, { stdio: 'ignore' });
-            return p;
+            const version = execSync(`"${p}" -r "echo PHP_VERSION;"`, { encoding: 'utf8' }).trim();
+            const [major, minor] = version.split('.').map(Number);
+            if (major > 8 || (major === 8 && minor >= 2)) {
+                return p;
+            }
         } catch {}
     }
     return 'php'; // fallback
@@ -68,19 +85,42 @@ function spawnProc(label, color, cmd, args, opts = {}) {
     return proc;
 }
 
+function isPortListening(port) {
+    try {
+        const output = execSync(
+            isWin
+                ? `netstat -ano | findstr ":${port}"`
+                : `lsof -iTCP:${port} -sTCP:LISTEN -P -n`,
+            { encoding: 'utf8' },
+        );
+
+        return output.split(/\r?\n/).some((line) => (
+            isWin
+                ? line.includes('LISTENING') && line.includes(`:${port}`)
+                : line.includes(`:${port}`)
+        ));
+    } catch {
+        return false;
+    }
+}
+
 console.log(`\n${colors.green}Starting dev servers...${colors.reset}\n`);
-
-// 1. PHP artisan serve
 const phpProc = spawnProc('PHP', colors.yellow, php, ['artisan', 'serve', '--port=8000']);
-
-// 2. Vite
 const viteProc = spawnProc('Vite', colors.cyan, isWin ? 'npx.cmd' : 'npx', ['vite']);
+const whatsappPort = Number(process.env.WWEBJS_PORT || 3001);
+const whatsappProc = isPortListening(whatsappPort)
+    ? null
+    : spawnProc('WhatsApp', colors.green, 'node', ['whatsapp-server.cjs']);
 
-// Graceful shutdown
+if (!whatsappProc) {
+    console.warn(`${tag('WhatsApp', colors.yellow)} port ${whatsappPort} sudah aktif; skip spawn whatsapp-server.cjs.`);
+}
+
 function shutdown() {
     console.log(`\n${colors.yellow}Shutting down...${colors.reset}`);
     phpProc.kill();
     viteProc.kill();
+    whatsappProc?.kill();
     process.exit(0);
 }
 

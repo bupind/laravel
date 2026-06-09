@@ -9,6 +9,7 @@ namespace App\Services\Queue\Handlers;
 
 use App\Contracts\Queue\QueueTaskHandler;
 use App\Models\SettingApp;
+use App\Support\WwebjsEndpoint;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -25,7 +26,9 @@ class SendWhatsAppTask implements QueueTaskHandler
         $settingConfig = $storedConfig === null ? [] : SettingApp::normalizeWhatsappConfig($storedConfig);
         $config        = SettingApp::normalizeWhatsappConfig(array_replace_recursive((array)config('services.whatsapp', []), $settingConfig));
         $provider      = (string)($config['provider'] ?? 'wwebjs');
-        $endpoint      = (string)($config['endpoint'] ?? '');
+        $endpoint      = $provider === 'wwebjs'
+            ? WwebjsEndpoint::resolve($config, 'send')
+            : (string)($config['endpoint'] ?? '');
         $token         = (string)($config['token'] ?? '');
         if($endpoint === '') {
             Log::warning('WhatsApp service endpoint is not configured.', [

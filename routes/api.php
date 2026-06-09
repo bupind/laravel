@@ -13,6 +13,7 @@
 use App\Http\Controllers\Api\HealthCheckController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\TranslationController;
+use App\Http\Controllers\Api\XenditWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,9 @@ Route::middleware('throttle:120,1')->group(function() {
     Route::get('translations', TranslationController::class)->name('api.translations');
     Route::post('translations/resolve', [TranslationController::class, 'resolve'])->name('api.translations.resolve');
 });
+Route::post('webhooks/xendit', XenditWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('api.webhooks.xendit');
 Route::middleware([
     'api.client',
     'throttle:api'

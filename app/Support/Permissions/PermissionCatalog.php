@@ -88,13 +88,19 @@ class PermissionCatalog
             ],
         ],
         'Settings'      => [
-            'settings'     => [
+            'settings'               => [
                 'view',
                 'update',
             ],
-            'translations' => [
+            'translations'           => [
                 'view',
                 'update',
+            ],
+            'notification-templates' => [
+                'view',
+                'create',
+                'update',
+                'delete',
             ],
         ],
         'Menus'         => [

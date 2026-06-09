@@ -8,7 +8,10 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\NotificationTemplate;
 use App\Models\SettingApp;
+use App\Services\Notifications\NotificationTemplateService;
+use App\Support\WwebjsEndpoint;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -229,33 +232,7 @@ class SettingAppController extends Controller
     // ─── Private Helpers ────────────────────────────────────────────────────
     private function resolveWwebjsEndpoint(array $config, string $type = 'send'): string
     {
-        $explicit = match ($type) {
-            'qr'     => (string)($config['qr_endpoint'] ?? ''),
-            'status' => (string)($config['status_endpoint'] ?? ''),
-            default  => '',
-        };
-        if($explicit !== '') {
-            return $explicit;
-        }
-        $endpoint = trim((string)($config['endpoint'] ?? ''));
-        if($endpoint === '') {
-            return '';
-        }
-        $endpoint = rtrim($endpoint, '/');
-        if($type === 'send') {
-            return $endpoint;
-        }
-        $target  = match ($type) {
-            'status'  => '/api/status',
-            'logout'  => '/api/logout',
-            'restart' => '/api/restart',
-            default   => '/api/qr',
-        };
-        $derived = preg_replace('~/api/(sendText|send|qr|status|logout|restart)$~', $target, $endpoint);
-        if(is_string($derived) && $derived !== $endpoint) {
-            return $derived;
-        }
-        return $endpoint . $target;
+        return WwebjsEndpoint::resolve($config, $type);
     }
 
     private function whatsappHttp(array $config)
@@ -338,7 +315,7 @@ class SettingAppController extends Controller
         }
     }
 
-    public function testWhatsapp(Request $request)
+    public function testWhatsapp(Request $request, NotificationTemplateService $templateService)
     {
         if(!$this->isServiceEnabled('whatsapp')) {
             return response()->json(['message' => 'WhatsApp service tidak aktif.'], 404);
@@ -354,7 +331,16 @@ class SettingAppController extends Controller
             ? $this->resolveWwebjsEndpoint($config, 'send')
             : (string)($config['endpoint'] ?? '');
         $to        = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
-        $message   = trim((string)($validated['message'] ?? ''));
+        $templateVars = $templateService->variables([
+            'name'        => 'Pelanggan Test',
+            'external_id' => 'ORDER-TEST',
+            'amount'      => 150000,
+            'currency'    => 'IDR',
+            'invoice_url' => config('app.url') . '/payment/test',
+            'status'      => 'PENDING',
+        ]);
+        $defaultMessage = $templateService->body(NotificationTemplate::CHANNEL_WHATSAPP, NotificationTemplate::EVENT_WELCOME, $templateVars);
+        $message   = trim((string)($validated['message'] ?? $defaultMessage));
         if($endpoint === '') {
             return response()->json(['message' => 'Endpoint WhatsApp belum diisi.'], 422);
         }
@@ -377,7 +363,7 @@ class SettingAppController extends Controller
         }
     }
 
-    public function testEmail(Request $request)
+    public function testEmail(Request $request, NotificationTemplateService $templateService)
     {
         if(!$this->isServiceEnabled('email')) {
             return response()->json(['message' => 'Email service tidak aktif.'], 404);
@@ -390,8 +376,17 @@ class SettingAppController extends Controller
         ]);
         $config    = $this->resolveEmailConfig($request);
         $to        = trim((string)($validated['to'] ?? $config['test_recipient'] ?? ''));
-        $subject   = trim((string)($validated['subject'] ?? 'Test Email'));
-        $message   = trim((string)($validated['message'] ?? 'Test email dari setting.'));
+        $templateVars = $templateService->variables([
+            'name'        => 'Pelanggan Test',
+            'external_id' => 'ORDER-TEST',
+            'amount'      => 150000,
+            'currency'    => 'IDR',
+            'invoice_url' => config('app.url') . '/payment/test',
+            'status'      => 'PENDING',
+        ]);
+        $template  = $templateService->email(NotificationTemplate::EVENT_WELCOME, $templateVars);
+        $subject   = trim((string)($validated['subject'] ?? $template['subject']));
+        $message   = trim((string)($validated['message'] ?? $template['body']));
         if($to === '') {
             return response()->json(['message' => 'Tujuan test email belum diisi.'], 422);
         }
